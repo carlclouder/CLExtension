@@ -1,0 +1,158 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="_cl_string\CLString.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_time\CLTime.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_extension.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_binSerial\CLBinSerial.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_smartLine\CLSmartLine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_arrayTemplate\CLArrayTemplate.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_httpSpider\CLHttpSpider.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_matcher\CLMatcher.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_behaviorObjectModel\CLBehaviorObjectModel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_showTool\CLShowTool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_processInfo\CLProcessInfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_common\CLCommon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_iocpServeBase\CLIocpServeBase.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_neuralNetwork\CreativeLusEx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_neuralNetwork\CreativeLus.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_neuralNetwork\CreativeLusExTools.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_jsonTask\CLJsonTask.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_objectMemPool\CLMemPool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_matrix\CLMatrix.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_cl_parallel\CLParallel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="_rapidjson\CLRapidjsonTX.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="_cl_time\CLTime.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_string\CLString.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_matrix\CLMatrix.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_binSerial\CLBinSerial.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_smartLine\CLSmartLine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_arrayTemplate\CLArrayTemplate.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_extension.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_httpSpider\CLHttpSpider.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_matcher\CLMatcher.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_behaviorObjectModel\CLBehaviorObjectModel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_showTool\CLShowTool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_processInfo\CLProcessInfo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_common\CLCommon.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_iocpServeBase\CLIocpServeBase.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_jsonTask\CLJsonTask.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_neuralNetwork\CreativeLus.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_neuralNetwork\CreativeLusEx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_objectMemPool\CLMemPool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_cl_parallel\CLParallel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="_cl_showTool\CLShowTool.ico">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="_cl_showTool\CLShowTool_small.ico">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="ClassDiagram1.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="_cl_showTool\CLShowTool.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

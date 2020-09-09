@@ -1,0 +1,23 @@
+#ifndef _CL_RAPIDJSON_
+#define _CL_RAPIDJSON_
+#include "rapidjson/document.h"
+#include "rapidjson/reader.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/allocators.h"
+#include "rapidjson/cursorstreamwrapper.h"
+#include "rapidjson/encodedstream.h"
+#include "rapidjson/encodings.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/fwd.h"
+#include "rapidjson/istreamwrapper.h"
+#include "rapidjson/memorybuffer.h"
+#include "rapidjson/memorystream.h"
+#include "rapidjson/ostreamwrapper.h"
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/schema.h"
+#include "rapidjson/pointer.h"
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/stream.h"
+#endif
