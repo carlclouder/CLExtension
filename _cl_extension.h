@@ -13,6 +13,27 @@
 #include "_jsoncpp/json.h" //jsoncpp库，效率稍微低一些但是稳定
 #include "_rapidjson/CLRapidjsonTX.h" //Tencent（腾讯）开源json库，速度快
 
+// 引入全局链接mysql头
+#ifndef _CURRENT_MYSQL_VERSION
+#define _CURRENT_MYSQL_VERSION  "5.7.24" //注意使用的版本要正确，否则可能出运行时错误
+#endif
+#include "./_mysql\\mysql5.7.24\\include\\mysql.h"
+#ifdef WIN32  //windows 平台
+#ifdef _WIN64	//x64
+#pragma comment(lib,"D:/Documents/Visual Studio 2019/Projects/Quantitative_investment_system/_cl_extension/_mysql/mysql5.7.24/lib/win64/libmysql.lib")
+#else			//x86
+#pragma comment(lib,"D:/Documents/Visual Studio 2019/Projects/Quantitative_investment_system/_cl_extension/_mysql/mysql5.7.24/lib/win32/libmysql.lib")
+#endif
+#endif
+
+#ifdef _mysql_h
+#ifdef LIBMYSQL_VERSION
+static_assert(_CURRENT_MYSQL_VERSION == MYSQL_SERVER_VERSION, "MySQL server version is not match!");
+static_assert(_CURRENT_MYSQL_VERSION == LIBMYSQL_VERSION, "MySQL include lib version is not match!");
+#endif
+#endif
+
+
 //以下是自定义库----------------------------------------------------------------------
 using namespace std;
 
