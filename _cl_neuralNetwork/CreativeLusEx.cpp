@@ -3658,8 +3658,8 @@ Bool CLBpExtend::exportGraphNetStruct(PCStr outFileName, Bool bUseDetailMode)
 	FILE* fl = NULL;
 	if (CLString::createDirectoryByFileName(file) &&
 		0 == _tfopen_s(&fl, file.string(), ("wb")) && fl != 0 && lpbi != 0) {
-		fwrite((VOID*)&bmfhdr, sizeof(BITMAPFILEHEADER), 1, fl);
-		fwrite((VOID*)lpbi, dwdibsize, 1, fl);
+		fwrite((void*)&bmfhdr, sizeof(BITMAPFILEHEADER), 1, fl);
+		fwrite((void*)lpbi, dwdibsize, 1, fl);
 		fclose(fl);
 	}
 	::DeleteObject(hbitmap);

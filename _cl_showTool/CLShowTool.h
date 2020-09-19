@@ -227,19 +227,19 @@ protected:
 #define RIGHT_WIDE  getWide(3)
 #define BOTTON_WIDE getWide(4)
 	DOUBLE getWide(LONG pos);
-	VOID release();
-	VOID releaseSubWndLst();
-	VOID getBasePtX(OUT LONG & basePtX, OUT DOUBLE & baseX, IN LONG orgX, IN DOUBLE xLeft, IN DOUBLE xASpan);
-	VOID updateMaxYMinY(DOUBLE* line,STUTHEADER* i) throw(...);
- 	VOID doExFlag(CLDC& dc,STUTHEADER& hdr,DOUBLE* line);
-	VOID drawText(CLDC& dc,LPCTSTR str,LONG szlen,LONG x,LONG y,LONG alignFlag = 0);
+	void release();
+	void releaseSubWndLst();
+	void getBasePtX(OUT LONG & basePtX, OUT DOUBLE & baseX, IN LONG orgX, IN DOUBLE xLeft, IN DOUBLE xASpan);
+	void updateMaxYMinY(DOUBLE* line,STUTHEADER* i) throw(...);
+ 	void doExFlag(CLDC& dc,STUTHEADER& hdr,DOUBLE* line);
+	void drawText(CLDC& dc,LPCTSTR str,LONG szlen,LONG x,LONG y,LONG alignFlag = 0);
 	BOOL drawGrapher(CLDC& dc);
 
-	VOID drawUtLine(CLDC& dc,STUTHEADER& hdr,DOUBLE* line, std::map<long, RAGE> *lx );
-	VOID drawUtVerline(CLDC& dc,STUTHEADER& hdr,DOUBLE* line, std::map<long, RAGE> *lx );
-	VOID drawUtText(CLDC& dc,STUTHEADER& hdr,PCLString str);
-	VOID drawUtAxisX(CLDC& dc,STUTHEADER& hdr);
-	VOID drawUtAxisY(CLDC& dc,STUTHEADER& hdr);
+	void drawUtLine(CLDC& dc,STUTHEADER& hdr,DOUBLE* line, std::map<long, RAGE> *lx );
+	void drawUtVerline(CLDC& dc,STUTHEADER& hdr,DOUBLE* line, std::map<long, RAGE> *lx );
+	void drawUtText(CLDC& dc,STUTHEADER& hdr,PCLString str);
+	void drawUtAxisX(CLDC& dc,STUTHEADER& hdr);
+	void drawUtAxisY(CLDC& dc,STUTHEADER& hdr);
 	static LONG getFitDataAccuracy(LONG curAcc, DOUBLE vmin, DOUBLE vmax);
 
 	BOOL drawKLine(CLDC& dc,DAYDATASETS_UNIT1 pPt[],LONGLONG nSize);
@@ -270,27 +270,27 @@ protected:
 // 消息映射函数
 #define _cl_msg virtual
  	virtual BOOL OnInitDialog();
- 	_cl_msg VOID OnPaint();
+ 	_cl_msg void OnPaint();
 	_cl_msg HCURSOR OnQueryDragIcon();
-	_cl_msg VOID OnClose();
-	virtual VOID OnOK();
-	virtual VOID OnCancel();
-	_cl_msg VOID OnDestroy();
+	_cl_msg void OnClose();
+	virtual void OnOK();
+	virtual void OnCancel();
+	_cl_msg void OnDestroy();
 	_cl_msg HBRUSH OnCtlColor(CLDC* pDC, CLShowTool* pWnd, UINT nCtlColor);
-	_cl_msg VOID OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-	_cl_msg VOID OnTimer(UINT_PTR nIDEvent);
-	_cl_msg VOID OnNcDestroy();	
-	_cl_msg VOID OnLButtonDown(UINT nFlags, CLPoint point);
-	_cl_msg VOID OnLButtonUp(UINT nFlags, CLPoint point);
-	_cl_msg VOID OnMouseMove(UINT nFlags, CLPoint point);
-	_cl_msg VOID OnSizing(UINT fwSide, LPRECT pRect);
-	_cl_msg VOID OnSize(UINT nType, LONG cx, LONG cy);
-	_cl_msg VOID OnMenuItem_BITMAPOUT();//ID_MENUITEM1消息函数
-	_cl_msg VOID OnContextMenu(CLPoint point);//右键菜单响应映射函数
-	_cl_msg VOID OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+	_cl_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	_cl_msg void OnTimer(UINT_PTR nIDEvent);
+	_cl_msg void OnNcDestroy();	
+	_cl_msg void OnLButtonDown(UINT nFlags, CLPoint point);
+	_cl_msg void OnLButtonUp(UINT nFlags, CLPoint point);
+	_cl_msg void OnMouseMove(UINT nFlags, CLPoint point);
+	_cl_msg void OnSizing(UINT fwSide, LPRECT pRect);
+	_cl_msg void OnSize(UINT nType, LONG cx, LONG cy);
+	_cl_msg void OnMenuItem_BITMAPOUT();//ID_MENUITEM1消息函数
+	_cl_msg void OnContextMenu(CLPoint point);//右键菜单响应映射函数
+	_cl_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 	_cl_msg BOOL OnMouseWheel(UINT nFlags, SHORT zDelta, CLPoint pt);
 	
-	VOID showSubLstWnd();
+	void showSubLstWnd();
 	BOOL attach(const CLShowTool& obj);
 	void init();
 	LONG messageBox(LPCTSTR lpString) const;
@@ -330,7 +330,7 @@ protected:
 	 //返回对象指针。创建运行失败返回NULL
 	 CLShowTool* showInNewThread(LPDWORD _out_threadId = NULL);
 	 //该函数设置子连是以子窗口方式显示，还是以NULL为父窗口显示。isSub = false 表示子连以NULL为父窗口
-	 VOID setSubLstShowAsSubWnd(BOOL isSub = TRUE);
+	 void setSubLstShowAsSubWnd(BOOL isSub = TRUE);
 	 BOOL getSubLstShowAsSubWnd()const;
 
 	 operator HWND() const;

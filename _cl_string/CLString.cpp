@@ -18,7 +18,7 @@ LPTSTR getCLString0(){
 	return &$char0;
 }
 
-  VOID CLString::setEncode(VOID)
+  void CLString::setEncode()
 {
 #ifdef UNICODE
 	 if(isBigEndian()) m_encoding = EnCode_UBE;
@@ -27,29 +27,29 @@ LPTSTR getCLString0(){
 	 m_encoding = EnCode_ASCII;
 #endif   
 }
-  VOID CLString::cleanAllMemory(VOID)/*会清除内部Vector*/
+  void CLString::cleanAllMemory(void)/*会清除内部Vector*/
 {
 	assert(string() != NULL);
 	if(string() != getCLString0() && string() != NULL)
 		delete[] pHead;
 	pHead = getCLString0();
-	m_UnitNumber = 0;
+	m_unitNumber = 0;
 	m_changeFlag = TRUE;
 	deleteDEx();
 }
-  VOID CLString::initialize(LONG_PTR nDefaultCharNumber)
+  void CLString::initialize(LONG_PTR nDefaultCharNumber)
 {
 	setEncode();
 	//让指针有效
 	if(nDefaultCharNumber < 1){
 		pHead = getCLString0();
-		m_UnitNumber = 0;
+		m_unitNumber = 0;
 	}
 	else{ 
-		pHead = new TCHAR[ m_UnitNumber = nDefaultCharNumber];
+		pHead = new TCHAR[ m_unitNumber = nDefaultCharNumber];
 		pHead[0] = 0;
 	}
-	m_Strlen = 0;
+	m_strlen = 0;
 	m_changeFlag = FALSE;
 	pDataEx = 0;
 }
@@ -59,7 +59,7 @@ LPTSTR getCLString0(){
 {
 	if (!pString)
 	{
-		//ZeroMemory(pHead,m_UnitNumber*sizeof(TCHAR));
+		//ZeroMemory(pHead,m_unitNumber*sizeof(TCHAR));
 		if(string() && string() != getCLString0())
 			*pHead = 0;
 		m_changeFlag = TRUE;
@@ -69,40 +69,40 @@ LPTSTR getCLString0(){
 	if(m_encoding == EnCode_ASCII)
     {
 		LONG_PTR _targetLen = std::strlen(pString);
-		if ((!( pString + _targetLen + 1 < (LPCSTR)pHead || pString > (LPCSTR)pHead + m_UnitNumber )) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCSTR>(getCLString0()))) )
+		if ((!( pString + _targetLen + 1 < (LPCSTR)pHead || pString > (LPCSTR)pHead + m_unitNumber )) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCSTR>(getCLString0()))) )
 		{
 			::MessageBoxA(NULL,"字符串指针范围重叠！", "CLString对象错误", MB_ICONERROR);
 			throw std::logic_error("字符串指针范围重叠！");
 		}
-		if (_targetLen+1 <= m_UnitNumber)
+		if (_targetLen+1 <= m_unitNumber)
 		{
-			//ZeroMemory(pHead +_targetLen,(m_UnitNumber -_targetLen)*sizeof(TCHAR));
+			//ZeroMemory(pHead +_targetLen,(m_unitNumber -_targetLen)*sizeof(TCHAR));
 			strcpy_s((LPSTR)pHead, _targetLen + 1, pString);
 		}
 		else {
 		   if(string() != getCLString0())delete[] pHead;	
-		   pHead = (LPTSTR)(new char[ m_UnitNumber = _targetLen + 1]);  
-		   strcpy_s((LPSTR)pHead, m_UnitNumber, pString);
+		   pHead = (LPTSTR)(new char[ m_unitNumber = _targetLen + 1]);  
+		   strcpy_s((LPSTR)pHead, m_unitNumber, pString);
 		}
 		m_changeFlag = TRUE;
 	}
 	else{
 		LONG_PTR _targetLen1 = std::strlen(pString);
-		if ((!( pString + _targetLen1 + 1 < (LPCSTR)pHead || pString > (LPCSTR)((LPWSTR)pHead + m_UnitNumber))) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCSTR>(getCLString0()))) )
+		if ((!( pString + _targetLen1 + 1 < (LPCSTR)pHead || pString > (LPCSTR)((LPWSTR)pHead + m_unitNumber))) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCSTR>(getCLString0()))) )
 		{
 			::MessageBoxW(NULL,L"字符串指针范围重叠！", L"CLString对象错误", MB_ICONERROR);
 			throw std::logic_error("字符串指针范围重叠！");
 		}		
 		LONG_PTR _targetLen;
 		LPWSTR pStringW;
-		BOOL rt = swapEncode((const LPBYTE)pString,_targetLen1,EnCode_ASCII,(LPBYTE&)pStringW,_targetLen,EnCode_ULE,(LPBYTE)pHead,m_UnitNumber*sizeof(WCHAR));
+		BOOL rt = swapEncode((const LPBYTE)pString,_targetLen1,EnCode_ASCII,(LPBYTE&)pStringW,_targetLen,EnCode_ULE,(LPBYTE)pHead,m_unitNumber*sizeof(WCHAR));
 		if(!rt)
 			empty();
-		else if(_targetLen > m_UnitNumber*(LONGLONG)sizeof(WCHAR))
+		else if(_targetLen > m_unitNumber*(LONGLONG)sizeof(WCHAR))
 		{
 			if(string() != getCLString0())delete[] pHead;
 			pHead = (LPTSTR)pStringW;
-			m_UnitNumber = _targetLen/sizeof(WCHAR);
+			m_unitNumber = _targetLen/sizeof(WCHAR);
 		}		
 		m_changeFlag = TRUE;		
 	}
@@ -112,46 +112,46 @@ LPTSTR getCLString0(){
   {
 	  if (!pString)
 	  {
-		  //ZeroMemory(pHead,m_UnitNumber*sizeof(TCHAR));
+		  //ZeroMemory(pHead,m_unitNumber*sizeof(TCHAR));
 		  if(string() && string() != getCLString0())*pHead = 0;
 		  m_changeFlag = TRUE;
 		  return *this;
 	  }
 	  if(m_encoding == EnCode_ASCII){
 		  LONG_PTR _targetLen1 = std::wcslen(pString);
-		  if ((!( pString + _targetLen1 + 1 < (LPCWSTR)pHead || pString > (LPCWSTR)((LPCSTR)pHead + m_UnitNumber) ) ) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCWSTR>(getCLString0()))))
+		  if ((!( pString + _targetLen1 + 1 < (LPCWSTR)pHead || pString > (LPCWSTR)((LPCSTR)pHead + m_unitNumber) ) ) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCWSTR>(getCLString0()))))
 		  {
 			  ::MessageBoxA(NULL,"字符串指针范围重叠！", "CLString对象错误", MB_ICONERROR);
 			  throw std::logic_error("字符串指针范围重叠！");
 		  }		
 		  LONG_PTR _targetLen;
 		  LPSTR pStringA;
-		  BOOL rt = swapEncode((const LPBYTE)pString,(_targetLen1)*sizeof(WCHAR),EnCode_ULE,(LPBYTE&)pStringA,_targetLen,EnCode_ASCII,(LPBYTE)pHead,m_UnitNumber*sizeof(CHAR));
+		  BOOL rt = swapEncode((const LPBYTE)pString,(_targetLen1)*sizeof(WCHAR),EnCode_ULE,(LPBYTE&)pStringA,_targetLen,EnCode_ASCII,(LPBYTE)pHead,m_unitNumber*sizeof(CHAR));
 		  if(!rt)
 			  empty();
-		  else if(_targetLen > m_UnitNumber*(LONG_PTR)sizeof(CHAR))
+		  else if(_targetLen > m_unitNumber*(LONG_PTR)sizeof(CHAR))
 		  {
 			  if(string() != getCLString0())delete[] pHead;
 			  pHead = (LPTSTR)pStringA;
-			  m_UnitNumber = _targetLen/sizeof(CHAR);
+			  m_unitNumber = _targetLen/sizeof(CHAR);
 		  }		
 		  m_changeFlag = TRUE;	
 	  }
 	  else{
 		  LONG_PTR _targetLen = std::wcslen(pString);
-		  if ((!( pString + _targetLen + 1 < (LPCWSTR)pHead || pString > ((LPCWSTR)pHead + m_UnitNumber) ) ) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCWSTR>(getCLString0()))))
+		  if ((!( pString + _targetLen + 1 < (LPCWSTR)pHead || pString > ((LPCWSTR)pHead + m_unitNumber) ) ) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCWSTR>(getCLString0()))))
 		  {
 			  ::MessageBoxW(NULL, L"字符串指针范围重叠！", L"CLString对象错误", MB_ICONERROR);
 			  throw std::logic_error("字符串指针范围重叠！");
 		  }
-		  if (_targetLen+1 <= m_UnitNumber)
+		  if (_targetLen+1 <= m_unitNumber)
 		  {
 			  wcscpy_s((LPWSTR)pHead, _targetLen + 1, pString);
 		  }
 		  else {
 			  if(string() != getCLString0())delete[] pHead;	
-			  pHead = (LPTSTR)(new WCHAR[ m_UnitNumber = _targetLen + 1]);  
-			  wcscpy_s((LPWSTR)pHead, m_UnitNumber, pString);
+			  pHead = (LPTSTR)(new WCHAR[ m_unitNumber = _targetLen + 1]);  
+			  wcscpy_s((LPWSTR)pHead, m_unitNumber, pString);
 		  }
 		  m_changeFlag = TRUE;	 
 	  }
@@ -432,17 +432,17 @@ CLString& CLString::append(LPCSTR pString)
 	   return (*this);
 	if(m_encoding == EnCode_ASCII){
     LONG_PTR _targetLen = std::strlen(pString);
-    if ((!( pString + _targetLen + 1 < (LPCSTR)pHead || pString > (LPCSTR)pHead + m_UnitNumber ) ) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCSTR>(getCLString0()))))
+    if ((!( pString + _targetLen + 1 < (LPCSTR)pHead || pString > (LPCSTR)pHead + m_unitNumber ) ) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCSTR>(getCLString0()))))
         {
             ::MessageBox(NULL, _T("字符串指针范围重叠！"), _T("CLString对象错误"), MB_ICONERROR);
             throw std::logic_error("字符串指针范围重叠！");
         }
-    if (_targetLen + strlen() + 1 <= m_UnitNumber)
+    if (_targetLen + strlen() + 1 <= m_unitNumber)
     {
        strcpy_s((LPSTR)pHead + strlen(), _targetLen + 1, pString);
     }
     else {
-       LPSTR pHeade = new CHAR[ m_UnitNumber = strlen() + _targetLen + 1];            
+       LPSTR pHeade = new CHAR[ m_unitNumber = strlen() + _targetLen + 1];            
        strcpy_s(pHeade, strlen() + 1, (LPCSTR)pHead);
        strcpy_s(pHeade + strlen(), _targetLen + 1, pString);
        if(string() != getCLString0())delete[] pHead;
@@ -454,12 +454,12 @@ CLString& CLString::append(LPCSTR pString)
 		if(!swapEncode((const LPBYTE)pString,std::strlen(pString),EnCode_ASCII,(LPBYTE&)pTag,_targetLen,EnCode_ULE))
 			return *this;
 		_targetLen = _targetLen/sizeof(WCHAR) -1;
-		if (_targetLen + strlen() + 1 <= m_UnitNumber)
+		if (_targetLen + strlen() + 1 <= m_unitNumber)
 		{
 			wcscpy_s((LPWSTR)pHead + strlen(), _targetLen + 1, pTag);
 		}
 		else {
-			LPWSTR pHeade = new WCHAR[ m_UnitNumber = strlen() + _targetLen + 1];            
+			LPWSTR pHeade = new WCHAR[ m_unitNumber = strlen() + _targetLen + 1];            
 			wcscpy_s(pHeade, strlen() + 1, (LPCWSTR)pHead);
 			wcscpy_s(pHeade + strlen(), _targetLen + 1, pTag);
 			if(string() != getCLString0())delete[] pHead;
@@ -475,17 +475,17 @@ CLString& CLString::append(LPCWSTR pString)
 		return (*this);
 	if(m_encoding != EnCode_ASCII){
 		LONG_PTR _targetLen = std::wcslen(pString);
-		if ((!( pString + _targetLen + 1 < (LPCWSTR)pHead || pString > (LPCWSTR)pHead + m_UnitNumber ) ) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCWSTR>(getCLString0()))))
+		if ((!( pString + _targetLen + 1 < (LPCWSTR)pHead || pString > (LPCWSTR)pHead + m_unitNumber ) ) && (!(pHead == getCLString0() || pString == reinterpret_cast<LPCWSTR>(getCLString0()))))
 		{
 			::MessageBox(NULL, _T("字符串指针范围重叠！"), _T("CLString对象错误"), MB_ICONERROR);
 			throw std::logic_error("字符串指针范围重叠！");
 		}
-		if (_targetLen + strlen() + 1 <= m_UnitNumber)
+		if (_targetLen + strlen() + 1 <= m_unitNumber)
 		{
 			wcscpy_s((LPWSTR)pHead + strlen(), _targetLen + 1, pString);
 		}
 		else {
-			LPWSTR pHeade = new WCHAR[ m_UnitNumber = strlen() + _targetLen + 1];            
+			LPWSTR pHeade = new WCHAR[ m_unitNumber = strlen() + _targetLen + 1];            
 			wcscpy_s(pHeade, strlen() + 1, (LPCWSTR)pHead);
 			wcscpy_s(pHeade + strlen(), _targetLen + 1, pString);
 			if(string() != getCLString0())delete[] pHead;
@@ -498,12 +498,12 @@ CLString& CLString::append(LPCWSTR pString)
 		if(!swapEncode((const LPBYTE)pString,(std::wcslen(pString))*sizeof(WCHAR),EnCode_ULE,(LPBYTE&)pTag,_targetLen,EnCode_ASCII))
 			return *this;
 		_targetLen = _targetLen/sizeof(CHAR) -1;
-		if (_targetLen + strlen() + 1 <= m_UnitNumber)
+		if (_targetLen + strlen() + 1 <= m_unitNumber)
 		{
 			strcpy_s((LPSTR)pHead + strlen(), _targetLen + 1, pTag);
 		}
 		else {
-			LPSTR pHeade = new CHAR[ m_UnitNumber = strlen() + _targetLen + 1];            
+			LPSTR pHeade = new CHAR[ m_unitNumber = strlen() + _targetLen + 1];            
 			strcpy_s(pHeade, strlen() + 1, (LPCSTR)pHead);
 			strcpy_s(pHeade + strlen(), _targetLen + 1, pTag);
 			if(string() != getCLString0())delete[] pHead;
@@ -635,7 +635,7 @@ CLString& CLString::format(LONG_PTR maxStrlen,LPCTSTR szFormat,...)
 		return empty();
 	}
 	LONG_PTR _szFormatlen = std::_tcslen(szFormat) + 1;
-	if( szFormat + _szFormatlen < pHead  ||	szFormat > pHead + m_UnitNumber )//指针重叠判断
+	if( szFormat + _szFormatlen < pHead  ||	szFormat > pHead + m_unitNumber )//指针重叠判断
 	{
 		va_list pArgs;
 		va_start(pArgs,szFormat);
@@ -660,7 +660,7 @@ CLString& CLString::format(LPCTSTR szFormat,...)
 	}
 	LONG_PTR _szFormatlen = std::_tcslen(szFormat) + 1;
 	
-	if( szFormat + _szFormatlen < pHead  ||	szFormat > pHead + m_UnitNumber )//指针重叠判断
+	if( szFormat + _szFormatlen < pHead  ||	szFormat > pHead + m_unitNumber )//指针重叠判断
 	{
 		va_list pArgs;
 		va_start(pArgs,szFormat);
@@ -1133,30 +1133,30 @@ LPTSTR CLString::store(LONG_PTR iStoreMaxCharLen)
 	assert(string() != NULL);
 	if(iStoreMaxCharLen < 0)iStoreMaxCharLen = 0;
 	m_changeFlag=TRUE;
-	if( iStoreMaxCharLen+1 > m_UnitNumber)
+	if( iStoreMaxCharLen+1 > m_unitNumber)
 	{
 		if(string() != getCLString0())delete[] pHead;
-		pHead = new TCHAR[ m_UnitNumber = iStoreMaxCharLen + 1 ];
+		pHead = new TCHAR[ m_unitNumber = iStoreMaxCharLen + 1 ];
 	}
 	ZeroMemory(pHead,sizeof(TCHAR)*(iStoreMaxCharLen+1));
-	m_Strlen = 0;
+	m_strlen = 0;
 	return pHead;
 }
-LONG_PTR CLString::buflen(VOID)
+LONG_PTR CLString::buflen(void)
 {
-	return m_UnitNumber*sizeof(TCHAR);
+	return m_unitNumber*sizeof(TCHAR);
 } 
-LONG_PTR CLString::strlen(VOID)
+LONG_PTR CLString::strlen(void)
 {
 	if (m_changeFlag)
 	{
 		assert(string() != NULL);
-		m_Strlen = std::_tcslen(string());
+		m_strlen = std::_tcslen(string());
 		m_changeFlag = FALSE;
 	}
-	return m_Strlen;
+	return m_strlen;
 } 
-LONG_PTR CLString::strlenInByte(VOID)
+LONG_PTR CLString::strlenInByte(void)
 {
 	return strlen()*sizeof(TCHAR);
 } 
@@ -1201,15 +1201,15 @@ int CLString::getCharCmd(LPTSTR lpBuffer,LONG_PTR nBufferSizeInChar,LPCTSTR lpPr
 CLString& CLString::addAnPathEnd(INT endNumber)
 {	
 	LONG_PTR N = (strlen()+1)*2;
-	if(N <= m_UnitNumber)
-		N = m_UnitNumber;
+	if(N <= m_unitNumber)
+		N = m_unitNumber;
 	LPTSTR tmp=new TCHAR[N];
 	//ZeroMemory(tmp,sizeof(TCHAR)*N);
 	_tcscpy_s(tmp,N,string());
 	if(_AddPathAnEnt(tmp,endNumber)){
 		if(string() != getCLString0())delete[] pHead;
 		pHead = tmp;
-		m_UnitNumber = N;
+		m_unitNumber = N;
 		m_changeFlag = TRUE;
 	}else{
 		delete[] tmp;
@@ -1219,14 +1219,14 @@ CLString& CLString::addAnPathEnd(INT endNumber)
 CLString& CLString::extendPathToQuality()
 {
 	LONG_PTR N = (strlen()+1)*2;
-	if(N <= m_UnitNumber)
-		N = m_UnitNumber;
+	if(N <= m_unitNumber)
+		N = m_unitNumber;
 	LPTSTR tmp=new TCHAR[N];
 	ZeroMemory(tmp,sizeof(TCHAR)*N);
 	_ExtendPathToQuality(string(),tmp);
 	if(string() != getCLString0())delete[] pHead;
 	pHead = tmp;
-	m_UnitNumber = N;
+	m_unitNumber = N;
 	m_changeFlag = TRUE;
 	return *this;
 }
@@ -1235,8 +1235,8 @@ CLString& CLString::extendPathToNormal()
 	LPTSTR tmp;	
 	if(strlen()+1 > MAX_PATH)
 	{	
-		tmp=new TCHAR[m_UnitNumber];
-		ZeroMemory(tmp,sizeof(TCHAR)*m_UnitNumber);
+		tmp=new TCHAR[m_unitNumber];
+		ZeroMemory(tmp,sizeof(TCHAR)*m_unitNumber);
 		_ExtendPathToNormal(pHead,tmp);
 		if(string() != getCLString0())delete[] pHead;
 		pHead = tmp;
@@ -1312,11 +1312,11 @@ BOOL CLString::setReg(HKEY mainKey,LPCTSTR mainPass,LPCTSTR optionName)
 }
 BOOL CLString::getReg(HKEY mainKey,LPCTSTR mainPass,LPCTSTR optionName,LONG_PTR stroeSize)
 {
-	if(m_UnitNumber < stroeSize ){
+	if(m_unitNumber < stroeSize ){
 		if(string() != getCLString0())delete[] pHead;
-		pHead = new TCHAR[ m_UnitNumber = stroeSize ];
+		pHead = new TCHAR[ m_unitNumber = stroeSize ];
 	}
-	//ZeroMemory(pHead,sizeof(TCHAR)*m_UnitNumber);
+	//ZeroMemory(pHead,sizeof(TCHAR)*m_unitNumber);
 	if(string() && string() != getCLString0())*pHead = 0;
 	m_changeFlag = TRUE;
 	if(_RegSZ(mainKey,mainPass,optionName,pHead,FALSE,stroeSize))
@@ -1324,33 +1324,33 @@ BOOL CLString::getReg(HKEY mainKey,LPCTSTR mainPass,LPCTSTR optionName,LONG_PTR 
 		return TRUE;
 	}
 	else {	
-		//ZeroMemory(pHead,sizeof(TCHAR)*m_UnitNumber);
+		//ZeroMemory(pHead,sizeof(TCHAR)*m_unitNumber);
 		if(string() && string() != getCLString0())*pHead = 0;
 		return FALSE;
 	}
 }
 CLString& CLString::getSpecialFolderPath(INT nFolder,INT storeLen,HWND hwndOwner,BOOL fCreate)
 {
-	if(m_UnitNumber < storeLen ){
+	if(m_unitNumber < storeLen ){
 		if(string() != getCLString0())delete[] pHead;
-		pHead = new TCHAR[ m_UnitNumber = storeLen ];
+		pHead = new TCHAR[ m_unitNumber = storeLen ];
 	}
-	//ZeroMemory(pHead,sizeof(TCHAR)*m_UnitNumber);
+	//ZeroMemory(pHead,sizeof(TCHAR)*m_unitNumber);
 	m_changeFlag = TRUE;
 	if(!SHGetSpecialFolderPath(hwndOwner,pHead,nFolder,fCreate))	
-		//ZeroMemory(pHead,sizeof(TCHAR)*m_UnitNumber);	
+		//ZeroMemory(pHead,sizeof(TCHAR)*m_unitNumber);	
 		if(string() && string() != getCLString0())*pHead = 0;
 	return *this;
 }
-BOOL CLString::fileExists(VOID)// 检查一个文件是否存在（绝对路径、相对路径，文件或文件夹均可）
+BOOL CLString::fileExists(void)// 检查一个文件是否存在（绝对路径、相对路径，文件或文件夹均可）
 {
 	return CLString::filePathExists();
 }
-BOOL CLString::filePathExists(VOID)// 检查一个路径是否存在（绝对路径、相对路径，文件或文件夹均可）
+BOOL CLString::filePathExists(void)// 检查一个路径是否存在（绝对路径、相对路径，文件或文件夹均可）
 {
 	return CLString::_FindFirstFileExists(string(), FALSE);
 }
-BOOL CLString::folderExists(VOID)// 检查一个文件夹是否存在（绝对路径、相对路径均可）
+BOOL CLString::folderExists(void)// 检查一个文件夹是否存在（绝对路径、相对路径均可）
 {
 	return CLString::_FindFirstFileExists(string(), FILE_ATTRIBUTE_DIRECTORY);
 }
@@ -2327,14 +2327,14 @@ LPCTSTR CLString::readFile(LPCTSTR pFilePath, BOOL openAlertMsg)
 	}	
 
 	DWORD nNum = 0, nSizeH = 0, nSizeL = GetFileSize(_hFile,&nSizeH)+sizeof(TCHAR)+2;
-	if( m_UnitNumber*sizeof(TCHAR) < nSizeL){
+	if( m_unitNumber*sizeof(TCHAR) < nSizeL){
 		if(string() != getCLString0())delete[] pHead;
-		pHead = new TCHAR[m_UnitNumber = nSizeL/sizeof(TCHAR)];
+		pHead = new TCHAR[m_unitNumber = nSizeL/sizeof(TCHAR)];
 		m_changeFlag = TRUE;
 	}
 	//LPBYTE p1 = new byte[nSizeL];
-	ReadFile(_hFile,(LPBYTE)pHead,m_UnitNumber*sizeof(TCHAR),&nNum,0);
-	ZeroMemory((LPBYTE)pHead + nNum,m_UnitNumber*sizeof(TCHAR) - nNum);
+	ReadFile(_hFile,(LPBYTE)pHead,m_unitNumber*sizeof(TCHAR),&nNum,0);
+	ZeroMemory((LPBYTE)pHead + nNum,m_unitNumber*sizeof(TCHAR) - nNum);
 	::CloseHandle(_hFile);
 	
 	if(m_encoding != ec){
@@ -4057,7 +4057,7 @@ CLStringR CLString::unEncrypteString(LPCTSTR inputString,int* s,int* ss,size_t n
 	return unEncrypteString(*this,inputString,s,ss,nCharCounts,nDenpth);
 }
 
-BOOL CLString::findStringInPair(LPCTSTR lpOrg,LPCTSTR lpBeginFlag,LPCTSTR lpEndFlag,CLString::PFSIP_INF inf,size_t orgNeedCounts)
+BOOL CLString::findStringInPair(LPCTSTR lpOrg,LPCTSTR lpBeginFlag,LPCTSTR lpEndFlag, OUT CLString::PFSIP_INF inf,size_t orgNeedCounts)
 {
 	LPCTSTR pc = lpOrg;
 	size_t ci = 0,si,ei;

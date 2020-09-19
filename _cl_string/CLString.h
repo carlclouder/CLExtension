@@ -21,7 +21,6 @@
 #include <locale.h> 
 #include <map>
 #include <exception>
-//#include "../_cl_common/CLCommon.h"
 #pragma comment(lib, "ws2_32.lib")
 
 #ifndef _CRTDBG_MAP_ALLOC
@@ -54,6 +53,13 @@ typedef const PCLString PCCLString;//类的常量指针类型
 typedef CLString& CLStringR;//类的引用对象类型
 typedef const CLStringR CLStringRC;//类的常量引用对象类型
 
+enum EnCode {
+	EnCode_UNKNOWN = 0, //encode unknown
+	EnCode_ASCII,       //ASCII
+	EnCode_UTF8,        //UTF-8
+	EnCode_ULE,         //Unicode little_Endian(windows default code)
+	EnCode_UBE,         //Unicode Big_Endian
+};
 
 //CL超级字符串类，功能很强就对了
 class CLString
@@ -63,22 +69,16 @@ protected:
 	LPTSTR pHead;
 
 	//缓冲区大小，以字符计（包含末尾0字符）
-	LONG_PTR m_UnitNumber;	
+	LONG_PTR m_unitNumber;	
 
 	//字符串字符个数
-	LONG_PTR m_Strlen;
+	LONG_PTR m_strlen;
 
 	//标记内容是否已经改变
 	byte m_changeFlag;
 
 	//保存的内容是否是宽字节格式，为1表示宽字节
-	byte m_encoding;
-
-#define EnCode_UNKNOWN 0 //encode unknown
-#define EnCode_ASCII   1 //ASCII
-#define EnCode_UTF8    2 //UTF-8
-#define EnCode_ULE     3 //Unicode little_Endian(windows default code)
-#define EnCode_UBE     4 //Unicode Big_Endian
+	byte m_encoding;		
 
 typedef struct _ClStringExData{
 
@@ -87,38 +87,23 @@ typedef struct _ClStringExData{
 		LPSTR pMultiByte;
 		LPWSTR pWideChar;
 	}m_pointer_;
-//#define (makeDEx()->m_pointer_) (makeDEx()->m_pointer_)
 	byte m_PtExSaveType_;//标明m_pointer_是否做过存储操作0为存储，1存过MultiByte，2存过WideChar
-//#define (makeDEx()->m_PtExSaveType_) (makeDEx()->m_PtExSaveType_)
 	//临时字符串缓冲区空间长度，以字符计（包含末尾0字符）
 	LONG_PTR m_pointerBufSizeInByte_;
-//#define (makeDEx()->m_pointerBufSizeInByte_) (makeDEx()->m_pointerBufSizeInByte_)
 
 	//内部保存的打开文件的句斌
 	HANDLE m_hFile_;
-//#define (makeDEx()->m_hFile_) (makeDEx()->m_hFile_)
 
-	byte m_fileType_;//标明内部打开的文件的http文件数据格式类型，
-//#define (makeDEx()->m_fileType_) (makeDEx()->m_fileType_)
+	byte m_fileType_;//标明内部打开的文件的http文件数据格式类型
 	HINTERNET hInternet_,hConnect_,hRequest_;//变量用于保存http句柄
-//#define (makeDEx()->hInternet_) (makeDEx()->hInternet_)
-//#define (makeDEx()->hConnect_) (makeDEx()->hConnect_)
-//#define (makeDEx()->hRequest_) (makeDEx()->hRequest_)
 	//动态分配的时间变量指针，用于秒级的时间统计;
 	SYSTEMTIME *m_sysTimeStart_,*m_sysTimeEnd_;
-//#define (makeDEx()->m_sysTimeStart_) (makeDEx()->m_sysTimeStart_)
-//#define (makeDEx()->m_sysTimeEnd_) (makeDEx()->m_sysTimeEnd_)
 	//动态分类的毫秒时间变量指针，用微秒级的时间统计;
 	LARGE_INTEGER *m_largeIntegerStart_,*m_largeIntegerEnd_;
-//#define (makeDEx()->m_largeIntegerStart_) (makeDEx()->m_largeIntegerStart_)
-//#define (makeDEx()->m_largeIntegerEnd_) (makeDEx()->m_largeIntegerEnd_)
 	
 	std::vector<LPCTSTR> *m_vtInnerStringVector_;//内部维护的字符串向量指针
 	std::vector<LPTSTR> *m_vtStringStoreLst_;//用于内部存储的字符串向量指针
 	std::vector<LONG_PTR> *m_vtStringStoreBufSizeLst_;//用于内部存储的字符串向量长度数据的指针
-//#define (makeDEx()->m_vtInnerStringVector_) (makeDEx()->m_vtInnerStringVector_)
-//#define (makeDEx()->m_vtStringStoreLst_) (makeDEx()->m_vtStringStoreLst_)
-//#define (makeDEx()->m_vtStringStoreBufSizeLst_) (makeDEx()->m_vtStringStoreBufSizeLst_)
 	//用于逐行读取文件内容的控制变量，
 	byte m_isEndOnce_;	
 //#define (makeDEx()->m_isEndOnce_) (makeDEx()->m_isEndOnce_)
@@ -138,20 +123,23 @@ typedef struct _ClStringExData{
 	void closeMemery();
 	void closeAndClear();
 	}CLStringExData,*PCLStringExData;
+
 	PCLStringExData pDataEx;//额外扩展数据结构包，初始化未使用则不创建
+
 	inline PCLStringExData makeDEx(){return pDataEx ? pDataEx : pDataEx = new CLStringExData;}
+
 	//析构中，最后一个调用的函数cleanAllMemory中调用
-	inline void deleteDEx(){ if(pDataEx)delete pDataEx;pDataEx = 0;}	
+	inline void deleteDEx(){ delete pDataEx;pDataEx = 0;}	
 
 	//内部功能接口，未开放。
 protected:
 	//函数改变m_encoding
-	  VOID setEncode(VOID);
+	  void setEncode();
 	//函数只能在析构函数调用唯一一次，仅清空所有分配内存
-	  VOID cleanAllMemory(VOID);
+	  void cleanAllMemory(void);
 	//函数只能在构造函数调用唯一一次，并赋予pHead有效的指针初值
 	//指正分配内存由nDefaultCharNumber以字符数为单位指定
-	  VOID initialize(LONG_PTR nDefaultCharNumber = 0);	
+	  void initialize(LONG_PTR nDefaultCharNumber = 0);	
 
 	static BOOL _AddPathAnEnt(LPTSTR pResBuffer,INT EndsNmber=1);
 	static LPCTSTR _ExtendPathToQuality(LPCTSTR pResBuffer,LPTSTR pDesBuffer);
@@ -213,7 +201,7 @@ public:
 	virtual ~CLString();
 
 	//设置文件的操作模式，参数为1时为C模式，为0时为windows API模式（注意：API模式的速度约为C模式的1.3倍）
-	BOOL setFileOpenedType(INT m_NewFileOpenedType = 1);
+	//BOOL setFileOpenedType(INT m_NewFileOpenedType = 1);
 
 	//加法“+”函数重载
 	friend CLString operator+(const CLString & str1,const CLString & str2);
@@ -407,16 +395,16 @@ public:
 	CLString& saveExStore();
 
 	//返回对象已分配了的缓冲区(以字节计)的大小。
-	LONG_PTR buflen(VOID);
+	LONG_PTR buflen(void);
 
 	//返回对象字符串长度(以字符计, 即空值结束符之前字符数目) 改变标记m_changeFlag为FALSE;
-	LONG_PTR strlen(VOID); 
+	LONG_PTR strlen(void); 
 	inline LONG_PTR size() { return strlen(); };
 	inline LONG_PTR size0() { return strlen()+1; };
 
 	//返回对象字符串长度(以字节计, 即空值结束符之前字符的字节数目)
-	LONG_PTR strlenInByte(VOID);
-	LONG_PTR strlenInByte0(VOID) { return (strlen() + 1)*sizeof(TCHAR); }
+	LONG_PTR strlenInByte(void);
+	LONG_PTR strlenInByte0(void) { return (strlen() + 1)*sizeof(TCHAR); }
 
 	//若对象保存的字符串是一个有效路劲，可以在该结尾增加反斜杠"\"。
 	//参数1：增加的反斜杠个数；
@@ -514,11 +502,11 @@ public:
 	//若对象保存的是以Unicode编码形式的字符串，则函数可以临时返回一个该字串的
 	//多字节(EnCode_ASCII)版本的字串，而不影响或更改对象保存的原值。
 	//注意：返回值缓冲区内存由类来管理释放，不要调用delete或free。
-	//CHAR* getMultiByte(VOID);
+	//CHAR* getMultiByte(void);
 	//若对象保存的是以多字节(EnCode_ASCII)编码形式的字符串，则函数可以临时返回一个该字串的
 	//Unicode编码版本的字串，而不影响或更改对象保存的原值。
 	//注意：返回值缓冲区内存由类来管理释放，不要调用delete或free。
-	//WCHAR* getWideChar(VOID);
+	//WCHAR* getWideChar(void);
 
    //返回保存字符串的ascii版本，注意：返回值缓冲区内存由类来管理释放，不要调用delete或free。
 	LPCSTR getASCII();
@@ -688,15 +676,15 @@ public:
 	//若对象保存的字符串是一个文件或文件夹的路径（绝对路径、相对路径，文件或文件夹均可），
 	//则检查该文件或文件夹是否存在。存在则返回TRUE。
 	//注意：路劲不能以“/”或“\\”结尾。
-	BOOL filePathExists(VOID);
+	BOOL filePathExists(void);
 	//若对象保存的字符串是一个文件夹的路径（绝对路径、相对路径均可），则检查该文件夹是否存在。存在则返回TRUE。
 	//注意：路劲不能以“/”或“\\”结尾。
-	BOOL folderExists(VOID);
+	BOOL folderExists(void);
 	//若对象保存的字符串是一个文件夹的路径（绝对路径、相对路径均可），则检查该文件夹是否存在。存在则返回TRUE。
 	//注意：路劲不能以“/”或“\\”结尾。
 	BOOL findFirstFileExists(DWORD dwFilter=FILE_ATTRIBUTE_DIRECTORY);
 	// 检查一个文件是否存在（绝对路径、相对路径，文件或文件夹均可）。注意：路劲不能以“/”或“\\”结尾。
-	BOOL fileExists(VOID);
+	BOOL fileExists(void);
 
 	//若指定了pFileDir为NULL：对象保存的字符串内容写入对象内部已维护一个文件句柄所指向的文件中，该句柄对象若为打开则当对象析构时被自动释放，也可以显式调用closeFile()函数主动关闭打开的文件句柄；
 	//若指定了pFileDir文件路径：则关闭已有的文件句柄，并打开指定的新文件，若打开不成功则原维护的可用句柄不再可用；
@@ -974,7 +962,7 @@ public:
     //lpBeginFlag、lpEndFlag为标签字符串，他们可以是、0、NULL、_T("\0")、或其他任意字符串
     //pInfOut输出信息结构体指针，该结构体传入前不需要初始化
     //orgMaxCheckCounts 表示从源开始要查找的最大源字符数量，超过却没找到将返回False，默认为 0 （0表示不设查找字符最大数限制）
-	static BOOL findStringInPair(LPCTSTR lpOrg,LPCTSTR lpBeginFlag,LPCTSTR lpEndFlag,OUT PFSIP_INF pInfOut = 0,size_t orgMaxCheckCounts=0);
+	static BOOL findStringInPair(LPCTSTR lpOrg,LPCTSTR lpBeginFlag,LPCTSTR lpEndFlag,OUT CLString::PFSIP_INF pInfOut = 0,size_t orgMaxCheckCounts=0);
 	BOOL findStringInPair(LPCTSTR lpBeginFlag,LPCTSTR lpEndFlag,OUT PFSIP_INF pInfOut = 0,size_t orgMaxCheckCounts=0);
 
 //#define USE_CLSTRING_TIME_CHECK //要关闭效能测试，请注释掉此行

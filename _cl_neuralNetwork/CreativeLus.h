@@ -204,9 +204,23 @@ namespace CreativeLus {
 		TransModel();
 		void reset();
 		virtual ~TransModel();
+		//将一个值通过映射变换为新值；
+		Float forward(Float org) const;
+		//将一个变换后的值通过映射逆变换为原值；
+		Float backward(Float tag) const;
 	};
 	//用于保存变换记录
-	class _dll_ TransModelDb:IBpnnBase,public std::map<Uint, TransModel>{};
+	class _dll_ TransModelDb:IBpnnBase,public std::map<Uint, TransModel>{
+	public:
+		//将一个值通过对应的映射变换为新值；
+		Float forward(Float org, Uint index) const;
+		//将一个变换后的值通过对应的映射逆变换为原值；
+		Float backward(Float tag, Uint index) const;
+		//将一个向量通过对应的映射变换为新向量，alignStartIndex表示从转换记录的第几个开始对齐转换；
+		void forward(const VLF& org, VLF& tag, Uint alignStartIndex) const;
+		//将一个变换后的向量通过对应的映射逆变换为原向量，alignStartIndex表示从转换记录的第几个开始对齐转换；
+		void backward(const VLF& tag, VLF& org, Uint alignStartIndex) const;
+	};
 	typedef vector<Uint> TransTypeVec;//样本变换标记
 
 
@@ -250,6 +264,11 @@ namespace CreativeLus {
 		Uint getTransModRecSize() const; 
 		//取得内部变换记录，返回新的实例
 		TransModelDb getTransModRec() const;
+		//取得样本文件的变换结构体；
+		//binMode = true表示读取二进制文件（该模式用于大量数据情况）
+		//当采用二进制方式时，指定的文件的扩展名将被自动替换为读取固定扩展名".bpnnSampSets"文件，以确保读取固定的二进制数据流文件；
+		static TransModelDb getTransModRec(PCStr lpFile, Bool binMode = true);
+
 		//清除内部的变换记录
 		BpnnSamSets& clearTransModRec();
 		//设置内部变换记录

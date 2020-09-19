@@ -463,7 +463,7 @@ BOOL CLShowTool::OnInitDialog()
 //  来绘制该图标。对于使用文档/视图模型的 MFC 应用程序，
 //  这将由框架自动完成。
 
-VOID CLShowTool::OnPaint()
+void CLShowTool::OnPaint()
 {
 	CLPaintDC m_dc(this); // 用于绘制的设备上下文
 	if (IsIconic(*this))
@@ -541,7 +541,7 @@ DOUBLE CLShowTool::getWide(LONG pos)
 	}
 }
 
-VOID CLShowTool::release()
+void CLShowTool::release()
 {
 	enterPermission();
 	m_type = SHOWGRAPHER_TYPE_NO;
@@ -559,7 +559,7 @@ VOID CLShowTool::release()
 	leavePermission();
 }
 
-VOID CLShowTool::updateMaxYMinY(DOUBLE* line, STUTHEADER* hdr) throw(...)
+void CLShowTool::updateMaxYMinY(DOUBLE* line, STUTHEADER* hdr) throw(...)
 {
 	assert(hdr != 0);
 	BOOL isNo0 = (hdr->exFlag & STEF_NODRAWLINE_0);
@@ -577,7 +577,7 @@ VOID CLShowTool::updateMaxYMinY(DOUBLE* line, STUTHEADER* hdr) throw(...)
 	}
 }
 
-VOID CLShowTool::doExFlag(CLDC& dc, STUTHEADER& hdr, DOUBLE* line)
+void CLShowTool::doExFlag(CLDC& dc, STUTHEADER& hdr, DOUBLE* line)
 {
 	if (hdr.exFlag & STEF_ADDTOPLINE)
 	{
@@ -682,7 +682,7 @@ BOOL CLShowTool::drawGrapher(CLDC& dc)
 	return TRUE;
 }
 
-VOID CLShowTool::drawUtLine(CLDC& dc, STUTHEADER& hdr, DOUBLE* line, std::map<long, RAGE>* lx)
+void CLShowTool::drawUtLine(CLDC& dc, STUTHEADER& hdr, DOUBLE* line, std::map<long, RAGE>* lx)
 {
 	//assert(lx != NULL);
 	CLPen pen(hdr.linePenType, hdr.lineWide, hdr.clr);
@@ -744,7 +744,7 @@ VOID CLShowTool::drawUtLine(CLDC& dc, STUTHEADER& hdr, DOUBLE* line, std::map<lo
 	doExFlag(dc, hdr, line);
 }
 
-VOID CLShowTool::drawUtVerline(CLDC& dc, STUTHEADER& hdr, DOUBLE* line, std::map<long, RAGE>* lx)
+void CLShowTool::drawUtVerline(CLDC& dc, STUTHEADER& hdr, DOUBLE* line, std::map<long, RAGE>* lx)
 {
 
 	long _dataCounts;
@@ -822,7 +822,7 @@ VOID CLShowTool::drawUtVerline(CLDC& dc, STUTHEADER& hdr, DOUBLE* line, std::map
 	doExFlag(dc, hdr, line);
 }
 
-VOID CLShowTool::drawUtText(CLDC& dc, STUTHEADER& hdr, PCLString str)
+void CLShowTool::drawUtText(CLDC& dc, STUTHEADER& hdr, PCLString str)
 {
 	CLFont ft;
 	ft.CreatePointFont(hdr.fontSize, hdr.fontTypeName, &dc);
@@ -840,7 +840,7 @@ VOID CLShowTool::drawUtText(CLDC& dc, STUTHEADER& hdr, PCLString str)
 	drawText(dc, str->string(), str->strlen(), (m_isYAxis > 0 ? LEFT_WIDE + 5: 0), n, 1);
 }
 
-VOID CLShowTool::drawUtAxisX(CLDC& dc, STUTHEADER& hdr)
+void CLShowTool::drawUtAxisX(CLDC& dc, STUTHEADER& hdr)
 {
 	DOUBLE
 		xLeft = LEFT_WIDE,
@@ -926,7 +926,7 @@ VOID CLShowTool::drawUtAxisX(CLDC& dc, STUTHEADER& hdr)
 	bottonWD = _maxWD;
 }
 
-VOID CLShowTool::drawUtAxisY(CLDC& dc, STUTHEADER& hdr)
+void CLShowTool::drawUtAxisY(CLDC& dc, STUTHEADER& hdr)
 {
 	DOUBLE xLeft = TOP_WIDE,
 		xRight = (DOUBLE)clientRect.bottom - BOTTON_WIDE;	
@@ -1028,7 +1028,7 @@ LONG CLShowTool::getFitDataAccuracy(LONG curAcc, DOUBLE vmin, DOUBLE vmax) {
 		return curAcc;
 }
 
-VOID CLShowTool::drawText(CLDC& dc, LPCTSTR str, LONG szlen, LONG x, LONG y, LONG alignFlag)
+void CLShowTool::drawText(CLDC& dc, LPCTSTR str, LONG szlen, LONG x, LONG y, LONG alignFlag)
 {
 	if (alignFlag < 0 || alignFlag > 9)alignFlag = 0;
 	if (alignFlag == 0) { dc.TextOut(x, y, str, szlen); return; }
@@ -1350,22 +1350,22 @@ HCURSOR CLShowTool::OnQueryDragIcon()
 //  则将隐藏 UI；但是在关闭对话框时，
 //  对话框仍然会保留在那里。
 
-VOID CLShowTool::OnClose()
+void CLShowTool::OnClose()
 {
 	//OldClass::OnClose();
 }
 
-VOID CLShowTool::OnOK()
+void CLShowTool::OnOK()
 {
 	//OldClass::OnOK();
 }
 
-VOID CLShowTool::OnCancel()
+void CLShowTool::OnCancel()
 {
 	//OldClass::OnCancel();
 }
 
-VOID CLShowTool::OnDestroy()
+void CLShowTool::OnDestroy()
 {
 	release();
 	m_memdc.DeleteDC();
@@ -1390,7 +1390,7 @@ HBRUSH CLShowTool::OnCtlColor(CLDC* pDC, CLShowTool* pWnd, UINT nCtlColor)
 	return hbr;
 }
 
-VOID CLShowTool::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void CLShowTool::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	if (m_type == 1)
@@ -1466,7 +1466,7 @@ VOID CLShowTool::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 // }
 
 
-VOID CLShowTool::OnTimer(UINT_PTR nIDEvent)
+void CLShowTool::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	BOOL rt = FALSE;
@@ -1659,12 +1659,12 @@ VOID CLShowTool::OnTimer(UINT_PTR nIDEvent)
 	//OldClass::OnTimer(nIDEvent);
 }
 
-VOID CLShowTool::OnNcDestroy()
+void CLShowTool::OnNcDestroy()
 {
 	// TODO: 在此处添加消息处理程序代码
 }
 
-VOID CLShowTool::OnLButtonDown(UINT nFlags, CLPoint point)
+void CLShowTool::OnLButtonDown(UINT nFlags, CLPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	m_isLD = 1;
@@ -1673,7 +1673,7 @@ VOID CLShowTool::OnLButtonDown(UINT nFlags, CLPoint point)
 	//OldClass::OnLButtonDown(nFlags, point);
 }
 
-VOID CLShowTool::OnLButtonUp(UINT nFlags, CLPoint point)
+void CLShowTool::OnLButtonUp(UINT nFlags, CLPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	m_isLD = 0;
@@ -1684,7 +1684,7 @@ VOID CLShowTool::OnLButtonUp(UINT nFlags, CLPoint point)
 	//OldClass::OnLButtonUp(nFlags, point);
 }
 
-VOID CLShowTool::OnMouseMove(UINT nFlags, CLPoint point)
+void CLShowTool::OnMouseMove(UINT nFlags, CLPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值	
 	if (m_isLD > 0) {
@@ -1694,7 +1694,7 @@ VOID CLShowTool::OnMouseMove(UINT nFlags, CLPoint point)
 	//OldClass::OnMouseMove(nFlags, point);
 }
 
-VOID CLShowTool::OnSizing(UINT fwSide, LPRECT pRect)
+void CLShowTool::OnSizing(UINT fwSide, LPRECT pRect)
 {
 	//OldClass::OnSizing(fwSide, pRect);
 
@@ -1702,7 +1702,7 @@ VOID CLShowTool::OnSizing(UINT fwSide, LPRECT pRect)
 	drawGrapher(m_memdc);
 }
 
-VOID CLShowTool::OnSize(UINT nType, LONG cx, LONG cy)
+void CLShowTool::OnSize(UINT nType, LONG cx, LONG cy)
 {
 	//OldClass::OnSize(nType, cx, cy);
 
@@ -1710,7 +1710,7 @@ VOID CLShowTool::OnSize(UINT nType, LONG cx, LONG cy)
 	drawGrapher(m_memdc);
 }
 
-VOID showFile(LPCTSTR szFile)
+void showFile(LPCTSTR szFile)
 {
 	//_tprintf(_T("FileOrPath:%s/n"),szFile);
 	LPCTSTR p = szFile;
@@ -1809,8 +1809,8 @@ BOOL CLShowTool::windowsToBmp(HWND hTagWnd, LPCTSTR outFileName)
 	bmfhdr.bfOffBits = 54;
 	FILE* fl = NULL;
 	if (0 == _tfopen_s(&fl, file.string(), _T("wb")) && fl != 0 && lpbi != 0) {
-		fwrite((VOID*)&bmfhdr, sizeof(BITMAPFILEHEADER), 1, fl);
-		fwrite((VOID*)lpbi, dwdibsize, 1, fl);
+		fwrite((void*)&bmfhdr, sizeof(BITMAPFILEHEADER), 1, fl);
+		fwrite((void*)lpbi, dwdibsize, 1, fl);
 		fclose(fl);
 	}
 	::GlobalUnlock(hdib);
@@ -1843,7 +1843,7 @@ CLShowTool* CLShowTool::getWnd(HWND hWnd)
 #endif
 }
 
-VOID CLShowTool::OnMenuItem_BITMAPOUT()
+void CLShowTool::OnMenuItem_BITMAPOUT()
 {
 
 	// 	CLShowTool st(getSafeHwnd());
@@ -1918,8 +1918,8 @@ VOID CLShowTool::OnMenuItem_BITMAPOUT()
 	// 	if(filedlg.DoModal()==IDOK)
 	// 	{
 	// 		if(fl.Open(filedlg.GetPathName(),CFile::modeWrite|CFile::modeCreate,&e)){
-	// 			fl.Write((VOID*)&bmfhdr,sizeof(BITMAPFILEHEADER));
-	// 			fl.Write((VOID*)lpbi,dwdibsize);
+	// 			fl.Write((void*)&bmfhdr,sizeof(BITMAPFILEHEADER));
+	// 			fl.Write((void*)lpbi,dwdibsize);
 	// 			fl.Close();
 	// 			MessageBox(CLString(_T("成功导出图像到文件:\n"),(LPCTSTR)(filedlg.GetPathName()),0).string(),_T("正确提示"),MB_ICONINFORMATION);
 	// 		}else MessageBox(CLString(_T("导出图像到文件，失败:\n"),(LPCTSTR)(filedlg.GetPathName()),0).string(),_T("错误提示"),MB_ICONERROR);
@@ -1968,8 +1968,8 @@ VOID CLShowTool::OnMenuItem_BITMAPOUT()
 			_str += _T(".bmp");
 		FILE* fl = NULL;
 		if (0 == _tfopen_s(&fl, _str.string(), _T("wb"))) {
-			fwrite((VOID*)&bmfhdr, sizeof(BITMAPFILEHEADER), 1, fl);
-			fwrite((VOID*)lpbi, dwdibsize, 1, fl);
+			fwrite((void*)&bmfhdr, sizeof(BITMAPFILEHEADER), 1, fl);
+			fwrite((void*)lpbi, dwdibsize, 1, fl);
 			fclose(fl);
 			::MessageBox(getSafeHwnd(), CLString(_T("成功导出图像到文件:\n"), (LPCTSTR)(szPathName), 0).string(), _T("正确提示"), MB_ICONINFORMATION);
 		}
@@ -1996,7 +1996,7 @@ VOID CLShowTool::OnMenuItem_BITMAPOUT()
 	::GlobalFree(hdib);
 }
 
-VOID CLShowTool::OnContextMenu(CLPoint point)
+void CLShowTool::OnContextMenu(CLPoint point)
 {
 	HMENU hPopMenu = ::CreatePopupMenu();
 	if (hPopMenu == NULL || hPopMenu == INVALID_HANDLE_VALUE) {
@@ -2011,7 +2011,7 @@ VOID CLShowTool::OnContextMenu(CLPoint point)
 	::DestroyMenu(hPopMenu);
 }
 
-VOID CLShowTool::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+void CLShowTool::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 
@@ -2071,7 +2071,7 @@ BOOL CLShowTool::addSubTool(CLShowTool* pSub, ...)
 	return TRUE;
 }
 
-VOID CLShowTool::releaseSubWndLst()
+void CLShowTool::releaseSubWndLst()
 {
 	for (size_t i = 0; i < m_subWndLst.size(); i++) {
 		CLShowTool* p = m_subWndLst[i];
@@ -2086,7 +2086,7 @@ VOID CLShowTool::releaseSubWndLst()
 	m_subWndLst.clear();
 }
 
-VOID CLShowTool::getBasePtX(OUT LONG& basePtX, OUT DOUBLE& baseX, IN LONG orgX, IN DOUBLE xLeft, IN DOUBLE xASpan)
+void CLShowTool::getBasePtX(OUT LONG& basePtX, OUT DOUBLE& baseX, IN LONG orgX, IN DOUBLE xLeft, IN DOUBLE xASpan)
 {
 	if (m_isXdata == 0) {
 	fails:
@@ -2119,7 +2119,7 @@ VOID CLShowTool::getBasePtX(OUT LONG& basePtX, OUT DOUBLE& baseX, IN LONG orgX, 
 	return;
 }
 
-VOID CLShowTool::showSubLstWnd()
+void CLShowTool::showSubLstWnd()
 {
 	for (size_t i = 0; i < m_subWndLst.size(); i++)
 	{
@@ -2497,7 +2497,7 @@ CLShowTool* CLShowTool::showInNewThread(LPDWORD _out_threadId) {
 	return createAndShowInNewThread(_out_threadId, this);
 }
 
-VOID CLShowTool::setSubLstShowAsSubWnd(BOOL isSub) { m_isSubLstShowAsSubWnd = isSub; }
+void CLShowTool::setSubLstShowAsSubWnd(BOOL isSub) { m_isSubLstShowAsSubWnd = isSub; }
 
 BOOL CLShowTool::getSubLstShowAsSubWnd() const { return m_isSubLstShowAsSubWnd; }
 

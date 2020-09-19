@@ -99,6 +99,14 @@ TransModelDb BpnnSamSets::getTransModRec() const
 	return transModeRec;
 }
 
+TransModelDb CreativeLus::BpnnSamSets::getTransModRec(PCStr lpFile, Bool binMode)
+{
+	assert(lpFile != nullptr);
+	BpnnSamSets tag;
+	readSamSetsFromFile(tag, lpFile, binMode);
+	return std::move(tag.getTransModRec());
+}
+
 BpnnSamSets& BpnnSamSets::clearTransModRec()
 {
 	transModeRec.clear();
@@ -1558,6 +1566,54 @@ void TransModel::reset()
 TransModel::~TransModel()
 {
 }
+Float TransModel::forward(Float org) const {
+	switch (dimType) {
+	case STT_Normalize:  return (org - vmin)/(vmax - vmin) ;//数据做归一化到(0,1)
+	case STT_NormalizeEx:  return (org - vmin) / (vmax - vmin) * 2 - 1;//数据做归一化到(-1,1)
+	case STT_Standart: return (org - vAver) / vStandardDeviation; //数据做标准化到(0,1)标准分布
+	default:
+		return org;
+	}
+}
+
+Float TransModel::backward(Float tag) const {
+	switch (dimType) {
+	case STT_Normalize:  return tag * (vmax - vmin) + vmin;//数据做归一化到(0,1)
+	case STT_NormalizeEx:  return (tag + 1)/2* (vmax - vmin) + vmin ;//数据做归一化到(-1,1)
+	case STT_Standart: return  tag *  vStandardDeviation + vAver; //数据做标准化到(0,1)标准分布
+	default:
+		return tag;
+	}
+}
+
+Float TransModelDb::forward(Float org, Uint index) const {
+	auto i = find(index);
+	if (i == cend())
+		throw std::out_of_range("TransModelDb forward para out of range!");
+	return i->second.forward(org);
+}
+
+Float TransModelDb::backward(Float tag, Uint index) const {
+	auto i = find(index);
+	if (i == cend())
+		throw std::out_of_range("TransModelDb forward para out of range!");
+	return i->second.backward(tag);
+}
+void TransModelDb::forward(const VLF& org, VLF& tag, Uint alignStartIndex) const {
+	tag.resize(org.size());
+	for (size_t i = 0; i < org.size(); i++)
+	{
+		tag[i] = forward(org[i], alignStartIndex++);
+	}
+}
+void TransModelDb::backward(const VLF& tag, VLF& org, Uint alignStartIndex) const {
+	org.resize(tag.size());
+	for (size_t i = 0; i < tag.size(); i++)
+	{
+		org[i] = backward(tag[i], alignStartIndex++);
+	}
+}
+
 WbDef::WbDef()
 {
 	reset();
