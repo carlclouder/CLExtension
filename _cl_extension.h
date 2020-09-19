@@ -3,7 +3,7 @@
 #define __CL_EXTENSION_H__
 
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
 #endif // !WIN32_LEAN_AND_MEAN
 
 
@@ -17,7 +17,7 @@
 #ifndef _CURRENT_MYSQL_VERSION
 #define _CURRENT_MYSQL_VERSION  "5.7.24" //注意使用的版本要正确，否则可能出运行时错误
 #endif
-#include "./_mysql\\mysql5.7.24\\include\\mysql.h"
+#include "_mysql/mysql5.7.24/include/mysql.h"
 #ifdef WIN32  //windows 平台
 #ifdef _WIN64	//x64
 #pragma comment(lib,"D:/Documents/Visual Studio 2019/Projects/Quantitative_investment_system/_cl_extension/_mysql/mysql5.7.24/lib/win64/libmysql.lib")
@@ -81,7 +81,7 @@ using namespace std;
 #include "_cl_processInfo/CLProcessInfo.h"
 
 //引入IOCP模型工具
-#include"_cl_iocpServeBase/CLIocpServeBase.h"
+#include "_cl_iocpServeBase/CLIocpServeBase.h"
 
 //引入对象内存池工具
 #include "_cl_objectMemPool/CLMemPool.h"
