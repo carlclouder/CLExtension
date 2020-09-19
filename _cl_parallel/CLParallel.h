@@ -38,10 +38,10 @@ inline size_t parallel_helper_hardware_concurrency() {
 #include <mutex>
 #include <condition_variable>
 #include <stdexcept>
-class ThreadPool {
+class CLThreadPoolBase {
 public:
 	//构造函数,把线程插入线程队列，插入时调用embrace_back()，用匿名函数lambda初始化Thread对象
-	ThreadPool(size_t threads = parallel_helper_hardware_concurrency()) : stop(false) {
+	CLThreadPoolBase(size_t threads = parallel_helper_hardware_concurrency()) : stop(false) {
 		for (size_t i = 0; i < threads; ++i)
 			workers.emplace_back(
 				[this]
@@ -65,7 +65,7 @@ public:
 							task = std::move(this->tasks.front());
 							this->tasks.pop();
 						}                            // 自动解锁
-						task();                      // 执行这个任务
+						task();                     // 执行这个任务
 					}
 				}
 				);
@@ -87,7 +87,7 @@ public:
 		{
 			std::unique_lock<std::mutex> lock(queue_mutex);  //加锁
 			if (stop)
-				throw std::runtime_error("enqueue on stopped ThreadPool");
+				throw std::runtime_error("enqueue on stopped CLThreadPoolBase");
 
 			tasks.emplace([task]() { (*task)(); });         //把任务加入队列
 		}                                                   //自动解锁
@@ -95,7 +95,7 @@ public:
 		return res;
 	}
 	// 析构函数，删除所有线程
-	~ThreadPool()
+	~CLThreadPoolBase()
 	{
 		{
 			std::unique_lock<std::mutex> lock(queue_mutex);
@@ -116,8 +116,8 @@ private:
 };
 
 //获取全局并行线程池（该线程池初始化硬件可用线程数个线程待命）
-inline ThreadPool& parallel_helper_taskPool_static() {
-	static ThreadPool _globle_thread_pool(parallel_helper_hardware_concurrency());
+inline CLThreadPoolBase& parallel_helper_taskPool_static() {
+	static CLThreadPoolBase _globle_thread_pool(parallel_helper_hardware_concurrency());
 	return _globle_thread_pool;
 }
 
@@ -128,21 +128,21 @@ auto parallel_helper_task(F&& f, Args&&... args)->std::future<typename std::resu
 	return parallel_helper_taskPool_static().enqueue(std::forward<F>(f), std::forward<Args>(args)...);
 }
 //自定义局部线程池包装类（在栈上分配的线程池空间）
-template<bool useStaticPool = false>struct _TaskPool {
-	ThreadPool& pool;
+template<bool useStaticPool = false>struct _CLTaskPool {
+	CLThreadPoolBase& pool;
 	template<class F, class... Args>
 	auto operator()(F&& f, Args&&... args)->std::future<typename std::result_of<F(Args...)>::type> {
 		return pool.enqueue(std::forward<F>(f), std::forward<Args>(args)...);
 	}
-	_TaskPool(size_t trdCounts = parallel_helper_hardware_concurrency())
-		:pool(*(new ThreadPool(trdCounts))) {}
-	~_TaskPool() {
+	_CLTaskPool(size_t trdCounts = parallel_helper_hardware_concurrency())
+		:pool(*(new CLThreadPoolBase(trdCounts))) {}
+	~_CLTaskPool() {
 		delete& pool;
 	}
 };
 //全局线程池特化包装类
-template<>struct _TaskPool<true> {
-	ThreadPool& pool = parallel_helper_taskPool_static();
+template<>struct _CLTaskPool<true> {
+	CLThreadPoolBase& pool = parallel_helper_taskPool_static();
 	template<class F, class... Args>
 	auto operator()(F&& f, Args&&... args)->std::future<typename std::result_of<F(Args...)>::type>
 	{
@@ -151,12 +151,12 @@ template<>struct _TaskPool<true> {
 };
 
 //全局共享内存池，通过operator()插入可带参数任务
-struct TaskPoolStatic :_TaskPool<true> {};
+struct CLTaskPoolStatic :_CLTaskPool<true> {};
 //局部内存池，通过operator()插入可带参数任务方法
-struct TaskPool :_TaskPool<> {
+struct CLTaskPool :_CLTaskPool<> {
 	//局部内存池，trdCounts表示创建的等待线程数
-	TaskPool(size_t trdCounts = parallel_helper_hardware_concurrency())
-		:_TaskPool<>(trdCounts) {}
+	CLTaskPool(size_t trdCounts = parallel_helper_hardware_concurrency())
+		:_CLTaskPool<>(trdCounts) {}
 };
 #endif
 
@@ -206,7 +206,7 @@ inline void parallel_control_break_all() {
 #define parallel_break_all (parallel_control_break_all()) //线程控制：本次启动的并行线程组退出
 
 //do not use it!!!
-template<class _iter, class _function, class _task = TaskPoolStatic>
+template<class _iter, class _function, class _task = CLTaskPoolStatic>
 void _parallel_iter(size_t nThreadsCounts, _iter startedIndex, _iter endIndex, _function&& func, _task&& task
 	, std::random_access_iterator_tag) {
 	auto pfunc = [](bool* bKeep,size_t i, size_t nThreadsCounts, _iter _iis, _iter _iie, _function&& func) {
@@ -238,7 +238,7 @@ void _parallel_iter(size_t nThreadsCounts, _iter startedIndex, _iter endIndex, _
 	for (auto& i : works)i.wait();
 }
 //do not use it!!!
-template<class _iter, class _function, class _task = TaskPoolStatic>
+template<class _iter, class _function, class _task = CLTaskPoolStatic>
 void _parallel_iter(size_t nThreadsCounts, _iter startedIndex, _iter endIndex, _function&& func, _task&& task
 	, std::bidirectional_iterator_tag) {
 	auto pfunc = [](bool* bKeep,_iter iis, _iter iie, _function&& func) {
@@ -278,7 +278,7 @@ void _parallel_iter(size_t nThreadsCounts, _iter startedIndex, _iter endIndex, _
 
 //执行与调度线程同步的nThreadsCounts个线程，并行STL容器，从容器的迭代器startedIndex至endIndex（不包含endIndex）个元素，
 //回调函数传参为容器的元素类型的引用；
-template<class _iter, class _function, class _task = TaskPoolStatic>
+template<class _iter, class _function, class _task = CLTaskPoolStatic>
 void parallel_iter(size_t nThreadsCounts, _iter&& startedIndex, _iter&& endIndex, _function&& func, _task&& task = _task()) {
 	_parallel_iter(nThreadsCounts, startedIndex, endIndex, func, task
 		, typename std::iterator_traits<typename std::decay<_iter>::type>::iterator_category()
@@ -287,7 +287,7 @@ void parallel_iter(size_t nThreadsCounts, _iter&& startedIndex, _iter&& endIndex
 }
 //执行与调度线程同步的nThreadsCounts个线程，并行STL容器，从容器的迭代器startedIndex至endIndex（不包含endIndex）个元素，
 //回调函数传参为容器的元素类型的引用；
-template<class _iter, class _function, class _task = TaskPoolStatic>
+template<class _iter, class _function, class _task = CLTaskPoolStatic>
 void parallel(size_t nThreadsCounts, _iter&& startedIndex, _iter&& endIndex, _function&& func, _task&& task = _task()) {
 	_parallel_iter(nThreadsCounts, startedIndex, endIndex, func, task
 		, typename std::iterator_traits<typename std::decay<_iter>::type>::iterator_category()
@@ -297,20 +297,20 @@ void parallel(size_t nThreadsCounts, _iter&& startedIndex, _iter&& endIndex, _fu
 
 //执行与调度线程同步的cpu核心数个线程，并行STL容器，从容器的迭代器startedIndex至endIndex（不包含endIndex）个元素，
 //回调函数传参为容器的元素类型的引用；
-template<class _iter, class _function, class _task = TaskPoolStatic>
+template<class _iter, class _function, class _task = CLTaskPoolStatic>
 void parallel_iter(_iter&& startedIndex, _iter&& endIndex, _function&& func, _task&& task = _task()) {
 	parallel_iter(parallel_helper_hardware_concurrency(), startedIndex, endIndex, func, task);
 }
 //执行与调度线程同步的cpu核心数个线程，并行STL容器，从容器的迭代器startedIndex至endIndex（不包含endIndex）个元素，
 //回调函数传参为容器的元素类型的引用；
-template<class _iter, class _function, class _task = TaskPoolStatic>
+template<class _iter, class _function, class _task = CLTaskPoolStatic>
 void parallel(_iter&& startedIndex, _iter&& endIndex, _function&& func, _task&& task = _task()) {
 	parallel_iter(parallel_helper_hardware_concurrency(), startedIndex, endIndex, func, task);
 }
 
 //执行与调度线程同步的nThreadsCounts个线程，并行容器con的从下标startedIndex至endIndex（不包含endIndex）个元素，
 //回调函数传参为容器或数组的元素类型的引用；
-template<class _contain, class _function, class _task = TaskPoolStatic>
+template<class _contain, class _function, class _task = CLTaskPoolStatic>
 void parallel(size_t nThreadsCounts, _contain& con, size_t startedIndex, size_t endIndex, _function&& func, _task&& task = _task()) {
 	auto pfunc = [](bool* bKeep,size_t ni, size_t nThreadsCounts, _contain* con, size_t startedIndex, size_t endIndex, _function&& func) {
 		size_t is, ie;
@@ -344,21 +344,21 @@ void parallel(size_t nThreadsCounts, _contain& con, size_t startedIndex, size_t 
 
 //执行与调度线程同步的nThreadsCounts个线程，并行容器con的从下标startedIndex至endIndex（不包含endIndex）个元素，
 //回调函数传参为容器或数组的元素类型的引用；
-template<class _contain, class _function, class _task = TaskPoolStatic>
+template<class _contain, class _function, class _task = CLTaskPoolStatic>
 void parallel(size_t nThreadsCounts, _contain&& con, size_t startedIndex, size_t endIndex, _function&& func, _task&& task = _task()) {
 	parallel(nThreadsCounts, con, startedIndex, endIndex, func, task);
 }
 
 //执行与调度线程同步的cpu核心数个线程，并行容器con的从下标startedIndex至endIndex（不包含endIndex）个元素，
 //回调函数传参为容器或数组的元素类型的引用；
-template<class _contain, class _function, class _task = TaskPoolStatic>
+template<class _contain, class _function, class _task = CLTaskPoolStatic>
 void parallel(_contain&& con, size_t startedIndex, size_t endIndex, _function&& func, _task&& task = _task()) {
 	parallel(parallel_helper_hardware_concurrency(), con, startedIndex, endIndex, func, task);
 }
 
 //执行与调度线程同步的nThreadsCounts个线程，线程函数传参为当前线程下标i(一个0开始的索引)和总的任务线程数nThreadsCounts
 //返回线程的future队列；
-template<class _function,class _task = TaskPoolStatic>
+template<class _function,class _task = CLTaskPoolStatic>
 auto parallel_proc(size_t nThreadsCounts, _function&& func, _task&& task = _task()) {
 	typedef typename result_of<_function(size_t, size_t)>::type key_type;
 	//组装完成对象序列
@@ -374,7 +374,7 @@ auto parallel_proc(size_t nThreadsCounts, _function&& func, _task&& task = _task
 //线程函数体形式为：R(*)(T1 i,T2 nThreadsCounts);
 //传参为：i为当前线程下标(一个0开始的索引)类型为T1，nThreadsCounts为总的任务线程数类型为T2，线程体返回值类型为R；
 //函数返回线程的future队列；
-template<class _function, class _task = TaskPoolStatic>
+template<class _function, class _task = CLTaskPoolStatic>
 auto parallel_proc(_function&& func, _task&& task = _task()) {
 	return parallel_proc(parallel_helper_hardware_concurrency(), func, task);
 }

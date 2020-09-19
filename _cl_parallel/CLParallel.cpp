@@ -4,7 +4,7 @@
 #include "ppl.h"
 using namespace std;
 //实例化
-volatile const ThreadPool* const _pTrdPool = &parallel_helper_taskPool_static();
+volatile const CLThreadPoolBase* const _pTrdPool = &parallel_helper_taskPool_static();
 
 //一个不会调用的测试函数,制作代码备份
 void testParallel() {
