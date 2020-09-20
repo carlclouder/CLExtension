@@ -2561,7 +2561,7 @@ Bool CLBpKernel::readBpnnFormFile(PCStr lpFile, Bool binMode)
 	return rt;
 }
 
-Bool writeSamSetsToFile(const BpnnSamSets& org, PCStr file, Bool binMode)
+Bool writeSamSetsToFile(const BpnnSampSets& org, PCStr file, Bool binMode)
 {
 	if (!file || !CLString::createDirectoryByFileName(file)) {
 		return false;
@@ -2638,7 +2638,7 @@ Bool writeSamSetsToFile(const BpnnSamSets& org, PCStr file, Bool binMode)
 	return rt ? true : false;
 }
 
-Bool readSamSetsFromFile(BpnnSamSets& tag, PCStr lpFile, Bool binMode)
+Bool readSamSetsFromFile(BpnnSampSets& tag, PCStr lpFile, Bool binMode)
 {
 	assert(lpFile != nullptr);
 	tag.reset();
@@ -2665,10 +2665,10 @@ Bool readSamSetsFromFile(BpnnSamSets& tag, PCStr lpFile, Bool binMode)
 		}
 		afile.read((char*)&si, sizeof(si));
 		if (si > 0) {
-			TransModelDb recdb;
-			TransModel mod;
+			BpnnSampTransModelRecord recdb;
+			BpnnTransModelUnit mod;
 			for (Uint i = 0; i < si; i++){
-				afile.read((char*)&mod, sizeof(TransModel));
+				afile.read((char*)&mod, sizeof(BpnnTransModelUnit));
 				recdb[mod.dimIndex] = mod;
 			}
 			tag.setTransModRec(recdb);
@@ -2683,8 +2683,8 @@ Bool readSamSetsFromFile(BpnnSamSets& tag, PCStr lpFile, Bool binMode)
 	Uint i = 0, nsi = 0, njs = 0, njs2 = 0, ci = 0, ct = 0,nsiRecMod = 0;
 	Float v = 0;
 	VLF ivi, ivo;
-	TransModelDb recdb; 
-	TransModel rec;
+	BpnnSampTransModelRecord recdb; 
+	BpnnTransModelUnit rec;
 	while (tt.readLineFromFile(i++ == 0 ? lpFile : nullptr) >= 0) {
 		CLRemoveNotes(tt);
 		if (tt.size() == 0)
@@ -2738,13 +2738,13 @@ Bool readSamSetsFromFile(BpnnSamSets& tag, PCStr lpFile, Bool binMode)
 	return tag.size() == 0 ? false : true;
 }
 
-CLBpExtend& CLBpExtend::setSampSets(const BpnnSamSets& tag)
+CLBpExtend& CLBpExtend::setSampSets(const BpnnSampSets& tag)
 {
 	vm_samSets = train_samSets = &tag;
 	return *this;
 }
 
-Float CLBpExtend::getCorrectRate(const BpnnSamSets* tag, Uint nCounst, Bool useRandom, Byte crtype)
+Float CLBpExtend::getCorrectRate(const BpnnSampSets* tag, Uint nCounst, Bool useRandom, Byte crtype)
 {
 	if (tag == 0) {
 		if (vm_samSets == 0) {
@@ -2962,7 +2962,7 @@ Float CLBpExtend::getCorrectRate(const BpnnSamSets* tag, Uint nCounst, Bool useR
 	return g_CorrectRate;
 }
 
-CLBpExtend& CLBpExtend::setCorrectRateEvaluationModel(Float correctRate, const BpnnSamSets* _predict, Uint _nCounst, Bool _useRandom, Byte crtype)
+CLBpExtend& CLBpExtend::setCorrectRateEvaluationModel(Float correctRate, const BpnnSampSets* _predict, Uint _nCounst, Bool _useRandom, Byte crtype)
 {
 	m_CorrectRateType = crtype;
 	m_CorrectRate = correctRate < 0 ? 0 : correctRate > 1 ? 1 : correctRate;

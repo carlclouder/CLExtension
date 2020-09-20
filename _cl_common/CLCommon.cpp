@@ -957,26 +957,6 @@ int printfWithBackCoverEnd(int bakCoverChars)
 }
 //按标号拆分cindex是从1开始的
 void getTrdSection(size_t ssi, size_t sectionTotals, size_t cindex, OUT size_t &is, OUT size_t &ie) {
-	/*int n = int(ssi) / sectionTotals;
-	int yu = int(ssi) % sectionTotals;
-	is = (cindex - 1)*n;
-	if (cindex == sectionTotals) {
-		ie = is + n + yu;
-	}
-	else {
-		ie = is + n;
-	}*/
-	/*int n = int(ssi) / sectionTotals;
-	int yu = int(ssi) % sectionTotals;
-	if (cindex <= yu)
-	{
-		is = (cindex - 1) * n + (cindex - 1);
-		ie = is + n + 1;
-	}
-	else {
-		is = (cindex - 1) * n + yu;
-		ie = is + n;
-	}*/
 	size_t n = ssi / sectionTotals;
 	size_t yu = ssi % sectionTotals;
 	if (cindex < yu)

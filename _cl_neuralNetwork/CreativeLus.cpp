@@ -5,7 +5,7 @@ PCStr const _lpDefineMsgBoxTitle = ("Bpnn struct define alert");
 PCStr const _lpSamSetsMsgBoxTitle = ("Bpnn sample sets alert");
 PCStr const _lpBpnnToolMsgBoxTitle = ("Neural network tool alert");
 
-BpnnSamSets& BpnnSamSets::normalizationOrStandardization(const TransTypeVec& flagVecter)
+BpnnSampSets& BpnnSampSets::normalizationOrStandardization(const BpnnSampTransTypeVec& flagVecter)
 {
 	VLF tmp;
 	Uint totalDim = intputDimension() + targetDimension();
@@ -89,31 +89,31 @@ BpnnSamSets& BpnnSamSets::normalizationOrStandardization(const TransTypeVec& fla
 	return *this;
 }
 
-Uint BpnnSamSets::getTransModRecSize() const
+Uint BpnnSampSets::getTransModRecSize() const
 {
 	return transModeRec.size();
 }
 
-TransModelDb BpnnSamSets::getTransModRec() const
+BpnnSampTransModelRecord BpnnSampSets::getTransModRec() const
 {
 	return transModeRec;
 }
 
-TransModelDb CreativeLus::BpnnSamSets::getTransModRec(PCStr lpFile, Bool binMode)
+BpnnSampTransModelRecord CreativeLus::BpnnSampSets::getTransModRec(PCStr lpFile, Bool binMode)
 {
 	assert(lpFile != nullptr);
-	BpnnSamSets tag;
+	BpnnSampSets tag;
 	readSamSetsFromFile(tag, lpFile, binMode);
 	return std::move(tag.getTransModRec());
 }
 
-BpnnSamSets& BpnnSamSets::clearTransModRec()
+BpnnSampSets& BpnnSampSets::clearTransModRec()
 {
 	transModeRec.clear();
 	return *this;
 }
 
-BpnnSamSets& BpnnSamSets::setTransModRec(const TransModelDb& rec)
+BpnnSampSets& BpnnSampSets::setTransModRec(const BpnnSampTransModelRecord& rec)
 {
 	transModeRec = rec;
 	return *this;
@@ -273,15 +273,15 @@ Bool Bpnn::readBpnnFormFile(PCStr lpFile, Bool binMode) {
 	return _kernel_Interface_ readBpnnFormFile(lpFile, binMode);
 }
 
-Bpnn& Bpnn::setSampSets(const BpnnSamSets& tag) {
+Bpnn& Bpnn::setSampSets(const BpnnSampSets& tag) {
 	return _extend_Interface_ setSampSets(tag), * this;
 }
 
-Float Bpnn::getCorrectRate(const BpnnSamSets* predict, Uint nCounst, Bool useRandom, EBP_CRT crtype) {
+Float Bpnn::getCorrectRate(const BpnnSampSets* predict, Uint nCounst, Bool useRandom, EBP_CRT crtype) {
 	return _extend_Interface_ getCorrectRate(predict, nCounst, useRandom,(Byte)crtype);
 }
 
-Bpnn& Bpnn::setCorrectRateEvaluationModel(Float correctRate, const BpnnSamSets* predict, Uint nCounst, Bool useRandom, EBP_CRT crtype) {
+Bpnn& Bpnn::setCorrectRateEvaluationModel(Float correctRate, const BpnnSampSets* predict, Uint nCounst, Bool useRandom, EBP_CRT crtype) {
 	return _extend_Interface_ setCorrectRateEvaluationModel(correctRate, predict, nCounst, useRandom, (Byte)crtype), * this;
 }
 //检查模型是否是以正确率评价训练收敛的；
@@ -522,7 +522,7 @@ Bpnn& Bpnn::setTransFunc(EBP_TF iBpTypeHide, EBP_TF iBpTypeOut) {
 //内部数据集增加一个样本对，标将指向最后一个数据
 
 
-//对内部样本数据集做归一化或标准化，变换规则由一个TransTypeVec向量表明，每一维度对应一种变换处理方式。
+//对内部样本数据集做归一化或标准化，变换规则由一个BpnnSampTransTypeVec向量表明，每一维度对应一种变换处理方式。
 
 
 //取得样本文件，保存一份原内部集合对象的副本到bkSet中，bkSet = NULL 不复制；
@@ -536,7 +536,7 @@ Bpnn& Bpnn::setTransFunc(EBP_TF iBpTypeHide, EBP_TF iBpTypeOut) {
 
 //数据变换记录
 
-BpnnSamSets& BpnnSamSets::changeDimension(Uint _ivDim, Uint _ovDim)
+BpnnSampSets& BpnnSampSets::changeDimension(Uint _ivDim, Uint _ovDim)
 {
 	clear();
 	if (_ivDim == 0) {
@@ -550,12 +550,12 @@ BpnnSamSets& BpnnSamSets::changeDimension(Uint _ivDim, Uint _ovDim)
 	return *this;
 }
 
-Uint BpnnSamSets::size() const
+Uint BpnnSampSets::size() const
 {
 	return intputDimension() > 0 ? ivdata.size() / intputDimension() : 0;
 }
 
-BpnnSamSets& BpnnSamSets::resize(Uint newSize, Float defaultInValue, Float defaultTagValue, Uint newInDim, Uint newTagDim)
+BpnnSampSets& BpnnSampSets::resize(Uint newSize, Float defaultInValue, Float defaultTagValue, Uint newInDim, Uint newTagDim)
 {
 	if ((newInDim > 0 && newInDim != intputDimension()) || (newTagDim > 0 && newTagDim != targetDimension()))
 		changeDimension(newInDim, newTagDim);
@@ -566,62 +566,63 @@ BpnnSamSets& BpnnSamSets::resize(Uint newSize, Float defaultInValue, Float defau
 	return *this;
 }
 
-BpnnSamSets::BpnnSamSets()
+BpnnSampSets::BpnnSampSets()
 {
 	ivDim = tvDim = 0;
 }
 
-BpnnSamSets::BpnnSamSets(Uint _ivDim, Uint _ovDim)
+BpnnSampSets::BpnnSampSets(Uint _ivDim, Uint _ovDim)
 {
 	ivDim = _ivDim; tvDim = _ovDim;
 }
 
-BpnnSamSets::~BpnnSamSets()
+BpnnSampSets::~BpnnSampSets()
 {
 }
 
-Uint BpnnSamSets::intputDimension() const
+Uint BpnnSampSets::intputDimension() const
 {
 	return ivDim;
 }
 
-Uint BpnnSamSets::targetDimension() const
+Uint BpnnSampSets::targetDimension() const
 {
 	return tvDim;
 }
 
-Uint BpnnSamSets::dimension() const
+Uint BpnnSampSets::dimension() const
 {
 	return intputDimension() + targetDimension();
 }
 
-BpnnSamSets& BpnnSamSets::clear()
+BpnnSampSets& BpnnSampSets::clear()
 {
 	transModeRec.clear();
 	ivdata.clear();
 	tvdata.clear();
 	return *this;
 }
-BpnnSamSets& BpnnSamSets::reset()
+BpnnSampSets& BpnnSampSets::reset()
 {
 	clear();
 	ivDim = tvDim = 0;
 	releaseStdVector(ivdata);
 	releaseStdVector(tvdata);
+	releaseStdMap(transModeRec);
 	return *this;
 }
 
-Bool BpnnSamSets::writeToFile(PCStr file, Bool binMode)
+Bool BpnnSampSets::writeToFile(PCStr file, Bool binMode)
 {
 	return writeSamSetsToFile(*this, file, binMode);
 }
 
-Bool BpnnSamSets::readFromFile(PCStr lpFile, Bool binMode)
+Bool BpnnSampSets::readFromFile(PCStr lpFile, Bool binMode)
 {
 	return readSamSetsFromFile(*this, lpFile, binMode);
 }
 
-BpnnSamSets& BpnnSamSets::addSample(const VLF& inputArray, const VLF& targetArray)
+BpnnSampSets& BpnnSampSets::addSample(const VLF& inputArray, const VLF& targetArray)
 {
 	/*if (intputDimension() == 0 || targetDimension() == 0) {
 		if (inputArray.size() == 0) {
@@ -647,7 +648,7 @@ BpnnSamSets& BpnnSamSets::addSample(const VLF& inputArray, const VLF& targetArra
 	return addSample(inputArray.data(), inputArray.size(), targetArray.data(), targetArray.size());
 }
 
-BpnnSamSets& CreativeLus::BpnnSamSets::addSample(const Float* inputArray, Uint inputArrayDim, const Float* targetArray, Uint targetArrayDim)
+BpnnSampSets& CreativeLus::BpnnSampSets::addSample(const Float* inputArray, Uint inputArrayDim, const Float* targetArray, Uint targetArrayDim)
 {
 	if (intputDimension() == 0 || targetDimension() == 0) {
 		if (inputArrayDim == 0) {
@@ -676,12 +677,12 @@ BpnnSamSets& CreativeLus::BpnnSamSets::addSample(const Float* inputArray, Uint i
 	return *this;
 }
 
-BpnnSamSets& BpnnSamSets::addSample(const BpnnSamPair& samPair)
+BpnnSampSets& BpnnSampSets::addSample(const BpnnSampPair& samPair)
 {
 	return addSample(samPair.inputVec(), samPair.targetVec());
 }
 
-BpnnSamSets& BpnnSamSets::setSample(Uint samIndex, const VLF& inputArray, const VLF& targetArray)
+BpnnSampSets& BpnnSampSets::setSample(Uint samIndex, const VLF& inputArray, const VLF& targetArray)
 {
 	/*if (size() <= samIndex)
 		CLString(("\nBpnnSamSets is out of range.\n")).printf().messageBoxRef(_lpSamSetsMsgBoxTitle, MB_ICONERROR).throw_out_of_range();
@@ -700,7 +701,7 @@ BpnnSamSets& BpnnSamSets::setSample(Uint samIndex, const VLF& inputArray, const 
 	return setSample(samIndex, inputArray.data(), inputArray.size(), targetArray.data(), targetArray.size());
 }
 
-BpnnSamSets& CreativeLus::BpnnSamSets::setSample(Uint samIndex, const Float* inputArray, Uint inputArrayDim, const Float* targetArray, Uint targetArrayDim)
+BpnnSampSets& CreativeLus::BpnnSampSets::setSample(Uint samIndex, const Float* inputArray, Uint inputArrayDim, const Float* targetArray, Uint targetArrayDim)
 {
 	if (size() <= samIndex)
 		CLString(("\nBpnnSamSets is out of range.\n")).printf().messageBoxRef(_lpSamSetsMsgBoxTitle, MB_ICONERROR).throw_out_of_range();
@@ -718,12 +719,12 @@ BpnnSamSets& CreativeLus::BpnnSamSets::setSample(Uint samIndex, const Float* inp
 	return *this;
 }
 
-BpnnSamSets& BpnnSamSets::setSample(Uint samIndex, const BpnnSamPair& samPair)
+BpnnSampSets& BpnnSampSets::setSample(Uint samIndex, const BpnnSampPair& samPair)
 {
 	return setSample(samIndex, samPair.inputVec(), samPair.targetVec());
 }
 
-void BpnnSamSets::copyAndTargetDimToIntervalClassification(BpnnSamSets& newSampSets, Float classFlagMax, Float classFlagMin, const VLF& intervalTable) const{
+void BpnnSampSets::copyAndTargetDimToIntervalClassification(BpnnSampSets& newSampSets, Float classFlagMax, Float classFlagMin, const VLF& intervalTable) const{
 	/*if (targetDimension() > intervalTable.size())
 		CLString().format("\nTarget data vector dimension(%d) can not match the Interval Classification Table size(%zd).\n", targetDimension(), intervalTable.size())
 		.printf().messageBoxRef(_lpSamSetsMsgBoxTitle, MB_ICONERROR).throw_invalid_argument();*/
@@ -738,7 +739,7 @@ void BpnnSamSets::copyAndTargetDimToIntervalClassification(BpnnSamSets& newSampS
 	{
 		newSampSets.transModeRec[i] = transModeRec.find(i)->second;
 	}
-	TransModel ut;
+	BpnnTransModelUnit ut;
 	for (size_t i = intputDimension(),si = intputDimension() + targetDimension() * (rag.size() + 1); i < si; i++)
 	{
 		ut.dimIndex = i;
@@ -770,44 +771,44 @@ void BpnnSamSets::copyAndTargetDimToIntervalClassification(BpnnSamSets& newSampS
 	}
 }
 
-BpnnSamPair BpnnSamSets::operator[](const Uint i)
+BpnnSampPair BpnnSampSets::operator[](const Uint i)
 {
 	Uint si = size();
 	if (i < si) {
 		auto id = intputDimension();
 		auto od = targetDimension();
-		return BpnnSamPair(&ivdata[size_t(i) * id], id, &tvdata[size_t(i) * od], od);
+		return BpnnSampPair(&ivdata[size_t(i) * id], id, &tvdata[size_t(i) * od], od);
 	}
-	throw runtime_error("BpnnSamSets out of range!");
+	throw runtime_error("BpnnSampSets out of range!");
 }
 
-const Float* BpnnSamSets::iv(const Uint i) const
+const Float* BpnnSampSets::iv(const Uint i) const
 {
 	return &ivdata[size_t(i) * intputDimension()];
 }
 
-const Float* BpnnSamSets::tv(const Uint i) const
+const Float* BpnnSampSets::tv(const Uint i) const
 {
 	return &tvdata[size_t(i) * targetDimension()];
 }
 
-const Float* BpnnSamSets::ivData() const
+const Float* BpnnSampSets::ivData() const
 {
 	return ivdata.data();
 }
-const Float* BpnnSamSets::tvData() const
+const Float* BpnnSampSets::tvData() const
 {
 	return tvdata.data();
 }
 
-const VLF& BpnnSamSets::ivDataVec() const {
+const VLF& BpnnSampSets::ivDataVec() const {
 	return ivdata;
 }
-const VLF& BpnnSamSets::tvDataVec() const {
+const VLF& BpnnSampSets::tvDataVec() const {
 	return tvdata;
 }
 
-void BpnnSamSets::getDimVecData(VLF& reseult, Uint dimVecIndex) {
+void BpnnSampSets::getDimVecData(VLF& reseult, Uint dimVecIndex) {
 	reseult.clear();	
 	if (dimVecIndex >= dimension()) {
 		CLString().format("\nBpnnSamSets get DimVecData(index=%u) is out of dimension range(%u).\n", dimVecIndex, dimension())
@@ -833,7 +834,7 @@ void BpnnSamSets::getDimVecData(VLF& reseult, Uint dimVecIndex) {
 	}
 }
 //取得输入向量集的某一个维度的分量数据,索引重0开始
-void BpnnSamSets::getIntputDimVecData(VLF& reseult, Uint dimVecIndex) {
+void BpnnSampSets::getIntputDimVecData(VLF& reseult, Uint dimVecIndex) {
 	reseult.clear();
 	if (dimVecIndex >= intputDimension()) {
 		CLString().format("\nBpnnSamSets get intput DimVecData(index=%u) is out of dimension range(%u).\n", dimVecIndex, intputDimension() )
@@ -851,7 +852,7 @@ void BpnnSamSets::getIntputDimVecData(VLF& reseult, Uint dimVecIndex) {
 	}
 }
 //取得输出向量集的某一个维度的分量数据,索引重0开始
-void BpnnSamSets::getTargetDimVecData(VLF& reseult, Uint dimVecIndex) {
+void BpnnSampSets::getTargetDimVecData(VLF& reseult, Uint dimVecIndex) {
 	reseult.clear();
 	if (dimVecIndex >= targetDimension()) {
 		CLString().format("\nBpnnSamSets get target DimVecData(index=%u) is out of dimension range(%u).\n", dimVecIndex, targetDimension())
@@ -1055,7 +1056,7 @@ Bool Bpnn::executeByJson(Bpnn& bp, BpnnInterfaceStore* iStore, PCStr jsonString)
 #define traceProgram2() 
 		Uint i = 0; 
 		PCStr key = nullptr;
-		vector<BpnnSamSets> sets;
+		vector<BpnnSampSets> sets;
 		vector<BpnnStructDef> defs;
 		for (auto iv = doc.MemberBegin(); iv != doc.MemberEnd(); ++iv,++i) {
 			if (iv == ie)
@@ -1242,7 +1243,7 @@ Bool Bpnn::executeByJson(Bpnn& bp, BpnnInterfaceStore* iStore, PCStr jsonString)
 				traceProgram();
 				if (!iStore || vl.GetInt() < 0 || sets.size() <= size_t(abs(vl.GetInt())))
 					continue;
-				auto pset = new BpnnSamSets(sets[vl.GetInt()]);//堆上分配对象，并传到外界
+				auto pset = new BpnnSampSets(sets[vl.GetInt()]);//堆上分配对象，并传到外界
 				bp.setSampSets(*pset);
 				(*iStore)["trainSampSets"] = (PIBpnnBase)pset;
 			}
@@ -1350,10 +1351,10 @@ Bool Bpnn::executeByJson(Bpnn& bp, BpnnInterfaceStore* iStore, PCStr jsonString)
 					if (ary[0].GetFloat() <= 0.0001)
 						bp.setCorrectRateEvaluationModel(0);
 					else {
-						BpnnSamSets* pset = 0;
+						BpnnSampSets* pset = 0;
 						if (iStore && ary[1].GetInt() >= 0
 							&& ary[1].GetInt() < (Int)sets.size()) {
-							pset = new BpnnSamSets(sets[ary[1].GetInt()]);
+							pset = new BpnnSampSets(sets[ary[1].GetInt()]);
 							(*iStore)["testSampSets"] = (PIBpnnBase)pset;
 						}
 						bp.setCorrectRateEvaluationModel(
@@ -1552,9 +1553,9 @@ DRP::~DRP()
 {
 }
 
-TransModel::TransModel() { reset(); }
+BpnnTransModelUnit::BpnnTransModelUnit() { reset(); }
 
-void TransModel::reset()
+void BpnnTransModelUnit::reset()
 {
 	dimIndex = 0;//维度编号
 	dimType = STT_Null;//维度的变换类型
@@ -1563,10 +1564,10 @@ void TransModel::reset()
 	vAver = 0;//均值
 	vStandardDeviation = 1;//标准差
 }
-TransModel::~TransModel()
+BpnnTransModelUnit::~BpnnTransModelUnit()
 {
 }
-Float TransModel::forward(Float org) const {
+Float BpnnTransModelUnit::forward(Float org) const {
 	switch (dimType) {
 	case STT_Normalize:  return (org - vmin)/(vmax - vmin) ;//数据做归一化到(0,1)
 	case STT_NormalizeEx:  return (org - vmin) / (vmax - vmin) * 2 - 1;//数据做归一化到(-1,1)
@@ -1576,7 +1577,7 @@ Float TransModel::forward(Float org) const {
 	}
 }
 
-Float TransModel::backward(Float tag) const {
+Float BpnnTransModelUnit::backward(Float tag) const {
 	switch (dimType) {
 	case STT_Normalize:  return tag * (vmax - vmin) + vmin;//数据做归一化到(0,1)
 	case STT_NormalizeEx:  return (tag + 1)/2* (vmax - vmin) + vmin ;//数据做归一化到(-1,1)
@@ -1586,27 +1587,27 @@ Float TransModel::backward(Float tag) const {
 	}
 }
 
-Float TransModelDb::forward(Float org, Uint index) const {
+Float BpnnSampTransModelRecord::forward(Float org, Uint index) const {
 	auto i = find(index);
 	if (i == cend())
-		throw std::out_of_range("TransModelDb forward para out of range!");
+		throw std::out_of_range("BpnnSampTransModelRecord forward para out of range!");
 	return i->second.forward(org);
 }
 
-Float TransModelDb::backward(Float tag, Uint index) const {
+Float BpnnSampTransModelRecord::backward(Float tag, Uint index) const {
 	auto i = find(index);
 	if (i == cend())
-		throw std::out_of_range("TransModelDb forward para out of range!");
+		throw std::out_of_range("BpnnSampTransModelRecord forward para out of range!");
 	return i->second.backward(tag);
 }
-void TransModelDb::forward(const VLF& org, VLF& tag, Uint alignStartIndex) const {
+void BpnnSampTransModelRecord::forward(const VLF& org, VLF& tag, Uint alignStartIndex) const {
 	tag.resize(org.size());
 	for (size_t i = 0; i < org.size(); i++)
 	{
 		tag[i] = forward(org[i], alignStartIndex++);
 	}
 }
-void TransModelDb::backward(const VLF& tag, VLF& org, Uint alignStartIndex) const {
+void BpnnSampTransModelRecord::backward(const VLF& tag, VLF& org, Uint alignStartIndex) const {
 	org.resize(tag.size());
 	for (size_t i = 0; i < tag.size(); i++)
 	{
@@ -2426,31 +2427,31 @@ Uint BpnnStructDef::layerCounts() const
 	return vector<BSLayer>::size();
 }
 
-BpnnSamPair::BpnnSamPair() {
+BpnnSampPair::BpnnSampPair() {
 	piv = pov = 0;
 	ivDim = tvDim = 0;
 }
 
-BpnnSamPair::BpnnSamPair(Float* _iv, Uint _ivDim, Float* _ov, Uint _ovDim)
+BpnnSampPair::BpnnSampPair(Float* _iv, Uint _ivDim, Float* _ov, Uint _ovDim)
 {
 	piv = _iv, pov = _ov;
 	ivDim = _ivDim, tvDim = _ovDim;
 }
 
-BpnnSamPair::~BpnnSamPair()
+BpnnSampPair::~BpnnSampPair()
 {
 }
 
-Uint BpnnSamPair::intputDimension() const
+Uint BpnnSampPair::intputDimension() const
 {
 	return ivDim;
 }
-Uint BpnnSamPair::targetDimension() const
+Uint BpnnSampPair::targetDimension() const
 {
 	return tvDim;
 }
 
-void BpnnSamPair::clear()
+void BpnnSampPair::clear()
 {
 	if (iv() && ivDim)
 		ZeroMemory(iv(), sizeof(Float) * ivDim);
@@ -2458,7 +2459,7 @@ void BpnnSamPair::clear()
 		ZeroMemory(tv(), sizeof(Float) * tvDim);
 }
 
-Float& BpnnSamPair::operator[](Uint i)
+Float& BpnnSampPair::operator[](Uint i)
 {
 	if (i < ivDim)
 		return iv()[i];
@@ -2467,7 +2468,7 @@ Float& BpnnSamPair::operator[](Uint i)
 	throw runtime_error("out of rang");
 }
 
-VLF BpnnSamPair::inputVec() const
+VLF BpnnSampPair::inputVec() const
 {
 	if (iv() && intputDimension()) {
 		VLF a(intputDimension());
@@ -2476,7 +2477,7 @@ VLF BpnnSamPair::inputVec() const
 	}
 	else return VLF();
 }
-VLF BpnnSamPair::targetVec() const
+VLF BpnnSampPair::targetVec() const
 {
 	if (tv() && targetDimension()) {
 		VLF a(targetDimension());
@@ -2486,11 +2487,11 @@ VLF BpnnSamPair::targetVec() const
 	else return VLF();
 }
 
-Float* BpnnSamPair::iv() const
+Float* BpnnSampPair::iv() const
 {
 	return piv;
 }
-Float* BpnnSamPair::tv() const
+Float* BpnnSampPair::tv() const
 {
 	return pov;
 }

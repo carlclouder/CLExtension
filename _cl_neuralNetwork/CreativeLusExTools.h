@@ -30,7 +30,7 @@ public:
 	static void readDataOfMnist(
 		string imgfilename,
 		string labfilename,
-		BpnnSamSets& data_dst,
+		BpnnSampSets& data_dst,
 		Float scMin = -1,
 		Float scMax = 1,
 		Float labMin = -0.8,
@@ -96,7 +96,7 @@ public:
 	}
 	static void readDataOfCifar10(
 		string datafilename,
-		BpnnSamSets& data_dst,
+		BpnnSampSets& data_dst,
 		Float scMin = 0,
 		Float scMax = 1,
 		Float labMin = 0,

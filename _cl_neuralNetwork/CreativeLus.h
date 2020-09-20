@@ -157,7 +157,7 @@ namespace CreativeLus {
 		TPC_Resume = TPC_Enable,//从当前暂停状态恢复运行
 	};
 
-	//define BpnnSamSets -----------------------------------------------------------------------------------------------
+	//define BpnnSampSets -----------------------------------------------------------------------------------------------
 
 	//共有接口
 	struct _dll_ IBpnnBase {
@@ -165,15 +165,15 @@ namespace CreativeLus {
 	};
 	typedef IBpnnBase *PIBpnnBase;
 
-	//输入输出样本对包装类（该类并不复制和产生新的数据，仅仅对已有的BpnnSamSets保存的数据样本对做包装输出）
-	class _dll_ BpnnSamPair :IBpnnBase {
+	//输入输出样本对包装类（该类并不复制和产生新的数据，仅仅对已有的BpnnSampSets保存的数据样本对做包装输出）
+	class _dll_ BpnnSampPair :IBpnnBase {
 	protected:
 		Float* piv, * pov;
 		Uint ivDim, tvDim;
 	public:
-		explicit BpnnSamPair();
-		explicit BpnnSamPair(Float* iv, Uint ivDim, Float* ov, Uint tvDim);
-		virtual ~BpnnSamPair();
+		explicit BpnnSampPair();
+		explicit BpnnSampPair(Float* iv, Uint ivDim, Float* ov, Uint tvDim);
+		virtual ~BpnnSampPair();
 		//获取输入数据向量维度
 		Uint intputDimension() const;
 		//获取目标数据向量维度
@@ -191,9 +191,9 @@ namespace CreativeLus {
 		//获取包装的目标向量数据指针
 		Float* tv() const;
 	};
-	typedef vector<BpnnSamPair> BpnnSamPairList, * PBpnnSamPairList;//样本对集合
+	typedef vector<BpnnSampPair> BpnnSampPairList, * PBpnnSampPairList;//样本对集合
 	//变换模式描述类
-	class _dll_ TransModel :IBpnnBase {
+	class _dll_ BpnnTransModelUnit :IBpnnBase {
 	public:
 		Uint dimIndex;//维度编号
 		Uint dimType;//维度的变换类型
@@ -201,16 +201,16 @@ namespace CreativeLus {
 		Float vmin;//最小值
 		Float vAver;//均值
 		Float vStandardDeviation;//标准差
-		TransModel();
+		BpnnTransModelUnit();
 		void reset();
-		virtual ~TransModel();
+		virtual ~BpnnTransModelUnit();
 		//将一个值通过映射变换为新值；
 		Float forward(Float org) const;
 		//将一个变换后的值通过映射逆变换为原值；
 		Float backward(Float tag) const;
 	};
 	//用于保存变换记录
-	class _dll_ TransModelDb:IBpnnBase,public std::map<Uint, TransModel>{
+	class _dll_ BpnnSampTransModelRecord:IBpnnBase,public std::map<Uint, BpnnTransModelUnit>{
 	public:
 		//将一个值通过对应的映射变换为新值；
 		Float forward(Float org, Uint index) const;
@@ -221,26 +221,26 @@ namespace CreativeLus {
 		//将一个变换后的向量通过对应的映射逆变换为原向量，alignStartIndex表示从转换记录的第几个开始对齐转换；
 		void backward(const VLF& tag, VLF& org, Uint alignStartIndex) const;
 	};
-	typedef vector<Uint> TransTypeVec;//样本变换标记
+	typedef vector<Uint> BpnnSampTransTypeVec;//样本（对）变换类型标记序列
 
 
 	//样本集合类
-	class _dll_ BpnnSamSets :IBpnnBase {
+	class _dll_ BpnnSampSets :IBpnnBase {
 	protected:
 		VLF ivdata;
 		VLF tvdata;
 		Uint ivDim, tvDim;
-		TransModelDb transModeRec;//数据变换记录
+		BpnnSampTransModelRecord transModeRec;//数据变换记录
 	public:
 		//改变数据的维度，并清理内部数据；
-		BpnnSamSets& changeDimension(Uint ivDim, Uint tvDim);
+		BpnnSampSets& changeDimension(Uint ivDim, Uint tvDim);
 		//获取数据集样本对个数；
 		Uint size() const;
 		//重置和初始化数据集结构、大小、维度、默认值等；只要输入和目标向量维度不变，重置大小不会改变已有数据的值；
-		BpnnSamSets& resize(Uint newSize, Float defaultInValue = 0.0, Float defaultTagValue = 0.0, Uint newInDim = 0, Uint newTagDim = 0);
-		BpnnSamSets();
-		explicit BpnnSamSets(Uint ivDim, Uint tvDim);
-		virtual ~BpnnSamSets();
+		BpnnSampSets& resize(Uint newSize, Float defaultInValue = 0.0, Float defaultTagValue = 0.0, Uint newInDim = 0, Uint newTagDim = 0);
+		BpnnSampSets();
+		explicit BpnnSampSets(Uint ivDim, Uint tvDim);
+		virtual ~BpnnSampSets();
 		//获取输入数据向量维度；
 		Uint intputDimension() const;
 		//获取输出向量数据维度；
@@ -248,9 +248,9 @@ namespace CreativeLus {
 		//获取输入输出向量数据总维度数；
 		Uint dimension() const;
 		//清除数据，但保留维度信息
-		BpnnSamSets& clear();
-		//清除数据，且清理维度信息
-		BpnnSamSets& reset();
+		BpnnSampSets& clear();
+		//清除数据，且清理维度信息，释放内存；
+		BpnnSampSets& reset();
 		//保存样本到文件，binMode = true表示2进制文件形式保存（该模式用于大量数据的导出）
 		//当采用二进制方式时，文件的扩展名将被修改为固定的".bpnnSampSets"并输出文件，以确保写入固定的二进制数据流文件；
 		Bool writeToFile(PCStr file, Bool binMode = true);
@@ -258,32 +258,32 @@ namespace CreativeLus {
 		//binMode = true表示读取二进制文件（该模式用于大量数据情况）
 		//当采用二进制方式时，指定的文件的扩展名将被自动替换为读取固定扩展名".bpnnSampSets"文件，以确保读取固定的二进制数据流文件；
 		Bool readFromFile(PCStr lpFile, Bool binMode = true);
-		//对内部样本数据集做归一化或标准化，变换规则由一个TransTypeVec向量标明，每一维度对应一种变换处理方式。
-		BpnnSamSets& normalizationOrStandardization(const TransTypeVec& flagVecter);
+		//对内部样本数据集做归一化或标准化，变换规则由一个BpnnSampTransTypeVec向量标明，每一维度对应一种变换处理方式。
+		BpnnSampSets& normalizationOrStandardization(const BpnnSampTransTypeVec& flagVecter);
 		//数据变换结构体的记录个数（一般等于输入输出维度总和）
 		Uint getTransModRecSize() const; 
 		//取得内部变换记录，返回新的实例
-		TransModelDb getTransModRec() const;
+		BpnnSampTransModelRecord getTransModRec() const;
 		//取得样本文件的变换结构体；
 		//binMode = true表示读取二进制文件（该模式用于大量数据情况）
 		//当采用二进制方式时，指定的文件的扩展名将被自动替换为读取固定扩展名".bpnnSampSets"文件，以确保读取固定的二进制数据流文件；
-		static TransModelDb getTransModRec(PCStr lpFile, Bool binMode = true);
+		static BpnnSampTransModelRecord getTransModRec(PCStr lpFile, Bool binMode = true);
 
 		//清除内部的变换记录
-		BpnnSamSets& clearTransModRec();
+		BpnnSampSets& clearTransModRec();
 		//设置内部变换记录
-		BpnnSamSets& setTransModRec(const TransModelDb& rec);
+		BpnnSampSets& setTransModRec(const BpnnSampTransModelRecord& rec);
 		//内部数据集增加一个样本对，标将指向最后一个数据
-		BpnnSamSets& addSample(const VLF& inputArray, const VLF& targetArray);
-		BpnnSamSets& addSample(const Float* inputArray,Uint inputArrayDim, const Float* targetArray,Uint targetArrayDim );
-		BpnnSamSets& addSample(const BpnnSamPair& samPair);
-		BpnnSamSets& setSample(Uint samIndex, const VLF& inputArray, const VLF& targetArray);
-		BpnnSamSets& setSample(Uint samIndex, const Float* inputArray, Uint inputArrayDim, const Float* targetArray, Uint targetArrayDim);
-		BpnnSamSets& setSample(Uint samIndex, const BpnnSamPair& samPair);
+		BpnnSampSets& addSample(const VLF& inputArray, const VLF& targetArray);
+		BpnnSampSets& addSample(const Float* inputArray,Uint inputArrayDim, const Float* targetArray,Uint targetArrayDim );
+		BpnnSampSets& addSample(const BpnnSampPair& samPair);
+		BpnnSampSets& setSample(Uint samIndex, const VLF& inputArray, const VLF& targetArray);
+		BpnnSampSets& setSample(Uint samIndex, const Float* inputArray, Uint inputArrayDim, const Float* targetArray, Uint targetArrayDim);
+		BpnnSampSets& setSample(Uint samIndex, const BpnnSampPair& samPair);
 		//把目标向量的每个维度分量都扩充区分到不同的区间分类中
-		void copyAndTargetDimToIntervalClassification(BpnnSamSets& newSampSets, Float classFlagMax, Float classFlagMin, const VLF& intervalTable) const;
+		void copyAndTargetDimToIntervalClassification(BpnnSampSets& newSampSets, Float classFlagMax, Float classFlagMin, const VLF& intervalTable) const;
 		//返回样本对包装对象
-		BpnnSamPair operator[](const Uint i);
+		BpnnSampPair operator[](const Uint i);
 		//由数字序号获取只读的样本对的输入向量数据指针
 		const Float* iv(const Uint i) const;
 		//由数字序号获取只读的样本对的目标向量数据指针
@@ -591,8 +591,8 @@ namespace CreativeLus {
 	//传入executeByJson的结构，用于执行函数内部保存动态分配的对象指针，若保存对象的指针不是nullptr
 	//则结构析构时自动对象；因此，若要保持指针有效性，请备份指针值，并设置结构内部对应的项为nullptr；
 	//结构内部字段意义：
-	//trainSampSets：是设置的用于保存内部传出的样本集合对象的指针变量，若由执行函数设置该值且不为nullptr，则对象保存了类型BpnnSamSets；
-	//testSampSets：是设置的用于保存内部传出的正确率测试集合对象的指针变量，若由执行函数设置该值且不为nullptr，则对象保存了类型BpnnSamSets；
+	//trainSampSets：是设置的用于保存内部传出的样本集合对象的指针变量，若由执行函数设置该值且不为nullptr，则对象保存了类型BpnnSampSets；
+	//testSampSets：是设置的用于保存内部传出的正确率测试集合对象的指针变量，若由执行函数设置该值且不为nullptr，则对象保存了类型BpnnSampSets；
 	//bpnnStructDef:是设置的用于保存内部传出的自定义结构描述对象的指针变量，若由执行函数设置该值且不为nullptr，则对象保存了类型BpnnStructDef；
 	//autoFitCallBack:是设置的用于保存内部传出的自动调整学习率回调对象的指针变量，若由执行函数设置该值且不为nullptr，则对象保存了一个不可用的未知类型；
 	class _dll_ BpnnInterfaceStore :IBpnnBase, public std::map<string, PIBpnnBase> {
@@ -804,15 +804,15 @@ namespace CreativeLus {
 		Bool readBpnnFormFile(PCStr lpFile, Bool binMode = true);
 
 		//用外部样本集对象设置到内部保存的训练样本集。
-		//注意：为节约内存，网络并不会保存BpnnSamSets结构对象的副本，只保留一份对象的引用（内部保存对象指针），请确保在网络生命周期中对象的有效性；
-		Bpnn& setSampSets(const BpnnSamSets& tag);
+		//注意：为节约内存，网络并不会保存BpnnSampSets结构对象的副本，只保留一份对象的引用（内部保存对象指针），请确保在网络生命周期中对象的有效性；
+		Bpnn& setSampSets(const BpnnSampSets& tag);
 
 		//计算取得一次预测样本的正确（成功）率；
 		//predict 预测样本指针（它应该与训练样本的结构一直且意义相同），当为nullptr时候预测样本选用内部训练样本的数据,
 		//nCounst  取用其中多少个参与成功率计算的预测样本（为0时候使用全部）,
 		//useRandom 当选用数少于总数时候，是否采用随机样本做评价；
 		//crtype 正确率评价所采用的方法类型
-		Float getCorrectRate(const BpnnSamSets* predict = 0, Uint nCounst = 0, Bool useRandom = false, EBP_CRT crtype = CRT_MeanSquareLoss);
+		Float getCorrectRate(const BpnnSampSets* predict = 0, Uint nCounst = 0, Bool useRandom = false, EBP_CRT crtype = CRT_MeanSquareLoss);
 
 		//把模型设置为以预测正确率作为模型收敛评价标准的模式，否则模型为目标损失评价模式。
 		//正确率 = 正确样本个数 / 统计的样本总数，其中，单个样本所谓的“正确”表示损失评价Er小于收敛精度（逼近），或者最大或最小值出现的位置与目标向量的最值位置相同（分类）
@@ -821,7 +821,7 @@ namespace CreativeLus {
 		//nCounst  取用其中多少个参与成功率计算的预测样本（为0时候使用全部）,
 		//useRandom 当选用数少于总数时候，是否采用随机样本做评价，当取用全部样本忽略该值；
 		//crtype 正确率评价所采用的方法类型
-		Bpnn& setCorrectRateEvaluationModel(Float correctRate = 0, const BpnnSamSets* predict = 0, Uint nCounst = 0, Bool useRandom = false, EBP_CRT crtype = CRT_MeanSquareLoss);
+		Bpnn& setCorrectRateEvaluationModel(Float correctRate = 0, const BpnnSampSets* predict = 0, Uint nCounst = 0, Bool useRandom = false, EBP_CRT crtype = CRT_MeanSquareLoss);
 		//检查模型是否是以正确率来评价训练是否收敛的；
 		Bool isCorrectRateEvaluationModel() const;
 
@@ -946,7 +946,7 @@ namespace CreativeLus {
 		// json格式如下：
 {
  "enable": 1,
-  "BpnnSamSets": [
+  "BpnnSampSets": [
 	""
   ],
   "BpnnStructDef": [

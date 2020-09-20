@@ -49,8 +49,8 @@ using namespace concurrency;
 //#include <ppl.h>
 #endif
 
-Bool writeSamSetsToFile(const BpnnSamSets& org, PCStr file, Bool binMode = true);
-Bool readSamSetsFromFile(BpnnSamSets& tag, PCStr lpFile, Bool binMode = true);
+Bool writeSamSetsToFile(const BpnnSampSets& org, PCStr file, Bool binMode = true);
+Bool readSamSetsFromFile(BpnnSampSets& tag, PCStr lpFile, Bool binMode = true);
 
 Bool readBpnnStructDefFromFile(BpnnStructDef& mod, PCStr file);
 BpnnStructDef& writeBpnnStructDefToFile(BpnnStructDef& mod, PCStr file);
@@ -743,12 +743,12 @@ public:
 	Byte m_CorrectRateType;
 
 
-	const BpnnSamSets* train_samSets;
+	const BpnnSampSets* train_samSets;
 	Uint train_useSamCounts;
 	Bool train_useRandom;//是否启用随机样本对输入
 	VLUI train_samUsage;
 
-	const BpnnSamSets* predict_samSets;//保存的预测样本数据集
+	const BpnnSampSets* predict_samSets;//保存的预测样本数据集
 	Uint predict_useSamCounts;//单词使用个数，0表示全用
 	Bool predict_useRandom;//非0状态下是否随机
 	VLUI predict_samUsage;
@@ -777,7 +777,7 @@ public:
 	//{
 	//构造应该有的数据
 	
-	const BpnnSamSets* vm_samSets;//保存的样本数据集	
+	const BpnnSampSets* vm_samSets;//保存的样本数据集	
 	//结构数据------------------------在buildNet中应该完成构造初始化的数据
 	
 
@@ -1010,11 +1010,11 @@ public:
 
 	//CLBpExtend& logToCmd(Bool bUseDetailedMode = false);	
 
-	CLBpExtend& setSampSets(const BpnnSamSets& tag);
+	CLBpExtend& setSampSets(const BpnnSampSets& tag);
 
-	Float getCorrectRate(const BpnnSamSets* predict,Uint nCounst ,Bool useRandom ,Byte crtype);
+	Float getCorrectRate(const BpnnSampSets* predict,Uint nCounst ,Bool useRandom ,Byte crtype);
 
-	CLBpExtend& setCorrectRateEvaluationModel(Float correctRate = 0, const BpnnSamSets* predict = 0, Uint nCounst = 0, Bool useRandom = false, Byte crtype = CRT_MeanSquareLoss);
+	CLBpExtend& setCorrectRateEvaluationModel(Float correctRate = 0, const BpnnSampSets* predict = 0, Uint nCounst = 0, Bool useRandom = false, Byte crtype = CRT_MeanSquareLoss);
 
 	Bool isCorrectRateEvaluationModel() const;
 
