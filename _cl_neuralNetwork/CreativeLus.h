@@ -641,8 +641,9 @@ namespace CreativeLus {
 		Uint hideLayerCounts() const;
 
 		//设置神经网络训练模式下采用多线程技术支持（默认状态是关闭）核心线程数少于4的cpu将不支持，并用常规单线程方案替代；
-		//若当前多线程模块正在运行，设置bOpen = false将立即关闭多线程工作组；函数也用于立即关闭多线程模块（阻塞式的安全退出）
-		Bpnn& setMultiThreadSupport(Bool bOpen = false);
+		//参数percentageOfThreadsStarted为[0,1]间的数值，代表启动的多线程数量占总可用线程数的比例，当为1时全部启用，当为0.8时只启动80%的线程，当为0时关闭；
+		//若当前多线程模块正在运行，设置percentageOfThreadsStarted = 0将立即关闭多线程工作组；函数也用于立即关闭多线程模块（阻塞式的安全退出）
+		Bpnn& setMultiThreadSupport(Float percentageOfThreadsStarted = 0);
 		//打开和关闭GPU硬件加速如果有GPU加速设备的话
 		Bpnn& setGpuAcceleratedSupport(Bool bOpen = false);
 

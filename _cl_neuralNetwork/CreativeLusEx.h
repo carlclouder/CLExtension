@@ -423,6 +423,7 @@ public:
 	Uint method = 0;
 	Uint clayIndex = 0;	
 	const Uint m_core = CLTaskSvc::getCpuCoreCounts();
+	Uint m_runTrdCounts = 0;
 	Uint getCpuCoreCounts() const { return m_core; };
 
 #define usdcci 0
@@ -464,16 +465,19 @@ public:
 		return;
 	}
 	//创建大于3且小于核心数减1的线程
-	Bool start() {
-		if (getCpuCoreCounts() < 4)//核心线程小于4则没有必要启动线程组
+	Bool start(Float runPercent) {
+		m_runTrdCounts = Uint(runPercent * getCpuCoreCounts());
+		if (m_runTrdCounts < 4) {//核心线程小于4则没有必要启动线程组
+			m_runTrdCounts = 0;
 			return false;
+		}
 #if usecsl > 0
 		setPriority(THREAD_PRIORITY_HIGHEST);
 #endif
 
 #define USE_MULTI 0
 #if USE_MULTI == 0
-		auto nsi = CLTaskSvc::start(getCpuCoreCounts() - 1, TRUE);
+		auto nsi = CLTaskSvc::start((m_runTrdCounts = (m_runTrdCounts - 1)), TRUE);
 		size_t siTag = 3;
 #else
 		auto nsi = CLTaskSvc::start(USE_MULTI, TRUE);
@@ -724,7 +728,7 @@ public:
 	VD _er, _ls, _mc, er, ls, mc;//保存外显数据
 	VD _cr, cr;//保存外显数据
 	WorkSvc work;
-	Bool bMutiTrdSupport;
+	Float m_mutiTrdSupportPerc;
 	Bool bAmpSupport;
 	BITMAPFILEHEADER m_BtmapFileHdr = { 0 };
 	BITMAPINFOHEADER m_BtmapInfoHdr = { 0 };
@@ -956,7 +960,7 @@ public:
 
 	static Uint getNeuronMenSize();
 
-	CLBpExtend& setMultiThreadSupport(Bool bOpen = false);
+	CLBpExtend& setMultiThreadSupport(Float percentageOfThreadsStarted = 0);
 	CLBpExtend& setGpuAcceleratedSupport(Bool bOpen = false);
 
 	CLBpExtend& openGraphFlag(Bool bOpen = true);

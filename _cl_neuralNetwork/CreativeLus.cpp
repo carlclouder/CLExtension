@@ -363,8 +363,8 @@ Uint Bpnn::hideLayerCounts() const {
 	return  isEncrypted() ? 0 : _kernel_Interface_ hideLayerCounts();
 }
 
-Bpnn& Bpnn::setMultiThreadSupport(Bool bOpen) {
-	return _extend_Interface_ setMultiThreadSupport(bOpen), * this;
+Bpnn& Bpnn::setMultiThreadSupport(Float percentageOfThreadsStarted) {
+	return _extend_Interface_ setMultiThreadSupport(percentageOfThreadsStarted), * this;
 }
 
 Bpnn& Bpnn::setGpuAcceleratedSupport(Bool bOpen) {
@@ -1393,10 +1393,12 @@ Bool Bpnn::executeByJson(Bpnn& bp, BpnnInterfaceStore* iStore, PCStr jsonString)
 					bp.setMaxTimes(vl.GetInt());
 			}
 			else if (_stricmp(name, key = "setMultiThreadSupport") == 0
-				&& vl.IsInt()) {
+				&& (vl.IsFloat() || vl.IsInt())) {
 				traceProgram();
-				if (vl.GetInt() >= 0)
-					bp.setMultiThreadSupport(abs(vl.GetInt()));
+				auto vf = vl.GetFloat();
+				if (vf >= 0) {
+					bp.setMultiThreadSupport(min(max(0,vf),1));
+				}
 			}
 			else if (_stricmp(name, key = "setAdam") == 0
 			&& vl.IsArray()) {

@@ -440,13 +440,15 @@ Bool CLBpExtend::exportGraph(PCStr lpfileName, Int pos)
 }
 
 //设置神经网络训练采用多线程技术支持（默认状态是关闭）
-CLBpExtend& CLBpExtend::setMultiThreadSupport(Bool bOpen)
+CLBpExtend& CLBpExtend::setMultiThreadSupport(Float percentageOfThreadsStarted)
 {
-	if (bOpen == false) {
+	if (percentageOfThreadsStarted < VtEpslon) {
 		if (work.isRunning())
 			work.close();
+		m_mutiTrdSupportPerc = 0;
 	}
-	bMutiTrdSupport = bOpen;
+	else 
+		m_mutiTrdSupportPerc = min(percentageOfThreadsStarted,1);
 	return *this;
 }
 
@@ -659,7 +661,7 @@ CLBpExtend::~CLBpExtend()
 		}
 		i->second = 0;
 	}
-	setMultiThreadSupport(false);//可以不用这一步	
+	setMultiThreadSupport(0);//可以不用这一步	
 	setGpuAcceleratedSupport(false);
 	releasBitmapBuf();
 }
@@ -1543,12 +1545,12 @@ Bool CLBpExtend::train(VLF* pOutEa, VLF* pOutLs, VLF* pOutMc, Bpnn::PCBMonitor _
 			.messageBox(_lpBpnnMsgBoxTitle, MB_ICONWARNING | MB_YESNOCANCEL);
 		setGpuAcceleratedSupport(false);
 		if (yn == IDYES) {
-			setMultiThreadSupport(true);
+			setMultiThreadSupport(1);
 			goto else1;
 		}
 		else if (yn == IDNO)
 		{
-			setMultiThreadSupport(false);
+			setMultiThreadSupport(0);
 			goto else1;
 		}
 		else
@@ -1751,20 +1753,20 @@ Bool CLBpExtend::doPrepair(PVoid _pCbFun, PVoid _pIns) {
 	checkWbPackShareBnData(_pCbFun, _pIns);	
 
 	//设置运行模式，基于samUsage，samSets
-	Uint  ncore = work.getCpuCoreCounts();
+	Uint ncore = work.getCpuCoreCounts();
 	if (ncore < 4 || (kernel.vm_globleInfo.iMaxLayNCounts + 1 < ncore && vm_samUsage->size() + 1 < ncore)) {
-		setMultiThreadSupport(false);
+		setMultiThreadSupport(0);
 	}
 	work.method = work.getWorkType(vm_samUsage->size());
 	
 
-	if (bMutiTrdSupport) {
+	if (Uint(m_mutiTrdSupportPerc * ncore) >= 4) {
 		//启动线程
 		if (!work.isRunning()) {
-			if (!work.start()) {
+			if (!work.start(m_mutiTrdSupportPerc)) {
 				Int id = CLString(("设备CPU核心数可能不支持多线程模式分析，是否采用单线程继续分析 [Yes/No] ！")).messageBox(_lpBpnnMsgBoxTitle, MB_ICONWARNING | MB_YESNO, 0);
 				if (id == IDYES) {
-					setMultiThreadSupport(false);
+					setMultiThreadSupport(0);
 				}
 				else return false;
 			}
@@ -1778,7 +1780,7 @@ Bool CLBpExtend::doPrepair(PVoid _pCbFun, PVoid _pIns) {
 	}
 
 	//设置原子梯度模式
-	if (bMutiTrdSupport && work.method == 1) {
+	if (Uint(m_mutiTrdSupportPerc * ncore) >= 4 && work.method == 1) {
 		//多线程且为节点行多线程启动梯度原子模型
 		vector<vector<Uint>> linkbk((kernel.vm_layInfo).getLayerMaxNnCountsInNet());
 		for (Uint i = 1, si = kernel.layerCounts(); i < si; i++)
@@ -1889,7 +1891,7 @@ Bool CLBpExtend::_trainOnce()
 	
 	updateDropout();
 
-	if (!bMutiTrdSupport) {
+	if (!(Uint(m_mutiTrdSupportPerc * work.getCpuCoreCounts()) >= 4)) {
 		//单线程
 		auto samSi = vm_samUsage->size();
 
@@ -2775,7 +2777,7 @@ Float CLBpExtend::getCorrectRate(const BpnnSampSets* tag, Uint nCounst, Bool use
 	auto pnnSi = kernel.LayNnCounts(kernel.lastLayIndex());
 	Uint ovSi = pnnSi;
 	Float yes = 0;
-	if (bMutiTrdSupport && sl >= 2) {//多线程并且预测样本数量大于2时候才使用多线程模式
+	if ((Uint(m_mutiTrdSupportPerc * work.getCpuCoreCounts()) >= 4) && sl >= 2) {//多线程并且预测样本数量大于2时候才使用多线程模式
 		if (vm_yi_predict.size() / (Uint)kernel.neuronCounts() < sl) {
 			vm_yi_predict.resize(sl * kernel.neuronCounts());
 			vm_yi_span_predict = sl;
