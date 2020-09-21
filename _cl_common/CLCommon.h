@@ -155,16 +155,25 @@ VT COR(VTArray v_X,VTArray v_Y,VTArray v_pix,VTArray v_piy,VTArraySize si);
 VT COR(VTArray v_X,VTArray v_Y,VTArraySize si);
 
 //计算一个数据列的分布情况；
-//result的T1表示某一分布区间的中心值（非均值），T2表示分布频数（即出现次数）
+//result的T1表示某一分布区间的中心值（非均值），T2表示分布频数（即出现次数）,   block_%zd (%zd)当为0表示采用自适应平滑拟合)
 template<class T1, class T2, class T3>void dataToDistribution(std::map<T1, T2> & result, const T3 * dataList, size_t dataCounts, size_t sectionCounts,
 	T1 * savedLowerLimitValue = nullptr, T1 * savedUpperLimitValue = nullptr) {
 	assert(dataList != nullptr && dataCounts != 0);
-	result.clear();
+	std::map<T1, T2>::const_iterator i, i2;
 	T1 vmax = dataList[0], vmin = dataList[0];
+	size_t agtimes = sectionCounts > 0 ? 100 : 0;
+	if (sectionCounts == 0)sectionCounts = 100;
 	for (size_t k = 0; k < dataCounts; k++) {
 		if (dataList[k] > vmax)vmax = dataList[k];
 		if (dataList[k] < vmin)vmin = dataList[k];
 	}
+	if (savedLowerLimitValue)
+		*savedLowerLimitValue = vmin;
+	if (savedUpperLimitValue)
+		*savedUpperLimitValue = vmax;
+
+ag:
+	result.clear();
 	T1 sec = T1(vmax - vmin) / max(1, sectionCounts);
 	for (size_t k = 0; k < dataCounts; ++k)
 	{
@@ -173,17 +182,27 @@ template<class T1, class T2, class T3>void dataToDistribution(std::map<T1, T2> &
 		auto x = T1((double(size_t((i - vmin) / sec)) + 0.5) * sec + vmin);
 		result[x] += T2(1);
 	}
-	if (savedLowerLimitValue)*savedLowerLimitValue = vmin;
-	if (savedUpperLimitValue)*savedUpperLimitValue = vmax;
+	if (++agtimes >= 100) //保护机制
+		return;
+	//自适应
+	sectionCounts = result.size();
+	i2 = result.cbegin(); ++i2;
+	for (i = result.cbegin(); i != result.cend() && i2 != result.cend(); ++i, ++i2)
+	{
+		if ((i->second * 0.6 / 1.6 >= 1 && i->second*1.0 < i2->second * 0.6) || (i2->second * 0.6 / 1.6 >= 1 && i->second * 0.6 > i2->second*1.0)) {
+			sectionCounts *= 2;
+			goto ag;
+		}
+	}
 }
 //计算一个数据列的分布情况；
-//result的T1表示某一分布区间的中心值（非均值），T2表示分布频数（即出现次数）
+//result的T1表示某一分布区间的中心值（非均值），T2表示分布频数（即出现次数）, sectionCounts分布区段数(当为0表示采用自适应平滑拟合)
 template<class T1, class T2, class T3>void dataToDistribution(std::map<T1, T2>& result, const vector<T3>& dataList, size_t sectionCounts,
 	T1* savedLowerLimitValue = nullptr, T1* savedUpperLimitValue = nullptr) {
 	return dataToDistribution(result, dataList.data(), dataList.size(), sectionCounts, savedLowerLimitValue, savedUpperLimitValue);
 }
 //计算一个数据列的分布情况；
-//resultDistRange表示某一分布区间的中心值（非均值），resultDistFrequency表示分布频数（即出现次数）
+//resultDistRange表示某一分布区间的中心值（非均值），resultDistFrequency表示分布频数（即出现次数）, sectionCounts分布区段数(当为0表示采用自适应平滑拟合)
 template<class T1, class T2, class T3>void dataToDistribution(std::vector<T1>& resultDistRange, std::vector<T2>& resultDistFrequency,
 	const T3* dataList, size_t dataCounts, size_t sectionCounts,T1* savedLowerLimitValue = nullptr, T1* savedUpperLimitValue = nullptr) {
 	std::map<T1, T2> ret;	
@@ -197,7 +216,7 @@ template<class T1, class T2, class T3>void dataToDistribution(std::vector<T1>& r
 	}
 }
 //计算一个数据列的分布情况；
-//resultDistRange表示某一分布区间的中心值（非均值），resultDistFrequency表示分布频数（即出现次数）
+//resultDistRange表示某一分布区间的中心值（非均值），resultDistFrequency表示分布频数（即出现次数）, sectionCounts分布区段数(当为0表示采用自适应平滑拟合)
 template<class T1, class T2, class T3>void dataToDistribution(std::vector<T1>& resultDistRange, std::vector<T2>& resultDistFrequency,
 	const vector<T3>& dataList, size_t sectionCounts, T1* savedLowerLimitValue = nullptr, T1* savedUpperLimitValue = nullptr) {
 	return dataToDistribution(resultDistRange, resultDistFrequency, dataList.data(), dataList.size(),

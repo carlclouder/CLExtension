@@ -142,7 +142,7 @@ public:
 	BOOL writeSimpleKLine(const DAYDATASETS1& rtData,LPCTSTR szTitle = _T("Simple Kline"),LONG X = 1,LONG Y = 1);
 	BOOL writeSimpleText(LPCTSTR vlst,LPCTSTR szTitle = _T("Simple Text"),LONG X = 1,LONG Y = 1,COLORREF textClr = CLGOLD);
 	//快速的显示数据分布情况
-	//pData 数据列, nCounts 数据个数, sectionCounts分布区段数
+	//pData 数据列, nCounts 数据个数, sectionCounts分布区段数(当为0表示采用自适应平滑拟合)
 	template<class _Ty> 
 	CLShowTool& writeSimpleDataDistribution(const _Ty* pData, size_t nCounts, size_t sectionCounts,
 		LPCTSTR szTitle = _T("Simple Data Distribution"), LONG X = 1, LONG Y = 1, 
@@ -150,7 +150,8 @@ public:
 		if (!pData || nCounts == 0)
 			throw runtime_error("writeSimpleDataDistribution: org data is not exist!");
 		std::map<DOUBLE, DOUBLE> data;
-		DOUBLE vmax = pData[0], vmin = pData[0], v;
+		DOUBLE vmax, vmin;
+		/*DOUBLE vmax = pData[0], vmin = pData[0], v;
 		for (size_t k = 0; k < nCounts; k++) {
 			v = pData[k];
 			if (v > vmax)vmax = v;
@@ -163,12 +164,15 @@ public:
 			if (v >= vmax) v -= sec;
 			auto x = (DOUBLE(size_t(DOUBLE(v - vmin) / sec)) + 0.5) * sec + vmin;
 			data[x] += 1.0;
-		}
+		}*/
+
+		::dataToDistribution(data, pData, nCounts, sectionCounts, &vmin, &vmax);
+
 		writeSimpleVerLine2D(data, szTitle, X, Y, vmin, vmax, isAddTopText, lineClr, lineClrEx, AxisTextDataAccuracy);
 		return *this;
 	}
 	//快速的显示数据分布情况
-	//vd 数据vector, sectionCounts分布区段数
+	//vd 数据vector, sectionCounts分布区段数(当为0表示采用自适应平滑拟合)
 	template<class _Ty> 
 	CLShowTool& writeSimpleDataDistribution(const vector<_Ty>& vd,size_t sectionCounts,
 		LPCTSTR szTitle = _T("Simple Data Distribution"), LONG X = 1, LONG Y = 1, 

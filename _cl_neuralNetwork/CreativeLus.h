@@ -932,7 +932,8 @@ namespace CreativeLus {
 		//显示内部权值及阈值的数据分布情况，帮助更好的调整预设参数；
 		//函数返回显示器的一个控制id（根据平台不同意义不同，windows下为窗口句柄）;加密网络无法显示；
 		//注意：该函数只是对内核部分参数状态的显示，不会将显示控件对象保存在结构内部，因此应该保存返回值从而实现对控件的后续控制。
-		void* showWbDataDistribution(Int x = 1,Int y = 1,Uint cx = 750,Uint cy = 300, Uint sectionCounts = 100) const;
+		//sectionCounts为分布区段数(当为0，表示采用自适应平滑拟合)
+		void* showWbDataDistribution(Int x = 1,Int y = 1,Uint cx = 750,Uint cy = 300, Uint sectionCounts = 0) const;
 
 		//输出内部权值及阈值的数据分布情况；加密网络无法显示；
 		void exportWbDataDistribution(VLF& retRange, VLF& retFreq, Uint sectionCounts = 50, Float* vmin = nullptr, Float* vmax = nullptr) const;

@@ -227,16 +227,31 @@ void* CLBpKernel::showWbDataDistribution(Int x, Int y, Uint cx, Uint cy, Uint se
 		return nullptr;
 	std::map<double, double> data;
 	double vmin, vmax;
+	//std::map<double, double>::const_iterator i, i2;
+	//ag:
 	dataToDistribution(data, vm_wji_Data, sectionCounts,&vmin,&vmax);
+	//i2 = data.cbegin(); ++i2;
+	/*for (i = data.cbegin(); i!= data.cend() && i2!=data.cend();++i,++i2)
+	{
+		if ((i->second < i2->second * 0.6) || (i->second * 0.6 > i2->second)) {
+			sectionCounts *= 2; 
+			goto ag;
+		}
+	}*/
 	auto pt = new CLShowTool;
 	auto bkrec = CLShowTool::setDefaultSimpleLineRect({ 0,0,long(cx),long(cy) });
 	/*pt->writeSimpleDataDistribution(vm_wji_Data, sectionCounts,
 		CLString().format("%s Wb Data Distribution < size= %u, sec= %u >",
 			getName(), vm_wji_Data.size(), max(1,sectionCounts)).string(),
 		x,y,false,CLGOLD,CLYELLOW,3);*/
-	pt->writeSimpleVerLine2D(data, CLString().format("%s Wb Data Distribution < size= %u, sec= %u/%u >",
-		getName(), vm_wji_Data.size(), data.size(),max(1, sectionCounts)).string(),
-		x, y, vmin, vmax, false, CLGOLD, CLYELLOW, 3);
+	if (sectionCounts != 0)
+		pt->writeSimpleVerLine2D(data, CLString().format("%s Wb Data Distribution < size= %u, sec= %u/%u >",
+			getName(), vm_wji_Data.size(), data.size(), sectionCounts).string(),
+			x, y, vmin, vmax, false, CLGOLD, CLYELLOW, 3);
+	else
+		pt->writeSimpleVerLine2D(data, CLString().format("%s Wb Data Distribution < size= %u, sec= %u£¨×ÔÊÊÓ¦£©>",
+			getName(), vm_wji_Data.size(), data.size()).string(),
+			x, y, vmin, vmax, false, CLGOLD, CLYELLOW, 3);
 	CLShowTool::setDefaultSimpleLineRect(bkrec);
 	CLShowTool::createAndShowInNewThread(0, pt, true);
 	//auto pt = st.copyToShowInNewThread();
