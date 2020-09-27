@@ -32,7 +32,7 @@ public:
 class CLMemPoolLock:public std::mutex {};
 #elif CLMP_USE_LOCK_TYPE == 1
 #include "../_cl_common/CLCommon.h" //高速自定义读写锁
-class CLMemPoolLock :public RWCS {};
+class CLMemPoolLock :public RWLock {};
 #else
 class CLMemPoolLock {  //no use lock, it do nothing
 public:

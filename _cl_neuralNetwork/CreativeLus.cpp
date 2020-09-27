@@ -258,7 +258,7 @@ Bpnn& Bpnn::setTrainState(EBP_TPC currentState)
 
 EBP_TPC Bpnn::getTrainState() const
 {
-	return extend ? ((CLBpExtend*)extend)->m_trainProcControl() : TPC_Enable;
+	return extend ? ((CLBpExtend*)extend)->m_trainProcControl : TPC_Enable;
 }
 
 Bool  Bpnn::train(VLF* pOutEa, VLF* pOutLs, VLF* pOutMc, PCBMonitor _pCbFun, PVoid _pIns) {

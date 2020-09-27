@@ -1,4 +1,4 @@
- #pragma once
+#pragma once
 #ifndef __CL_COMMON_H__
 #define __CL_COMMON_H__
 
@@ -99,7 +99,7 @@ using namespace std;
 #ifndef _CL_COMMON_MATH_DEF_
 #define _CL_COMMON_MATH_DEF_
 
-typedef double VT; 
+typedef double VT;
 //VT数列
 typedef std::vector<VT> VD;
 typedef VD& VD_R;
@@ -118,48 +118,48 @@ VT SUM(VD_RC vec);
 //均值
 VT AVG(VD_RC vec);
 //期望(pi权重)
-VT E(VD_RC v_X,VD_RC v_pi);
+VT E(VD_RC v_X, VD_RC v_pi);
 VT E(VD_RC v_X);
 //方差(pi权重)
-VT VAR(VD_RC v_X,VD_RC v_pi);
+VT VAR(VD_RC v_X, VD_RC v_pi);
 VT VAR(VD_RC v_X);
 //协方差(pix权重，piy权重)
-VT COV(VD_RC v_X,VD_RC v_Y,VD_RC v_pix ,VD_RC v_piy);
-VT COV(VD_RC v_X,VD_RC v_Y);
+VT COV(VD_RC v_X, VD_RC v_Y, VD_RC v_pix, VD_RC v_piy);
+VT COV(VD_RC v_X, VD_RC v_Y);
 //标准差（piy权重)
-VT DVA(VD_RC v_X,VD_RC v_pix);
+VT DVA(VD_RC v_X, VD_RC v_pix);
 VT DVA(VD_RC v_X);
 //求相关系数(pix权重，piy权重)
-VT COR(VD_RC v_X,VD_RC v_Y,VD_RC v_pix,VD_RC v_piy);
-VT COR(VD_RC v_X,VD_RC v_Y);
+VT COR(VD_RC v_X, VD_RC v_Y, VD_RC v_pix, VD_RC v_piy);
+VT COR(VD_RC v_X, VD_RC v_Y);
 
 //---------------------------------------
 //求和
-VT SUM(VTArray vec,VTArraySize si);
+VT SUM(VTArray vec, VTArraySize si);
 //均值
-VT AVG(VTArray vec,VTArraySize si);
+VT AVG(VTArray vec, VTArraySize si);
 //期望(pi权重)
-VT E(VTArray v_X,VTArray v_pi,VTArraySize si);
-VT E(VTArray v_X,VTArraySize si);
+VT E(VTArray v_X, VTArray v_pi, VTArraySize si);
+VT E(VTArray v_X, VTArraySize si);
 //方差(pi权重)
-VT VAR(VTArray v_X,VTArray v_pi,VTArraySize si);
-VT VAR(VTArray v_X,VTArraySize si);
+VT VAR(VTArray v_X, VTArray v_pi, VTArraySize si);
+VT VAR(VTArray v_X, VTArraySize si);
 //协方差(pix权重，piy权重)
-VT COV(VTArray v_X,VTArray v_Y,VTArray v_pix ,VTArray v_piy,VTArraySize si);
-VT COV(VTArray v_X,VTArray v_Y,VTArraySize si);
+VT COV(VTArray v_X, VTArray v_Y, VTArray v_pix, VTArray v_piy, VTArraySize si);
+VT COV(VTArray v_X, VTArray v_Y, VTArraySize si);
 //标准差（piy权重)
-VT DVA(VTArray v_X,VTArray v_pix,VTArraySize si);
-VT DVA(VTArray v_X,VTArraySize si);
+VT DVA(VTArray v_X, VTArray v_pix, VTArraySize si);
+VT DVA(VTArray v_X, VTArraySize si);
 //求相关系数(pix权重，piy权重)
-VT COR(VTArray v_X,VTArray v_Y,VTArray v_pix,VTArray v_piy,VTArraySize si);
-VT COR(VTArray v_X,VTArray v_Y,VTArraySize si);
+VT COR(VTArray v_X, VTArray v_Y, VTArray v_pix, VTArray v_piy, VTArraySize si);
+VT COR(VTArray v_X, VTArray v_Y, VTArraySize si);
 
 //计算一个数据列的分布情况；
 //result的T1表示某一分布区间的中心值（非均值），T2表示分布频数（即出现次数）,   block_%zd (%zd)当为0表示采用自适应平滑拟合)
-template<class T1, class T2, class T3>void dataToDistribution(std::map<T1, T2> & result, const T3 * dataList, size_t dataCounts, size_t sectionCounts,
-	T1 * savedLowerLimitValue = nullptr, T1 * savedUpperLimitValue = nullptr) {
+template<class T1, class T2, class T3>void dataToDistribution(std::map<T1, T2>& result, const T3* dataList, size_t dataCounts, size_t sectionCounts,
+	T1* savedLowerLimitValue = nullptr, T1* savedUpperLimitValue = nullptr) {
 	assert(dataList != nullptr && dataCounts != 0);
-	std::map<T1, T2>::const_iterator i, i2;
+	typename std::map<T1, T2>::const_iterator i, i2;
 	T1 vmax = dataList[0], vmin = dataList[0];
 	size_t agtimes = sectionCounts > 0 ? 100 : 0;
 	if (sectionCounts == 0)sectionCounts = 100;
@@ -189,7 +189,7 @@ ag:
 	i2 = result.cbegin(); ++i2;
 	for (i = result.cbegin(); i != result.cend() && i2 != result.cend(); ++i, ++i2)
 	{
-		if ((i->second * 0.6 / 1.6 >= 1 && i->second*1.0 < i2->second * 0.6) || (i2->second * 0.6 / 1.6 >= 1 && i->second * 0.6 > i2->second*1.0)) {
+		if ((i->second * 0.6 / 1.6 >= 1 && i->second * 1.0 < i2->second * 0.6) || (i2->second * 0.6 / 1.6 >= 1 && i->second * 0.6 > i2->second * 1.0)) {
 			sectionCounts *= 2;
 			goto ag;
 		}
@@ -204,12 +204,12 @@ template<class T1, class T2, class T3>void dataToDistribution(std::map<T1, T2>& 
 //计算一个数据列的分布情况；
 //resultDistRange表示某一分布区间的中心值（非均值），resultDistFrequency表示分布频数（即出现次数）, sectionCounts分布区段数(当为0表示采用自适应平滑拟合)
 template<class T1, class T2, class T3>void dataToDistribution(std::vector<T1>& resultDistRange, std::vector<T2>& resultDistFrequency,
-	const T3* dataList, size_t dataCounts, size_t sectionCounts,T1* savedLowerLimitValue = nullptr, T1* savedUpperLimitValue = nullptr) {
-	std::map<T1, T2> ret;	
+	const T3* dataList, size_t dataCounts, size_t sectionCounts, T1* savedLowerLimitValue = nullptr, T1* savedUpperLimitValue = nullptr) {
+	std::map<T1, T2> ret;
 	dataToDistribution(ret, dataList, dataCounts, sectionCounts, savedLowerLimitValue, savedUpperLimitValue);
 	resultDistRange.reserve(ret.size()); resultDistRange.clear();
 	resultDistFrequency.reserve(ret.size()); resultDistFrequency.clear();
-	for (auto& i: ret)
+	for (auto& i : ret)
 	{
 		resultDistRange.push_back(i.first);
 		resultDistFrequency.push_back(i.second);
@@ -220,7 +220,7 @@ template<class T1, class T2, class T3>void dataToDistribution(std::vector<T1>& r
 template<class T1, class T2, class T3>void dataToDistribution(std::vector<T1>& resultDistRange, std::vector<T2>& resultDistFrequency,
 	const vector<T3>& dataList, size_t sectionCounts, T1* savedLowerLimitValue = nullptr, T1* savedUpperLimitValue = nullptr) {
 	return dataToDistribution(resultDistRange, resultDistFrequency, dataList.data(), dataList.size(),
-		sectionCounts,savedLowerLimitValue ,savedUpperLimitValue);
+		sectionCounts, savedLowerLimitValue, savedUpperLimitValue);
 }
 
 #ifndef _CL_CLSPACE_DEF_
@@ -396,7 +396,7 @@ public:
 		result = intersectCount % 2 == 1;
 		return result;
 	}
-}; 
+};
 template class CLSpaceTemplate<float>;
 typedef CLSpaceTemplate<float>  CLSpaceF;
 template class  CLSpaceTemplate<double>;
@@ -409,7 +409,7 @@ typedef CLSpaceTemplate<double> CLSpace;
 //#define RANDD_MAX (INT_MAX) //本宏适用于生成原始数据的不可用
 #define RANDI_MAX (RANDDIV_MAX / 2 - 1) //最大随机数应该取一半
 //设置随机种子，基于时间和额外算法（区别于srand）
-void setRandomSeed();  
+void setRandomSeed();
 //产生一个随机数，0 ~ max ulonglong;不需要设置种子；
 unsigned long long randi();
 //设置随机种子，基于时间和额外算法（区别于srand）
@@ -449,7 +449,7 @@ unsigned long long randi();
 
 #include <map>
 //定义映射模板类。该类可自动化处理线程同步。
-template <typename A, typename B> 
+template <typename A, typename B>
 class CLMapTemplate {
 public:
 	CLMapTemplate() :pCs(NULL) {};
@@ -520,12 +520,12 @@ public:
 		else if (--m_refCounts == 0)
 			free(this);
 	}
-	void operator delete(void *p)
+	void operator delete(void* p)
 	{
 		((_inlineData<_ID>*)p)->subRef();
 	}
 
-	void operator delete(void *p, size_t size)
+	void operator delete(void* p, size_t size)
 	{
 		for (size_t i = 0; i < size; i++)((_inlineData<_ID>*)(p) + i)->subRef();
 	}
@@ -613,7 +613,7 @@ public:
 	static HRESULT release();
 
 public:
-	LONG writeMiniDump(EXCEPTION_POINTERS *pExceptionInfo);
+	LONG writeMiniDump(EXCEPTION_POINTERS* pExceptionInfo);
 
 private:
 	void setMiniDumpFileName(void);
@@ -632,64 +632,111 @@ private:
 };
 #endif
 
-#ifndef _CL_CS_H_
-#define _CL_CS_H_
-//自定义原子自旋锁
-typedef struct _at_cs {
-	using typeName = _at_cs;
-	_at_cs(const typeName&) = delete;
+#ifndef _CL_LOCK_H_
+#define _CL_LOCK_H_
+
+//自旋原子锁单元
+typedef struct _atomic_lock_base {
+	using typeName = _atomic_lock_base;
+	_atomic_lock_base(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
+
 	LONG bLock;
+	inline _atomic_lock_base() noexcept : bLock(0) {}
+	inline void lock() {
+		while (::InterlockedExchange(&bLock, 1))Sleep(0);
+	}
+	inline void unlock() {
+		::InterlockedExchange(&bLock, 0);
+	}
+	inline bool trylock() {
+		return !::InterlockedExchange(&bLock, 1);
+	}
+}ATLockBase, * PATLockBase;
+
+//自定义原子自旋锁
+typedef struct _atomic_lock :protected ATLockBase
+{
+	using typeName = _atomic_lock;
+	_atomic_lock(const typeName&) = delete;
+	typeName& operator=(const typeName&) = delete;
+
 	DWORD ownerThreadId;
 	LONG lockCounts;
-	_at_cs() noexcept;
-	inline ~_at_cs() {
-		bLock = FALSE;
+	inline _atomic_lock() noexcept :
+		ownerThreadId(0), lockCounts(0) {}
+	inline void lock() {
+		auto cid = GetCurrentThreadId();
+		if (ownerThreadId != cid) {
+			ATLockBase::lock();
+			ownerThreadId = cid;
+		}
+		++lockCounts;
 	}
-	void lock();
-	void unlock();
-	bool trylock();
-}ATCS, * PATCS;
+
+	inline void unlock() {
+		if (GetCurrentThreadId() == ownerThreadId)
+			if (--lockCounts == 0) {
+				ownerThreadId = 0;
+				ATLockBase::unlock();
+			}
+	}
+
+	inline bool trylock() {
+		auto cid = GetCurrentThreadId();
+		if (ownerThreadId != cid) {
+			if (!ATLockBase::trylock())
+				return false;
+			ownerThreadId = cid;
+		}
+		++lockCounts;
+		return true;
+	}
+}ATLock, * PATLock;
+
 //Windows临界区
-typedef struct _w_cs:CRITICAL_SECTION {
+typedef struct _w_cs :CRITICAL_SECTION {
 	using typeName = _w_cs;
 	_w_cs(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
 	inline _w_cs() noexcept { InitializeCriticalSection(this); }
 	inline ~_w_cs() { DeleteCriticalSection(this); }
-	inline void lock() {EnterCriticalSection(this);	}
-	inline void unlock() {LeaveCriticalSection(this);}
-	inline bool trylock() {return TryEnterCriticalSection(this);}
+	inline void lock() { EnterCriticalSection(this); }
+	inline void unlock() { LeaveCriticalSection(this); }
+	inline bool trylock() { return TryEnterCriticalSection(this); }
 }WCS, * PWCS;
-//RWLock读写锁
-typedef struct _rw_cs :SRWLOCK {
-	using typeName = _rw_cs;
-	_rw_cs(const typeName&) = delete;
+
+//RWLock读写锁(windows 平台)  
+typedef struct _rw_lock :SRWLOCK {
+	using typeName = _rw_lock;
+	_rw_lock(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
 	DWORD ownerThreadId;
 	LONG lockCounts;
-	_rw_cs() noexcept;
+	_rw_lock() noexcept;
 	void lock();
 	void unlock();
 	bool trylock();
-	inline void lockShared() {::AcquireSRWLockShared(this);}
-	inline void unlockShared() {::ReleaseSRWLockShared(this);}
-	inline bool trylockShared() {return ::TryAcquireSRWLockShared(this);}
-}RWCS, * PRWCS;
+	inline void lockShared() { ::AcquireSRWLockShared(this); }
+	inline void unlockShared() { ::ReleaseSRWLockShared(this); }
+	inline bool trylockShared() { return ::TryAcquireSRWLockShared(this); }
+}RWLock, * PRWLock;
+
 #include "mutex"
-//c++STL锁
-typedef struct _std_cs :protected std::mutex {
-	using typeName = _std_cs;	
-	_std_cs(const typeName&) = delete;
+//c++ STL锁
+typedef struct _std_lock :protected std::mutex {
+	using typeName = _std_lock;
+	_std_lock(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
-	inline _std_cs()noexcept :std::mutex() {}
-	inline ~_std_cs() {}
+	inline _std_lock()noexcept :std::mutex() {}
+	inline ~_std_lock() {}
 	inline void lock() { std::mutex::lock(); }
 	inline void unlock() { std::mutex::unlock(); }
 	inline bool trylock() { return std::mutex::try_lock(); }
-}STDCS, * PSTDCS;
+}STDLock, * PSTDLock;
+
 //公用锁名称
-using CLCS = RWCS;
+using CLCS = RWLock;
 #endif
 
 //内部锁类，基类
@@ -699,21 +746,21 @@ using CLCS = RWCS;
 class CLCSLock
 {
 public:
-	using cstype = RWCS;
-	//using cstype = ATCS;
+	using cstype = RWLock;
+	//using cstype = ATLock;
 	//using cstype = WCS;
-	//using cstype = STDCS;
-	CLCSLock()noexcept{}
-	CLCSLock(const CLCSLock& other){}
+	//using cstype = STDLock;
+	CLCSLock()noexcept {}
+	CLCSLock(const CLCSLock& other) {}
 	CLCSLock& operator=(const CLCSLock&) {};
-	~CLCSLock();	
+	~CLCSLock();
 	//主锁，请用于线程队列的增加删除操作
-	inline void lock(void){
+	inline void lock(void) {
 		m_cs.lock();
-	}	
-	inline void unlock(void){
+	}
+	inline void unlock(void) {
 		m_cs.unlock();
-	}	
+	}
 	//自由锁，可用于子类自由调用，csId在lock和unlock过程中前后必须一致
 	void lock(int csId);
 	//自由锁，可用于子类自由调用，csId在lock和unlock过程中前后必须一致
@@ -740,29 +787,32 @@ public:
 	int nIndex;//线程组索引，从1开始
 	int nTotals;//线程组总启动数
 	HANDLE hThread;//线程真实句柄，由外部控制线程释放
-	DWORD tId ;//线程id
+	DWORD tId;//线程id
 	HANDLE quitEvent;//线程退出事件对象句柄,该句柄由本线程自身负责清除
 	CLTaskSvcTrdSupport() { reset(); }
-	void reset() { ZeroMemory(this,sizeof(CLTaskSvcTrdSupport)); }
+	void reset() { ZeroMemory(this, sizeof(CLTaskSvcTrdSupport)); }
 }*PCLTaskSvcTrdSupport;
+
 //线程参数结构体
 typedef class CLTaskSvcTrdParam {
 public:
-	const CLTaskSvcTrdSupport info;;//保存该线程的在工作组内的相关信息
+	const CLTaskSvcTrdSupport info;//保存该线程的在工作组内的相关信息
 	DWORD_PTR extraData[10];//保存一些额外数据,用于后续函数间共享
-	CLTaskSvcTrdParam(const CLTaskSvcTrdSupport& _info):info(_info){ reset(); }
+	CLTaskSvcTrdParam(const CLTaskSvcTrdSupport& _info) :info(_info) { reset(); }
 	void reset() { ZeroMemory(extraData, sizeof(extraData)); }
 }*PCLTaskSvcTrdParam;
+
 //检查消息队列是否由WM_QUIT消息，并移除该消息
 BOOL CHECK_WM_QUIT();
+
 //线程组管理类，基类
-class CLTaskSvc:public CLCSLock
+class CLTaskSvc :public CLCSLock
 {
 public:
 	//start用于激活一定数量的工作者线程，默认激活数量为1。返回当前线程队列大小。第二个参数isDefaultSuspend = TRUE 时候应该显示调用resume用于恢复挂起的线程组；
 	//函数为非阻塞函数，在创建或启动线程组后将立即返回，若要实现线程组与调用线程同步，请在函数调用后执行wait操作等待线程组全部退出；
 	//num = 0则启动cpu核心数量的线程；
-	virtual size_t start(int num = 1,BOOL isDefaultSuspend = FALSE);
+	virtual size_t start(int num = 1, BOOL isDefaultSuspend = FALSE);
 	//手动重启线程组，当start调用的第二个参数isDefaultSuspend = TRUE时候应该显示调用
 	void resume();
 	//手动挂起线程组
@@ -774,11 +824,11 @@ public:
 	//获取正在运行线程数
 	size_t getActivateThreadsNum() const;
 	//线程组是否正在运行
-	BOOL isRunning() const {return getActivateThreadsNum() > 0 ? TRUE : FALSE;	}
+	BOOL isRunning() const { return getActivateThreadsNum() > 0 ? TRUE : FALSE; }
 	//取得cpu核心数
-	static DWORD getCpuCoreCounts();	 
+	static DWORD getCpuCoreCounts();
 	void setWaitTimeToQuit(DWORD dt = INFINITE) { m_waitTimeToQuit = dt; }
-	DWORD getWaitTimeToQuit() const {return m_waitTimeToQuit;}
+	DWORD getWaitTimeToQuit() const { return m_waitTimeToQuit; }
 
 	virtual ~CLTaskSvc();
 	//close用于等待线程结束并关闭线程，退出线程由子类控制。(该方法内部使用3种不同方式)
@@ -790,7 +840,7 @@ public:
 	//外部调用线程调用此函数等待线程组退出，sensitivityMinsec表示一个等待判断的灵明度，毫秒记，越小表示一个等待判断周期越短
 	//（该参数并不表示等待的最大时间而是判断间隔），返回等待总时间毫秒；
 	ULONGLONG wait(UINT sensitivityMinsec = 100)const {
-		ULONGLONG  sp = 0; 
+		ULONGLONG  sp = 0;
 		do {
 			Sleep(sensitivityMinsec);
 			sp += sensitivityMinsec;
@@ -805,7 +855,7 @@ protected:
 	//只有子类才可以构造父类，拒绝外部访问构造类实例
 	CLTaskSvc();
 	//线程启动时最先运行的内部初始化过程函数，必须返回TRUE，才会执行后续的run，否则直接进入exist
-	virtual BOOL init(PCLTaskSvcTrdParam var); 
+	virtual BOOL init(PCLTaskSvcTrdParam var);
 	//线程主工作体,纯虚函数需子类实现
 	virtual DWORD run(PCLTaskSvcTrdParam var) = 0;
 	//线程退出时的最后运行函数，线程返回值由该函数决定
@@ -819,7 +869,7 @@ private:
 
 	DWORD m_waitTimeToQuit = INFINITE;
 
-	int nPriority ;
+	int nPriority;
 };
 
 //判断quit事件对象,有信号就退出循环
@@ -880,29 +930,614 @@ private:
 //原子操作类
 #ifndef _CL_ATOMIC_H_
 #define _CL_ATOMIC_H_
-//默认状态下CLAtomic类对象的原子操作模式是否启动，原子操作在保证线程安全情况下将降低代码效率；
+//默认状态下__CLAtomic_Old类对象的原子操作模式是否启动，原子操作在保证线程安全情况下将降低代码效率；
 #define CLAtomic_bUseAtomc_def true
 
+template  <class T, bool = false>
+struct _atomic_value;
+
+template  <class T>
+struct _atomic_value<T, false> {
+	_atomic_value() = default;
+	constexpr _atomic_value(const T _Value) noexcept : _Value(_Value) {}
+	constexpr _atomic_value(T& _Value, bool) noexcept : _Value(_Value) {}
+	alignas(sizeof(T)) mutable T _Value {};
+};
+
+template  <class T>
+struct _atomic_value<T, true> {
+	inline static T& _getStaticT() {
+		static T _g_atv = 0;
+		return _g_atv;
+	}
+	_atomic_value() :_Value(_g_atv) {}
+	constexpr _atomic_value(const T _Value) noexcept : _Value(_getStaticT()) {}
+	constexpr _atomic_value(T& _Value, bool) noexcept : _Value(_Value) {}
+	alignas(sizeof(T)) T& _Value;
+};
+//值类型特化
+template <class T, bool isRef = false>
+struct _atomic_storage :_atomic_value<T, isRef> {
+protected:
+	bool _bUseAtomc{ CLAtomic_bUseAtomc_def };
+
+	using _Base = _atomic_value<T, isRef>;
+	_atomic_storage() = default;
+	constexpr _atomic_storage(const T _Value) noexcept : _Base(_Value) {}
+	constexpr _atomic_storage(T& _Value, bool) noexcept : _Base(_Value, true) {}
+	void store(const T _Value) noexcept { this->_Value = _Value; }
+	T load() const noexcept { return _Value; }
+
+	template<size_t = sizeof(T)>
+	bool compare_exchange_strong(T& _Expected, volatile T _Desired) noexcept;
+	template<>
+	bool compare_exchange_strong<2>(T& _Expected, volatile T _Desired) noexcept {
+		static_assert(sizeof(short) == sizeof(T), "Tried to reinterpret memory is not same. ");
+		volatile short old = *(short*)(&_Expected);
+		if (InterlockedCompareExchange(reinterpret_cast<short*>(&_Value), *(short*)(&_Desired), old) == old) {
+			return true;
+		}
+		else {
+			_Expected = this->load();
+			return false;
+		}
+	}
+	template<>
+	bool compare_exchange_strong<4>(T& _Expected, volatile T _Desired) noexcept {
+		static_assert(sizeof(long) == sizeof(T), "Tried to reinterpret memory is not same. ");
+		volatile long old = *(long*)(&_Expected);
+		if (InterlockedCompareExchange(reinterpret_cast<long*>(&_Value), *(long*)(&_Desired), old) == old) {
+			return true;
+		}
+		else {
+			_Expected = this->load();
+			return false;
+		}
+	}
+	template<>
+	bool compare_exchange_strong<8>(T& _Expected, volatile T _Desired) noexcept {
+		static_assert(sizeof(long long) == sizeof(T), "Tried to reinterpret memory is not same. ");
+		volatile long long old = *(long long*)(&_Expected);
+		if (InterlockedCompareExchange64(reinterpret_cast<long long*>(&_Value), *(long long*)(&_Desired), old) == old) {
+			return true;
+		}
+		else {
+			_Expected = this->load();
+			return false;
+		}
+	}
+
+public:
+	//设置该原子对象的状态为：执行原子操作，或执行非原子操作；原子操作更耗时；
+	void setUseAtomic(bool bUseAtomc = CLAtomic_bUseAtomc_def) noexcept {
+		_bUseAtomc = bUseAtomc;
+	}
+	//判断该对象状态，是执行原子操作，返回true；
+	bool isUseAtomic() const noexcept {
+		return _bUseAtomc;
+	}
+};
+
+template <class T, size_t = sizeof(T), bool = false>
+struct _atomic_integral; // not defined
+
+template <class _integral, class T>
+volatile _integral* _atomic_address_as(T& _Source) noexcept {
+	static_assert(is_integral_v<_integral>, "Tried to reinterpret memory as non-integral");
+	return &reinterpret_cast<volatile _integral&>(_Source);
+}
+
+template <class T, bool isRef>
+struct _atomic_integral<T, 1, isRef> : _atomic_storage<T, isRef> { // CLAtomic integral operations using 1-byte intrinsics
+protected:
+	using _Base = _atomic_storage<T, isRef>;
+	_atomic_integral() = default;
+	constexpr _atomic_integral(const T _Value) noexcept : _Base(_Value) {}
+	constexpr _atomic_integral(T& _Value, bool) noexcept : _Base(_Value, true) {}
+
+	T self_add(T _Operand) noexcept {
+		char _Result =
+			InterlockedExchangeAdd8(_atomic_address_as<char>(this->_Value), static_cast<char>(_Operand));
+		return static_cast<T>(_Result);
+	}
+	T self_and(T _Operand) noexcept {
+		char _Result =
+			InterlockedAnd8(_atomic_address_as<char>(this->_Value), static_cast<char>(_Operand));
+		return static_cast<T>(_Result);
+	}
+	T self_or(T _Operand) noexcept {
+		char _Result =
+			InterlockedOr8(_atomic_address_as<char>(this->_Value), static_cast<char>(_Operand));
+		return static_cast<T>(_Result);
+	}
+	T self_xor(T _Operand) noexcept {
+		char _Result =
+			InterlockedXor8(_atomic_address_as<char>(this->_Value), static_cast<char>(_Operand));
+		return static_cast<T>(_Result);
+	}
+	T operator++(int) noexcept {
+		return static_cast<T>(InterlockedExchangeAdd8(_atomic_address_as<char>(this->_Value), 1));
+	}
+	T operator++() noexcept {
+		unsigned char _Before =
+			static_cast<unsigned char>(InterlockedExchangeAdd8(_atomic_address_as<char>(this->_Value), 1));
+		++_Before;
+		return static_cast<T>(_Before);
+	}
+	T operator--(int) noexcept {
+		return static_cast<T>(InterlockedExchangeAdd8(_atomic_address_as<char>(this->_Value), -1));
+	}
+	T operator--() noexcept {
+		unsigned char _Before =
+			static_cast<unsigned char>(InterlockedExchangeAdd8(_atomic_address_as<char>(this->_Value), -1));
+		--_Before;
+		return static_cast<T>(_Before);
+	}
+};
+
+template <class T, bool isRef>
+struct _atomic_integral<T, 2, isRef> : _atomic_storage<T, isRef> { // CLAtomic integral operations using 2-byte intrinsics
+protected:
+	using _Base = _atomic_storage<T, isRef>;
+	_atomic_integral() = default;
+	constexpr _atomic_integral(const T _Value) noexcept : _Base(_Value) {}
+	constexpr _atomic_integral(T& _Value, bool) noexcept : _Base(_Value, true) {}
+	T self_add(T _Operand) noexcept {
+		short _Result =
+			InterlockedExchangeAdd16(_atomic_address_as<short>(this->_Value),
+				static_cast<short>(_Operand));
+		return static_cast<T>(_Result);
+	}
+	T self_and(T _Operand) noexcept {
+		short _Result =
+			InterlockedAnd16(_atomic_address_as<short>(this->_Value), static_cast<short>(_Operand));
+		return static_cast<T>(_Result);
+	}
+	T self_or(T _Operand) noexcept {
+		short _Result =
+			InterlockedOr16(_atomic_address_as<short>(this->_Value), static_cast<short>(_Operand));
+		return static_cast<T>(_Result);
+	}
+	T self_xor(T _Operand) noexcept {
+		short _Result =
+			InterlockedXor16(_atomic_address_as<short>(this->_Value),
+				static_cast<short>(_Operand));
+		return static_cast<T>(_Result);
+	}
+	T operator++(int) noexcept {
+		unsigned short _After =
+			static_cast<unsigned short>(InterlockedIncrement16(_atomic_address_as<short>(this->_Value)));
+		--_After;
+		return static_cast<T>(_After);
+	}
+	T operator++() noexcept {
+		return static_cast<T>(InterlockedIncrement16(_atomic_address_as<short>(this->_Value)));
+	}
+	T operator--(int) noexcept {
+		unsigned short _After =
+			static_cast<unsigned short>(InterlockedDecrement16(_atomic_address_as<short>(this->_Value)));
+		++_After;
+		return static_cast<T>(_After);
+	}
+	T operator--() noexcept {
+		return static_cast<T>(InterlockedDecrement16(_atomic_address_as<short>(this->_Value)));
+	}
+};
+
+template <class T, bool isRef>
+struct _atomic_integral<T, 4, isRef> : _atomic_storage<T, isRef> { // CLAtomic integral operations using 4-byte intrinsics
+protected:
+	using _Base = _atomic_storage<T, isRef>;
+	_atomic_integral() = default;
+	constexpr _atomic_integral(const T _Value) noexcept : _Base(_Value) {}
+	constexpr _atomic_integral(T& _Value, bool) noexcept : _Base(_Value, true) {}
+
+	T self_add(T _Operand) noexcept {
+		long _Result =
+			InterlockedExchangeAdd(_atomic_address_as<long>(this->_Value),
+				static_cast<long>(_Operand));
+		return static_cast<T>(_Result);
+	}
+
+	T self_and(T _Operand) noexcept {
+		long _Result =
+
+			InterlockedAnd(_atomic_address_as<long>(this->_Value), static_cast<long>(_Operand));
+		return static_cast<T>(_Result);
+	}
+
+	T self_or(T _Operand) noexcept {
+		long _Result =
+
+			InterlockedOr(_atomic_address_as<long>(this->_Value), static_cast<long>(_Operand));
+		return static_cast<T>(_Result);
+	}
+
+	T self_xor(T _Operand) noexcept {
+		long _Result =
+
+			InterlockedXor(_atomic_address_as<long>(this->_Value), static_cast<long>(_Operand));
+		return static_cast<T>(_Result);
+	}
+
+	T operator++(int) noexcept {
+		unsigned long _After =
+			static_cast<unsigned long>(InterlockedIncrement(_atomic_address_as<long>(this->_Value)));
+		--_After;
+		return static_cast<T>(_After);
+	}
+
+	T operator++() noexcept {
+		return static_cast<T>(InterlockedIncrement(_atomic_address_as<long>(this->_Value)));
+	}
+
+	T operator--(int) noexcept {
+		unsigned long _After =
+			static_cast<unsigned long>(InterlockedDecrement(_atomic_address_as<long>(this->_Value)));
+		++_After;
+		return static_cast<T>(_After);
+	}
+
+	T operator--() noexcept {
+		return static_cast<T>(InterlockedDecrement(_atomic_address_as<long>(this->_Value)));
+	}
+};
+
+template <class T, bool isRef>
+struct _atomic_integral<T, 8, isRef> : _atomic_storage<T, isRef> { // CLAtomic integral operations using 8-byte intrinsics
+protected:
+	using _Base = _atomic_storage<T, isRef>;
+	_atomic_integral() = default;
+	constexpr _atomic_integral(const T _Value) noexcept : _Base(_Value) {}
+	constexpr _atomic_integral(T& _Value, bool) noexcept : _Base(_Value, true) {}
+
+	T self_add(T _Operand) noexcept {
+		long long _Result =
+			InterlockedExchangeAdd64(
+				_atomic_address_as<long long>(this->_Value), static_cast<long long>(_Operand));
+		return static_cast<T>(_Result);
+	}
+
+	T self_and(T _Operand) noexcept {
+		long long _Result =
+			InterlockedAnd64(_atomic_address_as<long long>(this->_Value),
+				static_cast<long long>(_Operand));
+		return static_cast<T>(_Result);
+	}
+
+	T self_or(T _Operand) noexcept {
+		long long _Result =
+			InterlockedOr64(_atomic_address_as<long long>(this->_Value),
+				static_cast<long long>(_Operand));
+		return static_cast<T>(_Result);
+	}
+
+	T self_xor(T _Operand) noexcept {
+		long long _Result =
+			InterlockedXor64(_atomic_address_as<long long>(this->_Value),
+				static_cast<long long>(_Operand));
+		return static_cast<T>(_Result);
+	}
+
+	T operator++(int) noexcept {
+		unsigned long long _After =
+			static_cast<unsigned long long>(InterlockedIncrement64(_atomic_address_as<long long>(this->_Value)));
+		--_After;
+		return static_cast<T>(_After);
+	}
+
+	T operator++() noexcept {
+		return static_cast<T>(InterlockedIncrement64(_atomic_address_as<long long>(this->_Value)));
+	}
+
+	T operator--(int) noexcept {
+		unsigned long long _After =
+			static_cast<unsigned long long>(InterlockedDecrement64(_atomic_address_as<long long>(this->_Value)));
+		++_After;
+		return static_cast<T>(_After);
+	}
+
+	T operator--() noexcept {
+		return static_cast<T>(InterlockedDecrement64(_atomic_address_as<long long>(this->_Value)));
+	}
+};
+
+template <class T, bool isRef = false>
+struct _atomic_integral_facade : _atomic_integral<T, sizeof(T), isRef> {
+protected:
+	using _Base = _atomic_integral<T, sizeof(T), isRef>;
+	using difference_type = T;
+	_atomic_integral_facade() = default;
+	constexpr _atomic_integral_facade(const T _Value) noexcept : _Base(_Value) {}
+	constexpr _atomic_integral_facade(T& _Value, bool) noexcept : _Base(_Value, true) {}
+
+public:
+	T operator++(int)  noexcept {
+		return isUseAtomic() ? const_cast<_atomic_integral_facade*>(this)->_Base::operator++(0) : _Value++;
+	}
+
+	T operator++()  noexcept {
+		return isUseAtomic() ? const_cast<_atomic_integral_facade*>(this)->_Base::operator++() : ++_Value;
+	}
+
+	T operator--(int)  noexcept {
+		return isUseAtomic() ? const_cast<_atomic_integral_facade*>(this)->_Base::operator--(0) : _Value--;
+	}
+
+	T operator--()  noexcept {
+		return isUseAtomic() ? const_cast<_atomic_integral_facade*>(this)->_Base::operator--() : --_Value;
+	}
+
+	T operator+=(T _Operand) noexcept {
+		return isUseAtomic() ? static_cast<T>(this->_Base::self_add(_Operand) + _Operand) : _Value += _Operand;
+	}
+
+	T operator-=(T _Operand) noexcept {
+		return isUseAtomic() ? static_cast<T>(this->_Base::self_add(T(0) - _Operand) - _Operand) : _Value -= _Operand;
+	}
+
+	T operator&=(T _Operand) noexcept {
+		return isUseAtomic() ? static_cast<T>(this->_Base::self_and(_Operand) & _Operand) : _Value &= _Operand;
+	}
+
+	T operator|=(T _Operand) noexcept {
+		return isUseAtomic() ? static_cast<T>(this->_Base::self_or(_Operand) | _Operand) : _Value |= _Operand;
+	}
+
+	T operator^=(T _Operand) noexcept {
+		return isUseAtomic() ? static_cast<T>(this->_Base::self_xor(_Operand) ^ _Operand) : _Value ^= _Operand;
+	}
+
+	template<class T2>
+	T operator*=(T2 _Operand) noexcept {
+		if (!isUseAtomic())return _Value *= _Operand;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = _Temp * _Operand));
+		return _rt;
+	}
+	template<class T2>
+	T operator/=(T2 _Operand) noexcept {
+		if (!isUseAtomic())return _Value /= _Operand;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = _Temp / _Operand));
+		return _rt;
+	}
+
+	T operator%=(int _Operand) noexcept {
+		if (!isUseAtomic())return _Value %= _Operand;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = _Temp % _Operand));
+		return _rt;
+	}
+};
+
+template <class T, bool isRef = false>
+struct _atomic_floating : _atomic_storage<T, isRef> {
+protected:
+	// provides CLAtomic floating-point operations
+	using _Base = _atomic_storage<T, isRef>;
+	using difference_type = T;
+	_atomic_floating() = default;
+	constexpr _atomic_floating(const T _Value) noexcept : _Base(_Value) {}
+	constexpr _atomic_floating(T& _Value, bool) noexcept : _Base(_Value, true) {}
+
+public:
+	template<class T2>
+	T operator+=(T2 _Operand) noexcept {
+		if (!isUseAtomic())return _Value += _Operand;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = _Temp + _Operand));
+		return _rt;
+	}
+	template<class T2>
+	T operator-=(T2 _Operand) noexcept {
+		if (!isUseAtomic())return _Value -= _Operand;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = _Temp - _Operand));
+		return _rt;
+	}
+	template<class T2>
+	T operator*=(T2 _Operand) noexcept {
+		if (!isUseAtomic())return _Value *= _Operand;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = _Temp * _Operand));
+		return _rt;
+	}
+	template<class T2>
+	T operator/=(T2 _Operand) noexcept {
+		if (!isUseAtomic())return _Value /= _Operand;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = _Temp / _Operand));
+		return _rt;
+	}
+	template<size_t = sizeof(T)>
+	T operator%=(int _Operand) noexcept { throw runtime_error; return 0; }
+	template<>
+	T operator%=<4>(int _Operand) noexcept {
+		if (!isUseAtomic())return _Value = long(_Value) % _Operand;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = long(_Temp) % _Operand));
+		return _rt;
+	}
+	template<>
+	T operator%=<8>(int _Operand) noexcept {
+		if (!isUseAtomic())return _Value = long long(_Value) % _Operand;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = long long(_Temp) % _Operand));
+		return _rt;
+	}
+
+	T operator++() noexcept {
+		if (!isUseAtomic())return ++_Value;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = _Temp + T(1)));
+		return _rt;
+	}
+
+	T operator--() noexcept {
+		if (!isUseAtomic())return --_Value;
+		T _Temp{ this->load() }; T _rt;
+		while (!this->compare_exchange_strong(_Temp, _rt = _Temp - T(1)));
+		return _rt;
+	}
+
+	T operator++(int) noexcept {
+		if (!isUseAtomic())return _Value++;
+		T _Temp{ this->load() };
+		while (!this->compare_exchange_strong(_Temp, _Temp + T(1)));
+		return _Temp;
+	}
+
+	T operator--(int) noexcept {
+		if (!isUseAtomic())return _Value--;
+		T _Temp{ this->load() };
+		while (!this->compare_exchange_strong(_Temp, _Temp - T(1)));
+		return _Temp;
+	}
+};
+
+//泛型化类型选择
+template <class T>
+using _choose_atomic_base_t =
+typename _Select<is_integral_v<T> && !is_same_v<bool, T>>::template _Apply<_atomic_integral_facade<T>,
+	typename _Select<is_floating_point_v<T>>::template _Apply<_atomic_floating<T>,
+	_atomic_storage<T>>>;
+
+template <class T>
+using _choose_atomic_ref_base_t =
+typename _Select<is_integral_v<T> && !is_same_v<bool, T>>::template _Apply<_atomic_integral_facade<T, true>,
+	typename _Select<is_floating_point_v<T>>::template _Apply<_atomic_floating<T, true>,
+	_atomic_storage<T, true>>>;
+
+template <class T, bool isRef = false>
+using _choose_atomic_base_or_ref_t =
+typename _Select<isRef>::template _Apply<_choose_atomic_ref_base_t<T>, _choose_atomic_base_t<T>>;
+
 //原子操作类（模板）
+template <class T>
+struct CLAtomic : _choose_atomic_base_or_ref_t<T> { // CLAtomic value
+private:
+	using _Base = _choose_atomic_base_or_ref_t<T>;
+
+public:
+	// clang-format off
+	static_assert(is_trivially_copyable_v<T>&& is_copy_constructible_v<T>&& is_move_constructible_v<T>
+		&& is_copy_assignable_v<T>&& is_move_assignable_v<T>,
+		"CLAtomic<T> requires T to be trivially copyable, copy constructible, move constructible, copy assignable, "
+		"and move assignable.");
+	// clang-format on
+
+	using value_type = T;
+
+	//标准构造，初始状态标记对象为执行原子操作的；
+	constexpr CLAtomic(const T _Value) noexcept : _Base(_Value) {}
+
+	//默认构造，初始状态标记对象为执行原子操作的；
+	constexpr CLAtomic() noexcept(is_nothrow_default_constructible_v<T>) : _Base() {}
+
+	//拷贝构造，初始状态标记对象为执行原子操作的，并忽略原对象的原子操作标记状态，不予复制；
+	CLAtomic(const CLAtomic& v)
+		: _Base(v.load()) {
+	}
+	using _Base::load;
+	using _Base::store;
+	//拷贝构造，初始状态标记对象为执行原子操作的，并忽略原对象的原子操作标记状态，不予复制；
+	template<class T2>
+	CLAtomic(const CLAtomic<T2>& v)
+		: _Base(v.load()) {
+	}
+	T operator=(const T v2) {
+		return _Value = v2;
+	}
+	template<class T2>
+	T operator=(const T2 v2) {
+		return _Value = v2;
+	}
+
+	//赋值，并忽略原对象的原子操作标记状态，不予复制；
+	T operator=(const CLAtomic& v2) {
+		return _Value = v2.load();
+	}
+
+	//赋值，并忽略原对象的原子操作标记状态，不予复制；
+	template<class T2>
+	T operator=(const CLAtomic<T2>& v2) {
+		return _Value = v2.load();
+	}
+
+	operator T() const noexcept {
+		return this->load();
+	}
+};
+
+//原子操作引用类（模板）
+template <class T>
+struct CLAtomicRef : _choose_atomic_base_or_ref_t<T, true> { // CLAtomic value
+private:
+	using _Base = _choose_atomic_base_or_ref_t<T, true>;
+
+public:
+	// clang-format off
+	static_assert(is_trivially_copyable_v<T>&& is_copy_constructible_v<T>&& is_move_constructible_v<T>
+		&& is_copy_assignable_v<T>&& is_move_assignable_v<T>,
+		"CLAtomic<T> requires T to be trivially copyable, copy constructible, move constructible, copy assignable, "
+		"and move assignable.");
+	// clang-format on
+
+	using value_type = T;
+
+	//标准构造，初始状态标记对象为执行原子操作的；
+	constexpr CLAtomicRef(T& _Value) noexcept : _Base(_Value, true) {}
+
+	//默认构造，初始状态标记对象为执行原子操作的；
+	constexpr CLAtomicRef() noexcept(is_nothrow_default_constructible_v<T>) = delete;
+
+	//拷贝构造，初始状态标记对象为执行原子操作的，并忽略原对象的原子操作标记状态，不予复制；
+	CLAtomicRef(const CLAtomicRef& v)
+		: _Base(v._Value, true) {
+	}
+
+	using _Base::load;
+	using _Base::store;
+
+	T operator=(const T v2) {
+		return _Value = v2;
+	}
+	template<class T2>
+	T operator=(const T2 v2) {
+		return _Value = v2;
+	}
+
+	//赋值，并忽略原对象的原子操作标记状态，不予复制；
+	T operator=(const CLAtomicRef& v2) {
+		return _Value = v2.load();
+	}
+	template<class T2>
+	T operator=(const CLAtomicRef<T2>& v2) {
+		return _Value = v2.load();
+	}
+	T operator=(const CLAtomic<T>& v2) {
+		return _Value = v2.load();
+	}
+	//赋值，并忽略原对象的原子操作标记状态，不予复制；
+	template<class T2>
+	T operator=(const CLAtomic<T2>& v2) {
+		return _Value = v2.load();
+	}
+	operator T() const noexcept {
+		return this->load();
+	}
+};
+
+//旧的原子操作类（模板,非浮点类型执行速度慢）
 template<class T>
-class CLAtomic {	
-	static_assert(sizeof(T) % 2 == 0, "CLAtomic: target type is not support!");
+class __CLAtomic_Old {
+	static_assert(sizeof(T) % 2 == 0, "__CLAtomic_Old: target type is not support!");
 protected:
 	T Target;
 	bool bUseAtomc;
 
-	/*inline static bool atomicCAS(CHAR* dest, CHAR newvalue, CHAR oldvalue)
-	{
-		SHORT cov = *reinterpret_cast<SHORT volatile*>(dest);cov &= 0xff00;
-		SHORT new1 = newvalue;new1 |= cov;
-		SHORT old = oldvalue;old |= cov;
-		SHORT tem = InterlockedCompareExchange16(reinterpret_cast<SHORT volatile*>(dest),new1,old);
-		return tem == old ? true : false;
-	}*/
-	/*inline static bool atomicCAS(UCHAR* dest, UCHAR newvalue, UCHAR oldvalue)
-	{
-		return atomicCAS(reinterpret_cast<CHAR volatile*>(dest), CHAR(newvalue), CHAR(oldvalue));
-	}*/
+
 	inline static bool atomicCAS(volatile SHORT* dest, SHORT newvalue, SHORT oldvalue)
 	{
 		return InterlockedCompareExchange16(dest, newvalue, oldvalue) == oldvalue ? true : false;
@@ -929,7 +1564,7 @@ protected:
 	}
 	inline static bool atomicCAS(volatile LONG64* dest, LONG64 newvalue, LONG64 oldvalue)
 	{
-		return InterlockedCompareExchange64(dest,newvalue,oldvalue) == oldvalue ? true : false;
+		return InterlockedCompareExchange64(dest, newvalue, oldvalue) == oldvalue ? true : false;
 	}
 	inline static bool atomicCAS(volatile ULONG64* dest, ULONG64 newvalue, ULONG64 oldvalue)
 	{
@@ -938,15 +1573,15 @@ protected:
 	inline static bool atomicCAS(volatile FLOAT* dest, FLOAT newvalue, FLOAT oldvalue)
 	{
 		auto old1 = *(LONG*)(void*)&oldvalue;
-		return InterlockedCompareExchange(reinterpret_cast<LONG volatile*>(dest), *(LONG*)(void*)&newvalue,old1) == old1 ? true : false;
+		return InterlockedCompareExchange(reinterpret_cast<LONG volatile*>(dest), *(LONG*)(void*)&newvalue, old1) == old1 ? true : false;
 	}
 	inline static bool atomicCAS(volatile DOUBLE* dest, DOUBLE newvalue, DOUBLE oldvalue)
 	{
 		auto old1 = *(LONG64*)(void*)&oldvalue;
-		return InterlockedCompareExchange64(reinterpret_cast<LONG64 volatile*>(dest), *(LONG64*)(void*)&newvalue,old1) == old1 ? true : false;
+		return InterlockedCompareExchange64(reinterpret_cast<LONG64 volatile*>(dest), *(LONG64*)(void*)&newvalue, old1) == old1 ? true : false;
 	}
 	inline void set(T dest) {
-		throw logic_error("CLAtomic::set is not impliment!");
+		throw logic_error("__CLAtomic_Old::set is not impliment!");
 		Target = dest;
 	}
 	inline T increment()
@@ -954,7 +1589,7 @@ protected:
 		T old;
 		do {
 			old = Target;
-		} while (!CLAtomic::atomicCAS(&Target, old + T(1), old));
+		} while (!__CLAtomic_Old::atomicCAS(&Target, old + T(1), old));
 		return old;
 	}
 	inline T decrement()
@@ -962,7 +1597,7 @@ protected:
 		T old;
 		do {
 			old = Target;
-		} while (!CLAtomic::atomicCAS(&Target, old - T(1), old));
+		} while (!__CLAtomic_Old::atomicCAS(&Target, old - T(1), old));
 		return old;
 	}
 	inline T add(volatile T v)
@@ -970,7 +1605,7 @@ protected:
 		T old;
 		do {
 			old = Target;
-		} while (!CLAtomic::atomicCAS(&Target, old + v, old));
+		} while (!__CLAtomic_Old::atomicCAS(&Target, old + v, old));
 		return old;
 	}
 	inline T mul(volatile T v)
@@ -978,7 +1613,7 @@ protected:
 		T old;
 		do {
 			old = Target;
-		} while (!CLAtomic::atomicCAS(&Target, old * v, old));
+		} while (!__CLAtomic_Old::atomicCAS(&Target, old * v, old));
 		return old;
 	}
 	inline T div(volatile T v)
@@ -986,7 +1621,7 @@ protected:
 		T old;
 		do {
 			old = Target;
-		} while (!CLAtomic::atomicCAS(&Target, old / v, old));
+		} while (!__CLAtomic_Old::atomicCAS(&Target, old / v, old));
 		return old;
 	}
 	inline T surplus(volatile int v)
@@ -994,50 +1629,54 @@ protected:
 		T old;
 		do {
 			old = Target;
-		} while (!CLAtomic::atomicCAS(&Target, old % int(v), old));
+		} while (!__CLAtomic_Old::atomicCAS(&Target, old % int(v), old));
 		return old;
 	}
 public:
 	using value_type = T;
 
-	inline CLAtomic():bUseAtomc(CLAtomic_bUseAtomc_def){
+	inline __CLAtomic_Old() :bUseAtomc(CLAtomic_bUseAtomc_def) {
 	}
-	inline CLAtomic(T v, bool _bUseAtomc = CLAtomic_bUseAtomc_def)
-		:Target(v), bUseAtomc(_bUseAtomc) {
+	inline __CLAtomic_Old(T v, bool _bUseAtomc = CLAtomic_bUseAtomc_def)
+		: Target(v), bUseAtomc(_bUseAtomc) {
 	}
-	inline CLAtomic(const CLAtomic& v)
-		:Target(v.Target), bUseAtomc(v.bUseAtomc) {
+	inline __CLAtomic_Old(const __CLAtomic_Old& v)
+		: Target(v.Target), bUseAtomc(v.bUseAtomc) {
 	}
 	template<class T2>
-	inline CLAtomic(const CLAtomic<T2>& v)
-		:Target(v()), bUseAtomc(v.isUseAtomic()) {
+	inline __CLAtomic_Old(const __CLAtomic_Old<T2>& v)
+		: Target(v()), bUseAtomc(v.isUseAtomic()) {
 	}
-	CLAtomic& setUseAtomic(bool _bUseAtomc = CLAtomic_bUseAtomc_def) {
-		return bUseAtomc = _bUseAtomc,*this;
+	template<class T2>
+	inline __CLAtomic_Old(T2 v)
+		: Target(T(v)), bUseAtomc(CLAtomic_bUseAtomc_def) {
+	}
+	__CLAtomic_Old& setUseAtomic(bool _bUseAtomc = CLAtomic_bUseAtomc_def) {
+		return bUseAtomc = _bUseAtomc, *this;
 	}
 	bool isUseAtomic() const {
 		return bUseAtomc;
 	}
-	template<class T2>
-	inline CLAtomic& operator=(const T2 v2) {
+	inline __CLAtomic_Old& operator=(T v2) {
 		return Target = v2, *this;
 	}
-	template<class T2>
-	inline CLAtomic& operator=(const CLAtomic<T2>& v2) {
-		return Target = v2(), *this;
-	}
-	inline CLAtomic& operator=(const CLAtomic& v2) {
+	inline __CLAtomic_Old& operator=(const __CLAtomic_Old& v2) {
 		return Target = v2.Target, *this;
 	}
-	inline CLAtomic& operator=(const T& v2) {
+	template<class T2>
+	inline __CLAtomic_Old& operator=(T2 v2) {
 		return Target = v2, *this;
 	}
+	template<class T2>
+	inline __CLAtomic_Old& operator=(const __CLAtomic_Old<T2>& v2) {
+		return Target = v2(), *this;
+	}
 	//默认为原子操作++()，当setUseAtomic(false)时采用非原子操作方式；
-	inline CLAtomic& operator++() {
+	inline __CLAtomic_Old& operator++() {
 		return bUseAtomc ? increment() : ++Target, * this;
 	}
 	//默认为原子操作--()，当setUseAtomic(false)时采用非原子操作方式；
-	inline CLAtomic& operator--() {
+	inline __CLAtomic_Old& operator--() {
 		return bUseAtomc ? decrement() : --Target, * this;
 	}
 	//默认为原子操作()++，当setUseAtomic(false)时采用非原子操作方式；
@@ -1046,7 +1685,7 @@ public:
 			return increment();
 		}
 		else {
-			T old = Target;  
+			T old = Target;
 			++Target;
 			return old;
 		}
@@ -1057,38 +1696,34 @@ public:
 			return decrement();
 		}
 		else {
-			T old = Target;  
+			T old = Target;
 			--Target;
 			return old;
 		}
 	}
 	//默认为原子操作+=，当setUseAtomic(false)时采用非原子操作方式；
-	inline CLAtomic& operator+=(T v) {
-		return  bUseAtomc ? add(v) : Target += v, * this;
+	inline __CLAtomic_Old& operator+=(T v) {
+		return  bUseAtomc ? add(v) : Target += v, *this;
 	}
 	//默认为原子操作-=，当setUseAtomic(false)时采用非原子操作方式；
-	inline CLAtomic& operator-=(T v) {
-		return  bUseAtomc ? add(0 - v) : Target -= v, * this;
+	inline __CLAtomic_Old& operator-=(T v) {
+		return  bUseAtomc ? add(0 - v) : Target -= v, *this;
 	}
 	//默认为原子操作*=，当setUseAtomic(false)时采用非原子操作方式；
-	inline CLAtomic& operator*=(T v) {
-		return  bUseAtomc ? mul(v) : Target *= v, * this;
+	inline __CLAtomic_Old& operator*=(T v) {
+		return  bUseAtomc ? mul(v) : Target *= v, *this;
 	}
 	//默认为原子操作/=，当setUseAtomic(false)时采用非原子操作方式；
-	inline CLAtomic& operator/=(T v) {
-		return  bUseAtomc ? div(v) : Target /= v, * this;
+	inline __CLAtomic_Old& operator/=(T v) {
+		return  bUseAtomc ? div(v) : Target /= v, *this;
 	}
 	//默认为原子操作%=，当setUseAtomic(false)时采用非原子操作方式；
-	inline  CLAtomic& operator%=(int v) {
+	inline  __CLAtomic_Old& operator%=(int v) {
 		return  bUseAtomc ? surplus(v) : Target %= v, *this;
 	}
 	inline operator T() const noexcept { return Target; }
-	inline operator T() const volatile noexcept { return Target; }
 	inline operator T& () noexcept { return Target; }
-	inline operator T& () volatile noexcept { return Target; }
 	inline T operator()() const noexcept { return Target; }
-	inline T operator()() const volatile noexcept { return Target; }
-	template<class T2> inline operator T2() const { return (T2)Target; }
 	template<class T2> inline T operator+(const T2 v) const { return Target + v; }
 	template<class T2> inline T operator-(const T2 v) const { return Target - v; }
 	template<class T2> inline T operator*(const T2 v) const { return Target * v; }
@@ -1096,21 +1731,6 @@ public:
 	template<class T2> inline T operator%(const T2 v) const { return Target % (int)v; }
 };
 
-template<class T,class T2> inline T operator+(const T v,const CLAtomic<T2>& tag){ 
-	return v + tag; 
-}
-template<class T,class T2> inline T operator-(const T v,const CLAtomic<T2>& tag){ 
-	return v - tag; 
-}
-template<class T,class T2> inline T operator*(const T v,const CLAtomic<T2>& tag){ 
-	return v * tag; 
-}
-template<class T,class T2> inline T operator/(const T v,const CLAtomic<T2>& tag){ 
-	return v / tag; 
-}
-template<class T,class T2> inline T operator%(const T v,const CLAtomic<T2>& tag){ 
-	return v % (int)tag; 
-}
 #endif
 
 //本类实现的效能较低，请使用c++11以上提供的unordered_map
@@ -1122,8 +1742,8 @@ class HashNode
 {
 public:
 	Key    _key;
-	HashNode *next;
-	Value  _value;	
+	HashNode* next;
+	Value  _value;
 
 	HashNode(Key key, Value value)
 	{
@@ -1131,7 +1751,7 @@ public:
 		_value = value;
 		next = NULL;
 	}
-	virtual ~HashNode()	{}
+	virtual ~HashNode() {}
 };
 
 //本类实现的效能较低，请使用c++11以上提供的unordered_map
@@ -1139,11 +1759,11 @@ template <class Key, class Value, class HashFunc, class EqualKey>
 class HashMap
 {
 public:
-	HashMap(size_t size) : _size(size),ValueNULL(Value())
+	HashMap(size_t size) : _size(size), ValueNULL(Value())
 	{
 		hash = HashFunc();
 		equal = EqualKey();
-		table = new HashNode<Key, Value>*[_size];
+		table = new HashNode<Key, Value> * [_size];
 		ZeroMemory(table, _size * sizeof(HashNode<Key, Value>*));
 	}
 
@@ -1151,10 +1771,10 @@ public:
 	{
 		for (size_t i = 0; i < _size; i++)
 		{
-			HashNode<Key, Value> *currentNode = table[i];
+			HashNode<Key, Value>* currentNode = table[i];
 			while (currentNode)
 			{
-				HashNode<Key, Value> *temp = currentNode;
+				HashNode<Key, Value>* temp = currentNode;
 				currentNode = currentNode->next;
 				delete temp;
 			}
@@ -1171,8 +1791,8 @@ public:
 	bool del(const Key& key)
 	{
 		size_t index = _getIndex(key);
-		HashNode<Key, Value> * node = table[index];
-		HashNode<Key, Value> * prev = NULL;
+		HashNode<Key, Value>* node = table[index];
+		HashNode<Key, Value>* prev = NULL;
 		while (node)
 		{
 			if (node->_key == key)
@@ -1192,7 +1812,7 @@ public:
 			node = node->next;
 		}
 		return false;
-	}	
+	}
 
 	Value* find(const Key& key)
 	{
@@ -1203,27 +1823,27 @@ public:
 	Value& operator [](const Key& key)
 	{
 		size_t index = _getIndex(key);
-		Value* pv =  _find(key, index);
+		Value* pv = _find(key, index);
 		if (pv)
 			return *pv;
 		else
-			return _insert(key, ValueNULL,index)._value;
+			return _insert(key, ValueNULL, index)._value;
 	}
 private:
 
-	HashNode<Key, Value> **table;
+	HashNode<Key, Value>** table;
 	size_t _size;
-	const Value ValueNULL;	
+	const Value ValueNULL;
 	HashFunc hash;
 	EqualKey equal;
 
-	inline size_t _getIndex(const Key& key){
+	inline size_t _getIndex(const Key& key) {
 		return hash(key) % _size;
 	}
 
 	HashNode<Key, Value>& _insert(const Key& key, const Value& value, size_t index)
 	{
-		HashNode<Key, Value> * node = new HashNode<Key, Value>(key, value);
+		HashNode<Key, Value>* node = new HashNode<Key, Value>(key, value);
 		node->next = table[index];
 		table[index] = node;
 		return *node;
@@ -1234,7 +1854,7 @@ private:
 			return NULL;
 		else
 		{
-			HashNode<Key, Value> * node = table[index];
+			HashNode<Key, Value>* node = table[index];
 			while (node)
 			{
 				if (node->_key == key)
@@ -1250,7 +1870,7 @@ private:
 class HashFunc_string
 {
 public:
-	int operator()(const std::tstring & key)
+	int operator()(const std::tstring& key)
 	{
 		int hash = 0;
 		size_t si = key.length();
@@ -1264,7 +1884,7 @@ public:
 class EqualKey_string
 {
 public:
-	bool operator()(const std::tstring & A, const std::tstring & B)
+	bool operator()(const std::tstring& A, const std::tstring& B)
 	{
 		if (A.compare(B) == 0)
 			return true;
@@ -1290,7 +1910,7 @@ HRESULT converXlsToCsv(LPCTSTR pSrcFileName, LPCTSTR pDesFileName);
 /*将Url指向的地址的文件下载到save_as指向的本地文件*/
 BOOL downloadUrlFile(LPCTSTR Url, LPCTSTR save_as);
 /*将Url指向的地址的文件下载到buf，buf和nBufSize不为0则表示已经存在缓冲区,buf使用后需要delete删除，save_as指向的本地文件地址则保存到指定文件*/
-BOOL downloadUrl(LPCTSTR Url, LPCTSTR save_as, IN OUT char*& buf, IN OUT size_t & nBufSize, OUT size_t & nDataSize);
+BOOL downloadUrl(LPCTSTR Url, LPCTSTR save_as, IN OUT char*& buf, IN OUT size_t& nBufSize, OUT size_t& nDataSize);
 typedef std::vector<char> DataBuffer;//数据缓冲区
 BOOL downloadUrl(LPCTSTR Url, LPCTSTR save_as, IN OUT DataBuffer& buf);
 //把缓冲区数据写入到文件
@@ -1298,14 +1918,14 @@ BOOL writeBufToFile(LPCTSTR saveFile, const char* buf, size_t nDataSize, LPDWORD
 
 
 //退行输出，返回本行输出字符长度，参数1：表示要退格回删的字符数（该值应该为上一次调用函数成功的返回值，以实现单行的回删覆盖显示）
-int printfWithBackCover(int bakCoverChars, const TCHAR* szFormat, ...); 
+int printfWithBackCover(int bakCoverChars, const TCHAR* szFormat, ...);
 #define printfbc printfWithBackCover //退行输出，返回本行输出字符长度，参数1：表示要退格回删的字符数（该值应该为上一次调用函数成功的返回值，以实现单行的回删覆盖显示）
 //删除最后的一行输出，bakCoverChars表示最后一行字符个数，应该是printfWithBackCover调用的返回值
 int printfWithBackCoverEnd(int bakCoverChars);
 #define printfbce printfWithBackCoverEnd //删除最后的一行输出，bakCoverChars表示最后一行字符个数，应该是printfWithBackCover调用的返回值
 
 //取得线程分段,ssi总数据量，totals分段数，index当前序号从0开始，is起始编号，ie结束编号（最后一个对象的后一个位置）
-void getTrdSection(size_t ssi, size_t totals, size_t index, OUT size_t &is, OUT size_t &ie);
+void getTrdSection(size_t ssi, size_t totals, size_t index, OUT size_t& is, OUT size_t& ie);
 
 #ifndef __CL_WINDOWS_SYSTEM_H__
 #define __CL_WINDOWS_SYSTEM_H__
@@ -1319,17 +1939,17 @@ void getTrdSection(size_t ssi, size_t totals, size_t index, OUT size_t &is, OUT 
 #pragma comment(lib, "Advapi32.lib")
 
 //以普通权限启动进程
-BOOL createProcessLow(TCHAR * lpApplicationName,
-	TCHAR * lpCommandLine = NULL,
-	TCHAR * lpDirectory = NULL,
+BOOL createProcessLow(TCHAR* lpApplicationName,
+	TCHAR* lpCommandLine = NULL,
+	TCHAR* lpDirectory = NULL,
 	UINT nShow = SW_SHOWNORMAL);
 //以管理员权限启动进程
-BOOL createProcessHigh(TCHAR * strProcessName,
-	TCHAR * strCommandLine = NULL,
-	TCHAR * lpDirectory = NULL,
+BOOL createProcessHigh(TCHAR* strProcessName,
+	TCHAR* strCommandLine = NULL,
+	TCHAR* lpDirectory = NULL,
 	UINT nShow = SW_SHOWNORMAL);
 
-typedef BOOL(WINAPI *PCreateProcessWithToken)(
+typedef BOOL(WINAPI* PCreateProcessWithToken)(
 	__in          HANDLE hToken,
 	__in          DWORD dwLogonFlags,
 	__in          LPCTSTR lpApplicationName,
@@ -1345,7 +1965,7 @@ HANDLE dupExplorerToken();
 BOOL isVistaOrLater();
 BOOL isAdminPrivilege();
 BOOL isInstallService(LPCTSTR servName);
-BOOL installService(LPCTSTR servName, LPCTSTR lpszBinaryPathName=0, LPCTSTR lpServiceDisplayName=0, LPCTSTR lpDescription=0);
+BOOL installService(LPCTSTR servName, LPCTSTR lpszBinaryPathName = 0, LPCTSTR lpServiceDisplayName = 0, LPCTSTR lpDescription = 0);
 BOOL uninstallService(LPCTSTR servName);
 BOOL startService(LPCTSTR servName);
 BOOL stopService(LPCTSTR servName);
@@ -1362,85 +1982,86 @@ int messageBoxTimeoutW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType,
 #define messageBoxT messageBoxTimeoutA
 #endif
 
- class CLString;
- //取得cpu完整信息，包括cpu型号名，cpu类型名，cpu核心线程数，cpu主频(GHz)
- void getCpuInfo(CLString& chProcessorName, CLString& chProcessorType, DWORD& dwCoreNum, DWORD& dwMaxClockSpeed);
+class CLString;
+//取得cpu完整信息，包括cpu型号名，cpu类型名，cpu核心线程数，cpu主频(GHz)
+void getCpuInfo(CLString& chProcessorName, CLString& chProcessorType, DWORD& dwCoreNum, DWORD& dwMaxClockSpeed);
 
- //取得控台窗口句柄
- inline HWND getConsoleHwnd(void)
- {
-	 HWND hwndFound;         // This is what is returned to the caller.
-	 CHAR pszNewWindowTitle[6000]; // Contains fabricated
-	 // WindowTitle.
-	 CHAR pszOldWindowTitle[6000]; // Contains original
-	 if (GetConsoleTitleA(pszOldWindowTitle, 6000)) {
-		 sprintf_s(pszNewWindowTitle, "Cmd temp names: %I64d/%d.", GetTickCount64(), GetCurrentProcessId());
-		 SetConsoleTitleA(pszNewWindowTitle);
-		 int i = 0;
-		 do {
-			 Sleep(10);
-			 hwndFound = FindWindowA(NULL, pszNewWindowTitle);
-			 if (hwndFound) {
-				 SetConsoleTitleA(pszOldWindowTitle);
-				 return hwndFound;
-			 }
-		 } while (++i < INT_MAX);
-		 throw 0;
-	 }
-	 else return NULL;
- }
+//取得控台窗口句柄
+inline HWND getConsoleHwnd(void)
+{
+	HWND hwndFound;         // This is what is returned to the caller.
+	CHAR pszNewWindowTitle[6000]; // Contains fabricated
+	// WindowTitle.
+	CHAR pszOldWindowTitle[6000]; // Contains original
+	if (GetConsoleTitleA(pszOldWindowTitle, 6000)) {
+		sprintf_s(pszNewWindowTitle, "Cmd temp names: %I64d/%d.", GetTickCount64(), GetCurrentProcessId());
+		SetConsoleTitleA(pszNewWindowTitle);
+		int i = 0;
+		do {
+			Sleep(10);
+			hwndFound = FindWindowA(NULL, pszNewWindowTitle);
+			if (hwndFound) {
+				SetConsoleTitleA(pszOldWindowTitle);
+				return hwndFound;
+			}
+		} while (++i < INT_MAX);
+		throw 0;
+	}
+	else return NULL;
+}
 
- class CLCpuDelay;
- //取得cpu当前使用率
- class CLCpuUsage
- {
- public:
-	 CLCpuUsage();
-	 ~CLCpuUsage();
-	 int GetUsage();//取得cpu当前使用率
- private:
-#define CLCDelay_DELAY_DIFF	200
+class CLCpuDelay;
+//取得cpu当前使用率
+class CLCpuUsage
+{
+public:
+	CLCpuUsage();
+	~CLCpuUsage();
+	int GetUsage();//取得cpu当前使用率
+private:
+#define CLCDelay_DELAY_DIFF   200
 #define CLCDelay_DATA_COUNT  (1000/CLCDelay_DELAY_DIFF)
-	 static CLCpuDelay	s_delay;
-	 static int		s_count;
-	 static int      s_index;
-	 static int		s_lastCpu;
-	 static int      s_cpu[CLCDelay_DATA_COUNT];
-	 static __int64 s_time;
-	 static __int64 s_idleTime;
-	 static __int64 s_kernelTime;
-	 static __int64 s_userTime;
-	 CRITICAL_SECTION m_lock;
- };
+	static CLCpuDelay	s_delay;
+	static int		s_count;
+	static int      s_index;
+	static int		s_lastCpu;
+	static int      s_cpu[CLCDelay_DATA_COUNT];
+	static __int64 s_time;
+	static __int64 s_idleTime;
+	static __int64 s_kernelTime;
+	static __int64 s_userTime;
+	CRITICAL_SECTION m_lock;
+};
 
 #ifndef __CL_TICK_DEF__
 #define __CL_TICK_DEF__
- //高精度计时器类
- class CLTick {
- protected:
-	 LARGE_INTEGER lis;
-	 LARGE_INTEGER lie;
-	 LARGE_INTEGER Freg;
- public:
-	 CLTick() { 
-		 timingStart();
-	 }
-	 //开始计时
-	 CLTick& timingStart() {
-		 QueryPerformanceFrequency(&Freg);
-		 QueryPerformanceCounter(&lis);
-		 return *this;
-	 }
-	 //取得从计时开始到当前的时间
-	 double getSpendTime(bool saveToStart = false) {
-		 QueryPerformanceCounter(&lie);
-		 double rt = double(lie.QuadPart - lis.QuadPart) / double(Freg.QuadPart);
-		 if (saveToStart)lis = lie;
-		 return rt;
-	 }
- };
+//高精度计时器类
+class CLTick {
+protected:
+	LARGE_INTEGER lis;
+	LARGE_INTEGER lie;
+	LARGE_INTEGER Freg;
+public:
+	CLTick() {
+		timingStart();
+	}
+	//开始计时
+	CLTick& timingStart() {
+		QueryPerformanceFrequency(&Freg);
+		QueryPerformanceCounter(&lis);
+		return *this;
+	}
+	//取得从计时开始到当前的时间
+	double getSpendTime(bool saveToStart = false) {
+		QueryPerformanceCounter(&lie);
+		double rt = double(lie.QuadPart - lis.QuadPart) / double(Freg.QuadPart);
+		if (saveToStart)lis = lie;
+		return rt;
+	}
+};
 #endif
 
 #endif
 
 #endif
+

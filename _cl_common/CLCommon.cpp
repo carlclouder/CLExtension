@@ -1677,14 +1677,13 @@ inline void CLCSLock::unlock(int csId)
 	}
 }
 
-inline _rw_cs::_rw_cs() noexcept {
+inline _rw_lock::_rw_lock() noexcept :
+	ownerThreadId(0), lockCounts(0) {
 	InitializeSRWLock(this);
-	ownerThreadId = 0;
-	lockCounts = 0;
 }
 
 #define OPEN_DEADLOCK_CHECK  FALSE //设置值为TRUE，用于检查死锁或长等待异常
-inline void _rw_cs::lock() {
+inline void _rw_lock::lock() {
 #if OPEN_DEADLOCK_CHECK == TRUE
 	auto cid = GetCurrentThreadId();
 	size_t counts = 0;
@@ -1710,58 +1709,18 @@ inline void _rw_cs::lock() {
 #endif
 }
 
-inline void _rw_cs::unlock() {
-	auto cid = GetCurrentThreadId();
-	if (cid != ownerThreadId)
-		return;
-	if (--lockCounts == 0) {
-		ownerThreadId = 0;
-		ReleaseSRWLockExclusive(this);
-	}
+inline void _rw_lock::unlock() {
+	if (GetCurrentThreadId() == ownerThreadId)
+		if (--lockCounts == 0) {
+			ownerThreadId = 0;
+			ReleaseSRWLockExclusive(this);
+		}
 }
 
-inline bool _rw_cs::trylock() {
+inline bool _rw_lock::trylock() {
 	auto cid = GetCurrentThreadId();
 	if (ownerThreadId != cid) {
 		if (TryAcquireSRWLockExclusive(this) == FALSE)
-			return false;
-		ownerThreadId = cid;
-	}
-	++lockCounts;
-	return true;
-}
-
-inline _at_cs::_at_cs() noexcept {
-	bLock = FALSE;
-	ownerThreadId = 0;
-	lockCounts = 0;
-}
-
-inline void _at_cs::lock() {
-	auto cid = GetCurrentThreadId();
-	if (ownerThreadId != cid) {
-		while (InterlockedExchange(&bLock, TRUE) == TRUE) {
-			Sleep(0);
-		}
-		ownerThreadId = cid;
-	}
-	++lockCounts;
-}
-
-inline void _at_cs::unlock() {
-	auto cid = GetCurrentThreadId();
-	if (cid != ownerThreadId)
-		return;
-	if (--lockCounts == 0) {
-		ownerThreadId = 0;
-		bLock = FALSE;
-	}
-}
-
-inline bool _at_cs::trylock() {
-	auto cid = GetCurrentThreadId();
-	if (ownerThreadId != cid) {
-		while (InterlockedExchange(&bLock, TRUE) == TRUE)
 			return false;
 		ownerThreadId = cid;
 	}
