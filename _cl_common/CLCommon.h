@@ -938,22 +938,23 @@ struct _atomic_value;
 
 template  <class T>
 struct _atomic_value<T, false> {
+	/*alignas(sizeof(T))*/ mutable T _Value{};
 	_atomic_value() = default;
-	constexpr _atomic_value(const T _Value) noexcept : _Value(_Value) {}
-	constexpr _atomic_value(T& _Value, bool) noexcept : _Value(_Value) {}
-	alignas(sizeof(T)) mutable T _Value {};
+	constexpr _atomic_value(const T Value) noexcept : _Value(Value) {}
+	constexpr _atomic_value(T& Value, bool) noexcept : _Value(Value) {}	
 };
 
 template  <class T>
 struct _atomic_value<T, true> {
-	inline static T& _getStaticT() {
+	/*alignas(sizeof(T))*/ T& _Value;
+	_atomic_value() :_Value(_getStaticValueRef()) {}
+	constexpr _atomic_value(const T Value) noexcept : _Value(_getStaticValueRef()) {}
+	constexpr _atomic_value(T& Value, bool) noexcept : _Value(Value) {}	
+private:
+	inline static T& _getStaticValueRef() {
 		static T _g_atv = 0;
 		return _g_atv;
 	}
-	_atomic_value() :_Value(_g_atv) {}
-	constexpr _atomic_value(const T _Value) noexcept : _Value(_getStaticT()) {}
-	constexpr _atomic_value(T& _Value, bool) noexcept : _Value(_Value) {}
-	alignas(sizeof(T)) T& _Value;
 };
 //值类型特化
 template <class T, bool isRef = false>
@@ -963,46 +964,46 @@ protected:
 
 	using _Base = _atomic_value<T, isRef>;
 	_atomic_storage() = default;
-	constexpr _atomic_storage(const T _Value) noexcept : _Base(_Value) {}
-	constexpr _atomic_storage(T& _Value, bool) noexcept : _Base(_Value, true) {}
-	void store(const T _Value) noexcept { this->_Value = _Value; }
-	T load() const noexcept { return _Value; }
+	constexpr _atomic_storage(const T Value) noexcept : _Base(Value) {}
+	constexpr _atomic_storage(T& Value, bool) noexcept : _Base(Value, true) {}
+	void store(const T Value) noexcept { this->_Base::_Value = Value; }
+	T load() const noexcept { return this->_Base::_Value; }
 
 	template<size_t = sizeof(T)>
-	bool compare_exchange_strong(T& _Expected, volatile T _Desired) noexcept;
+	bool compare_exchange_strong(T& _Expected, const T _Desired) noexcept;
 	template<>
-	bool compare_exchange_strong<2>(T& _Expected, volatile T _Desired) noexcept {
+	bool compare_exchange_strong<2>(T& _Expected, const T _Desired) noexcept {
 		static_assert(sizeof(short) == sizeof(T), "Tried to reinterpret memory is not same. ");
-		volatile short old = *(short*)(&_Expected);
-		if (InterlockedCompareExchange(reinterpret_cast<short*>(&_Value), *(short*)(&_Desired), old) == old) {
+		auto old = *(short*)(&_Expected);
+		if (InterlockedCompareExchange(&reinterpret_cast<volatile short&>(_Value), *(short*)(&_Desired), old) == old) {
 			return true;
 		}
 		else {
-			_Expected = this->load();
+			_Expected = load();
 			return false;
 		}
 	}
 	template<>
-	bool compare_exchange_strong<4>(T& _Expected, volatile T _Desired) noexcept {
+	bool compare_exchange_strong<4>(T& _Expected, const T _Desired) noexcept {
 		static_assert(sizeof(long) == sizeof(T), "Tried to reinterpret memory is not same. ");
-		volatile long old = *(long*)(&_Expected);
-		if (InterlockedCompareExchange(reinterpret_cast<long*>(&_Value), *(long*)(&_Desired), old) == old) {
+		auto old = *(long*)(&_Expected);
+		if (InterlockedCompareExchange(&reinterpret_cast<volatile long&>(_Value), *(long*)(&_Desired), old) == old) {
 			return true;
 		}
 		else {
-			_Expected = this->load();
+			_Expected = load();
 			return false;
 		}
 	}
 	template<>
-	bool compare_exchange_strong<8>(T& _Expected, volatile T _Desired) noexcept {
+	bool compare_exchange_strong<8>(T& _Expected, const T _Desired) noexcept {
 		static_assert(sizeof(long long) == sizeof(T), "Tried to reinterpret memory is not same. ");
-		volatile long long old = *(long long*)(&_Expected);
-		if (InterlockedCompareExchange64(reinterpret_cast<long long*>(&_Value), *(long long*)(&_Desired), old) == old) {
+		auto old = *(long long*)(&_Expected);
+		if (InterlockedCompareExchange64(&reinterpret_cast<volatile long long&>(_Value), *(long long*)(&_Desired), old) == old) {
 			return true;
 		}
 		else {
-			_Expected = this->load();
+			_Expected = load();
 			return false;
 		}
 	}
@@ -1032,8 +1033,8 @@ struct _atomic_integral<T, 1, isRef> : _atomic_storage<T, isRef> { // CLAtomic i
 protected:
 	using _Base = _atomic_storage<T, isRef>;
 	_atomic_integral() = default;
-	constexpr _atomic_integral(const T _Value) noexcept : _Base(_Value) {}
-	constexpr _atomic_integral(T& _Value, bool) noexcept : _Base(_Value, true) {}
+	constexpr _atomic_integral(const T Value) noexcept : _Base(Value) {}
+	constexpr _atomic_integral(T& Value, bool) noexcept : _Base(Value, true) {}
 
 	T self_add(T _Operand) noexcept {
 		char _Result =
@@ -1141,21 +1142,18 @@ protected:
 
 	T self_and(T _Operand) noexcept {
 		long _Result =
-
 			InterlockedAnd(_atomic_address_as<long>(this->_Value), static_cast<long>(_Operand));
 		return static_cast<T>(_Result);
 	}
 
 	T self_or(T _Operand) noexcept {
 		long _Result =
-
 			InterlockedOr(_atomic_address_as<long>(this->_Value), static_cast<long>(_Operand));
 		return static_cast<T>(_Result);
 	}
 
 	T self_xor(T _Operand) noexcept {
 		long _Result =
-
 			InterlockedXor(_atomic_address_as<long>(this->_Value), static_cast<long>(_Operand));
 		return static_cast<T>(_Result);
 	}
@@ -1404,14 +1402,15 @@ typename _Select<is_integral_v<T> && !is_same_v<bool, T>>::template _Apply<_atom
 	_atomic_storage<T>>>;
 
 template <class T>
-using _choose_atomic_ref_base_t =
+using _choose_atomic_ref_t =
 typename _Select<is_integral_v<T> && !is_same_v<bool, T>>::template _Apply<_atomic_integral_facade<T, true>,
 	typename _Select<is_floating_point_v<T>>::template _Apply<_atomic_floating<T, true>,
 	_atomic_storage<T, true>>>;
 
+//泛型化类型选择（选择引用或值类型原子操作基类）
 template <class T, bool isRef = false>
 using _choose_atomic_base_or_ref_t =
-typename _Select<isRef>::template _Apply<_choose_atomic_ref_base_t<T>, _choose_atomic_base_t<T>>;
+typename _Select<isRef>::template _Apply<_choose_atomic_ref_t<T>, _choose_atomic_base_t<T>>;
 
 //原子操作类（模板）
 template <class T>
@@ -1470,7 +1469,7 @@ public:
 	}
 };
 
-//原子操作引用类（模板）
+//原子操作引用类（模板），该类将在初始化阶段唯一的绑定一个对应类型的数据类型
 template <class T>
 struct CLAtomicRef : _choose_atomic_base_or_ref_t<T, true> { // CLAtomic value
 private:
