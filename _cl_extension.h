@@ -92,4 +92,7 @@ using namespace std;
 //引入并行支持
 #include "_cl_parallel/CLParallel.h"
 
+//引入原子操作支持工具
+#include "_cl_atomic/CLAtomic.hpp"
+
 #endif

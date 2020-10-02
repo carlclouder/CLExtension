@@ -3149,4 +3149,225 @@ inline void matrixLocalTest() {
 	CLMatrix::setUseSSE(bku);//还原
 }
 
+#ifndef CLM_DATA_OPEN 
+#ifdef NDEBUG
+#define CLM_DATA_OPEN false
+#else
+#define CLM_DATA_OPEN true
+#endif
+#endif
+
+//多维矩阵
+template<class T>
+struct CLMultiDimMatrix{
+	enum dim {
+		D1 = 1, D2, D3, D4, D5, D6, D7, D8, D9,
+		X = D1, Y = D2, Z = D3,
+		x = X, y = Y, z = Z,
+		col = X, row = Y, plan = Z, time = D4,
+	};
+	using value_type = T;
+	using valueType = value_type;	
+	using index = size_t;//0开始索引
+	using coord = index*;//坐标数列指针
+	using dimSize = size_t;///单个维度长度
+	using dimCounts = dimSize;//维度个数
+	using dimId = size_t;//从1开始的维度编号id
+	using dimInfo = std::vector<dimSize>;//维度信息结构体[维度个数，维度1长度，...，维度N长度，1，维度1跨度，...，维度N跨度]
+
+	struct dimData {
+		dimData(valueType* value, dimSize* span
+#if CLM_DATA_OPEN
+			, dimId dim
+#endif
+		):_value(value), _span(span)
+#if CLM_DATA_OPEN
+			,_dim(dim) 
+#endif
+		{}
+		dimData operator[](index idx) const {
+#if CLM_DATA_OPEN
+			auto ndim = _dim - 1;
+			if (ndim == 0) {
+				throw out_of_range("dimData: operator[] out of dim counts range!");
+			}
+#endif
+			return dimData(_value + idx * (*_span), _span - 1
+#if CLM_DATA_OPEN
+				, ndim
+#endif
+			);
+		}
+		operator valueType() const { return *_value; }
+		operator valueType& () { return *_value; }
+		void store(const valueType v) { *_value = v; }
+		valueType load() const { return *_value; }
+#if CLM_DATA_OPEN
+		dimId dim() const { return _dim; }
+#endif
+	protected:
+		valueType* _value;
+		dimSize* _span;
+#if CLM_DATA_OPEN
+		dimId _dim;
+#endif
+	};
+
+protected:
+	valueType*             _head;
+	dimSize*               _info;
+	std::vector<valueType> _data;
+	
+	//更新指针数据
+	void updateMatHead() {
+		_info = (size_t*)_data.data();
+		_head = _data.data() + infoHeadSize(*_info);
+	}
+	size_t openArgs(size_t* upsave, size_t* save, size_t perDimNodes, size_t thisDimCounts) {
+		*upsave = thisDimCounts;
+		return *save = perDimNodes* thisDimCounts;
+	}
+	template <class ...Args>
+	size_t openArgs(size_t* upsave, size_t* save, size_t perDimNodes, size_t thisDimCounts, Args&& ...xyz) {
+		*upsave = thisDimCounts;
+		*save = perDimNodes * thisDimCounts;
+		return  openArgs(upsave + 1, save + 1, *save, std::forward<Args>(xyz)...);
+	}
+	size_t _index(size_t _dim, size_t _dimLength) const {
+		if (_dim >= size_t(dim::D1))
+			return dimNodeSpan(_dim - 1) * _dimLength;
+		else return 0;
+	}
+	template<class ...Args>
+	size_t _index(size_t _dim, size_t _dimLength, Args&& ...xyz) const {
+		if (_dim > size_t(dim::D1))
+			return dimNodeSpan(_dim - 1) * _dimLength + _index(_dim - 1, std::forward<Args>(xyz)...);
+		else if (_dim == size_t(dim::D1))
+			return _dimLength;
+		else return 0;
+	}
+	size_t infoHeadSize(size_t argsSize) const noexcept{
+		return (argsSize * 2 + 2) * sizeof(size_t) % sizeof(valueType) == 0 ?
+			(argsSize * 2 + 2) * sizeof(size_t) / sizeof(valueType) :
+			(argsSize * 2 + 3) * sizeof(size_t) / sizeof(valueType);
+	}
+public:
+
+	CLMultiDimMatrix() :_head(nullptr), _info(nullptr) {}
+	template<class ...Args>
+	CLMultiDimMatrix(dimSize v1,Args&& ...xyz){
+		this->resize(v1,std::forward<Args>(xyz)...);
+	}
+	template<class ...Args>
+	CLMultiDimMatrix(const std::function<void(valueType&, coord, dimCounts)>&& fun, Args&& ...xyz) {
+		this->resize(std::forward<Args>(xyz)...);
+		size_t coord[sizeof...(xyz)] = { 0 };
+		for (size_t i = 0; i < size(); i++)
+		{
+			coordinate(i, coord);//索引转为坐标
+			fun(element(i), coord, sizeof...(xyz)); //遍历每个元素
+		}
+	}
+	CLMultiDimMatrix(const CLMultiDimMatrix& v):_data(v._data) {
+		updateMatHead();
+	}
+	template<class T2>
+	CLMultiDimMatrix(const CLMultiDimMatrix<T2>& v){
+		*this = v;
+	}
+	CLMultiDimMatrix& operator=(const CLMultiDimMatrix& v) {
+		_data = v._data;
+		updateMatHead();
+		return *this;
+	}
+	template<class T2>
+	CLMultiDimMatrix& operator=(const CLMultiDimMatrix<T2>& v) {		
+		auto tdc = v.dimension();
+		_data.resize(infoHeadSize(tdc));
+		size_t* pt = (size_t*)_data.data();
+		*pt = tdc;
+		*(pt + tdc + 1) = 1;
+		for (size_t i = 1; i <= tdc; i++)
+		{
+			pt[i] = v.dimlength(i);
+			pt[i + tdc + 1] = v.dimNodeSpan(i - 1) * pt[i];
+		}		
+		_data.resize(_data.size() + v.size());
+		updateMatHead();
+		for (size_t i = 0; i < size(); i++)
+			element(i) = v.element(i);
+		return *this;
+	}
+	//索引转为坐标（输出坐标是正序的（x,y,z））
+	void coordinate(index idx, coord _coord) const {
+		size_t j = 0, i = dimension();
+		for (; i > 1; --i, ++j)
+		{
+			auto _ndSpan = dimNodeSpan(i - 1);
+			_coord[j] = idx / _ndSpan;
+			idx = idx % _ndSpan;
+		}
+		_coord[j] = idx;
+	}
+	//矩阵元素个数
+	size_t size() const {
+		return dimNodeSpan(dimension());
+	}
+	//将矩阵按参数表达的维度方式重构，例如resize(5，6，7)，生成总计7层，每层6行，每行5列的矩阵；
+	template<class ...Args>
+	void resize(Args&& ...xyz) {
+		_data.resize(infoHeadSize(sizeof...(xyz)));
+		size_t* pt = (size_t*)_data.data();
+		*pt = sizeof...(xyz);
+		*(pt + sizeof...(xyz) + 1) = 1;
+		auto total = openArgs(pt + 1, pt + sizeof...(xyz) + 2, 1, std::forward<Args>(xyz)...);
+		_data.resize(_data.size() + total);
+		updateMatHead();
+	}
+	//用维度下标索引取得维度数据，输入维度坐标的写法应该是倒序的，例如：m1[层][行][列] 或 m1[z][y][x] ；
+	//到达根维度后将不能在继续[]操作，继续[]操作将会得到不可预料的结果。（不会抛出异常）
+	dimData operator[](index idx) const {
+		return dimData( &_head[dimNodeSpan(dimension() - 1) * idx],_info + dimension() * 2 - 1
+#if CLM_DATA_OPEN
+			, dimension()
+#endif
+		);
+	}
+	//坐标取得元素（输入坐标的写法是倒序的，例如（层，行，列）或（z，y，x））；
+	//该方法采用递归参数展开，效率慢，请使用operator[]操作代替；
+	template<class ...Args>
+	valueType& operator()(Args&& ...xyz) {
+		return _head[_index(dimension(), std::forward<Args>(xyz)...)];
+	}
+	//坐标取得元素（输入坐标的写法是倒序的，例如（层，行，列）或（z，y，x））；
+	//该方法采用递归参数展开，效率慢，请使用operator[]操作代替；
+	template<class ...Args>
+	valueType operator()(Args&& ...xyz) const {
+		return _head[_index(dimension(), std::forward<Args>(xyz)...)];
+	}
+	//把多维矩阵忽略维度信息，表示为一维数列，按下标索引取得元素对象；
+	valueType& element(index idx) { return _head[idx]; }
+	//把多维矩阵忽略维度信息，表示为一维数列，按下标索引取得元素值；
+	valueType element(index idx)const { return _head[idx]; }
+	//取得矩阵的维度数
+	dimCounts dimension() const {
+		return *_info;
+	}
+	//取得某一维度的长度；
+	dimSize dimlength(dimId _dim) const {
+		return *(_info + _dim);
+	}
+	//取得某一维度的跨度，即本维度内包含的所有节点（元素）的数量；
+	size_t dimNodeSpan(dimId _dim) const {
+		return *(_info + dimension() + _dim + 1);
+	}
+	//取得矩阵的信息[维度数，维度1长，...，维度N长，1，维度1跨度，...，维度N跨度]，最后一个维度的跨度即为总元素个数；
+	dimInfo& getDimInfo(dimInfo& info) {
+		info.resize(infoHeadSize(dimension()));
+		memcpy_s(info.data(), infoHeadSize(dimension()) * sizeof(dimSize), _info, infoHeadSize(dimension()) * sizeof(dimSize));
+		return info;
+	}
+};
+
+
 #endif

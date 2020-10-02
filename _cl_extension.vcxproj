@@ -239,6 +239,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_cl_arrayTemplate\CLArrayTemplate.h" />
+    <ClInclude Include="_cl_atomic\CLAtomic.hpp" />
     <ClInclude Include="_cl_behaviorObjectModel\CLBehaviorObjectModel.h" />
     <ClInclude Include="_cl_binSerial\CLBinSerial.h" />
     <ClInclude Include="_cl_common\CLCommon.h" />

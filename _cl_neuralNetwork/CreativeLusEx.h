@@ -30,6 +30,7 @@
 #include "../_cl_matrix/CLMatrix.h"
 #include "../_cl_binSerial/CLBinSerial.h"
 #include "../_rapidjson/CLRapidjsonTX.h"
+#include "../_cl_atomic/CLAtomic.hpp"
 
 using namespace CreativeLus;
 
