@@ -2,183 +2,41 @@
 //MINI-SUPPORT @ C++14
 
 #pragma once
-#ifndef __CL_MATRIX_H__
-#define __CL_MATRIX_H__
+#ifndef __CL_MATRIX_EX_H__
+#define __CL_MATRIX_EX_H__
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
-#include <math.h>
-#include <functional>
-#include <algorithm>
-#include <Windows.h> //其他平台注释掉
-
-using std::vector;
-using std::string;
-using std::wstring;
-using std::cout;
-using std::cin;
-using std::istream;
-using std::ostream;
-
-#include <iomanip>  //用于设置输出格式
-
-using std::ifstream;
-using std::ofstream;
-using std::istringstream;
-using std::cerr;
-using std::endl;
-
-#define CLMAT_USE_SSE       1 //当为1时使用SSE/AVX指令加速
-#define CLMAT_USE_MEMPOOLS  1 //当为1时使用内存池技术加速
-
-#if CLMAT_USE_MEMPOOLS > 0
-#ifndef CLMP_USE_LOCK_TYPE
-#define CLMP_USE_LOCK_TYPE 1 // 0=无锁（快），1=用RWLock（读写锁）， 2=用C++锁，3=用windows临界区锁
-#endif
-#include "../_cl_objectMemPool/CLMemPool.h"
-#else
-extern unsigned long long matrixCreateTimes;
-#endif
-
-#if CLMAT_USE_SSE  > 0
-//当设置该变量为true时候启动SSE,AVX指令加速。
-//该变量需要在cpp定义为全局变量，并设置该全局量。
-extern bool matrixUseSSE;
-//使用SSE,AVX指令的最低矩阵宽度，他的大小影响本机矩阵运算效率；
-//一般为根据本机计算性能决定（8-16间），可使用matrixSSEParamFitValue()获得本机该值的最佳值；
-//该变量需要在cpp定义为全局变量，并设置该全局量为一个初始值；
-extern size_t matrixUseSSEMinRank;
-#endif
-
-
-#ifndef _CL_DIFVARS_SUPPORT_
-#define _CL_DIFVARS_SUPPORT_
-#ifdef UNICODE
-typedef wchar_t Char;
-#define tstring wstring
-#ifndef _T
-#define _T(x)  L ## x
-#endif
-#ifndef _tprintf_s
-#define _tprintf_s wprintf_s
-#define _stprintf_s swprintf_s
-#define _tcscpy_s wcscpy_s
-#endif
-#else
-typedef char Char;
-#define tstring string
-#ifndef _T
-#define _T(x)  x
-#endif
-#ifndef _tprintf_s
-#define _tprintf_s printf_s
-#define _stprintf_s sprintf_s
-#define _tcscpy_s strcpy_s
-#endif
-#endif
-typedef const Char* PCStr;
-typedef Char* PStr;
-#ifndef BUFSIZE
-#define BUFSIZE 4096
-#endif
-#ifndef max
-#define max(a,b) ((a) < (b) ? (b) : (a))
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
-#endif
-
-template<class T1> T1 LxAbs(T1 d)
-{
-	return (d >= 0) ? (d) : (-d);
-}
-template<class T1> bool isSignRev(const T1* v, size_t n){
-	size_t p = 0;
-	size_t sum = 0;
-
-	for (size_t i = 0; i < n; ++i)
-	{
-		p = (size_t)v[i];
-		if (p >= 0)
-			sum += p + i;
-
-	}
-
-	if (sum % 2 == 0) // 如果是偶数，说明不变号	
-		return false;
-	return true;
-}
-template<class T1> bool isSignRev(const std::vector<T1>& v){	
-	return isSignRev(v.data(),v.size());
-}
-
-//sse指令集数据拷贝
-template<class Ty> void memcpy_sse(Ty* left, const Ty* right, size_t nCounts) {
-	struct block_4 { Ty a[4]; };
-	struct block_8 { Ty a[8]; };
-	struct block_16 { Ty a[16]; };
-	if (nCounts < 4) {
-		for (size_t j = 0; j < nCounts; ++j)
-			left[j] = right[j];
-	}
-	else if (nCounts < 16) {
-		size_t sj = nCounts / 4 * 4;
-		for (size_t j = 0; j < sj; j += 4)
-			*(block_4*)&left[j] = *(block_4*)&right[j];
-		for (size_t j = sj; j < nCounts; ++j)
-			left[j] = right[j];
-	}
-	else {
-		size_t sj = nCounts / 16 * 16;
-		size_t sj2 = nCounts / 4 * 4;
-		for (size_t j = 0; j < sj; j += 16)
-			*(block_16*)&left[j] = *(block_16*)&right[j];
-		for (size_t j = sj; j < sj2; j += 4)
-			*(block_4*)&left[j] = *(block_4*)&right[j];
-		for (size_t j = sj2; j < nCounts; ++j)
-			left[j] = right[j];
-	}
-}
+#include "CLMatrix.h"
 
 // 矩阵类模板
 template <class T1>
-class CLMatrixT
+class CLMatrixExT:public CLMultiDimData<T1>
 {
 public:
-	using obj = CLMatrixT<T1>;
+	using base = CLMultiDimData<T1>;
+	using obj = CLMatrixExT<T1>;
 	using ref = obj&;
 	using remove_ref = obj&&;
 	typedef std::vector<T1> MatrixLine;
 	typedef std::vector<MatrixLine> Matrix;
 	typedef std::initializer_list<MatrixLine> MatrixL;
-protected:
-#if CLMAT_USE_MEMPOOLS > 0
-	Matrix& matrix;
-#else
-	Matrix matrix;
-#endif
-	size_t m_rows, m_cols;
-	
+protected:	
 	template<class TList>
 	void set(size_t r, size_t c, const TList& m) {
 		resize(r, c);
 #if CLMAT_USE_SSE > 0
 		if (matrixUseSSE) {
 			for (size_t i = 0; i < r; ++i)
-				::memcpy_sse(&matrix[i][0], &m[i][0], c);
+				::memcpy_sse(&(*this)[i][0], &m[i][0], c);
 			return;
 		}
 #endif
 		for (size_t i = 0; i < r; ++i)
 			for (size_t j = 0; j < c; ++j)
-				matrix[i][j] = m[i][j];
+				(*this)[i][j] = m[i][j];
 		return;
 	}
 	void valid() {//extend line to full
-		for (size_t i = 0; i < rows(); ++i)
-			matrix[i].resize(cols(), 0);//逐层扩充
+		
 	}
 	void print_(PCStr lpFlag = nullptr) const { 
 		size_t r = rows();
@@ -194,14 +52,14 @@ protected:
 			{
 				//计算整数位
 				size_t nc = 0;
-				double maxV = ::abs(double(matrix[i][j]));
+				double maxV = ::abs(double((*this)[i][j]));
 				while (maxV >= 1.0) {
 					maxV /= 10.0;
 					++nc;
 				}
 
 				//计算小数位
-				auto xs = ((long long)(::abs(double(matrix[i][j] - ((T1)(long long)(matrix[i][j])))) * v6)) * v_6;
+				auto xs = ((long long)(::abs(double((*this)[i][j] - ((T1)(long long)((*this)[i][j])))) * v6)) * v_6;
 				size_t prec = 0;
 				while (xs >= v_6) {
 					xs *= 10.0;
@@ -224,11 +82,11 @@ protected:
 			{
 				if (j > 0)
 					cout << ",";
-				if (::abs(double(matrix[i][j] - ((T1)(long long)(matrix[i][j])))) < v_6) //清除末尾全0
-					cout << std::setprecision(0) << std::setw(wid) << matrix[i][j];
+				if (::abs(double((*this)[i][j] - ((T1)(long long)((*this)[i][j])))) < v_6) //清除末尾全0
+					cout << std::setprecision(0) << std::setw(wid) << (*this)[i][j];
 				else {
 					//计算本元素实际小数位
-					auto xs = ((long long)(::abs(double(matrix[i][j] - ((T1)(long long)(matrix[i][j])))) * v6)) * v_6;
+					auto xs = ((long long)(::abs(double((*this)[i][j] - ((T1)(long long)((*this)[i][j])))) * v6)) * v_6;
 					size_t prec = 0;
 					while (xs >= v_6)
 					{
@@ -238,7 +96,7 @@ protected:
 						if (prec >= precst)
 							break;
 					}
-					cout << std::setprecision(prec) << std::setw(wid) << matrix[i][j];
+					cout << std::setprecision(prec) << std::setw(wid) << (*this)[i][j];
 				}
 			}
 			cout << endl;
@@ -249,110 +107,47 @@ protected:
 	}
 public:
 
-#if CLMAT_USE_MEMPOOLS > 0
-	static long long getMatrixCreateTimes() {
-		return 0;
-	}
+
 	//默认构造
-	CLMatrixT()
-		:matrix(*newObjAndNamed(Matrix, CLMatrixT_Inline_Matrix_Data)), m_rows(0), m_cols(0)
-	{}
-	~CLMatrixT() {
-		giveUpObj(&matrix);
-	}
+	CLMatrixExT() {}
+	~CLMatrixExT() {}
 	//带初值设定的矩阵构造
-	CLMatrixT(size_t rows, size_t cols, T1 v = 0)
-		:matrix(*newObjAndNamed(Matrix, CLMatrixT_Inline_Matrix_Data)), m_rows(0), m_cols(0)
+	CLMatrixExT(size_t rows, size_t cols, T1 v = 0)
 	{
 		make(rows, cols, v);
 	}
 	//带自定义赋值模式的矩阵构造
-	CLMatrixT(size_t rows, size_t cols, std::function<void(T1 & item, size_t row, size_t col)> const& func)
-		:matrix(*newObjAndNamed(Matrix, CLMatrixT_Inline_Matrix_Data)), m_rows(0), m_cols(0)
+	CLMatrixExT(size_t rows, size_t cols, const std::function<void(T1 & item, size_t row, size_t col)> && func) 
 	{
 		make(rows, cols, func);
 	}
 	//带自定义赋值模式的方矩阵构造
-	CLMatrixT(size_t siRank, std::function<void(T1 & item, size_t row, size_t col)> const& func)
-		:matrix(*newObjAndNamed(Matrix, CLMatrixT_Inline_Matrix_Data)), m_rows(0), m_cols(0)
+	CLMatrixExT(size_t siRank, const std::function<void(T1 & item, size_t row, size_t col)> & func) 
 	{
 		make(siRank, siRank, func);
 	}
-	CLMatrixT(const obj& m)
-		:matrix(*newObjAndNamed(Matrix, CLMatrixT_Inline_Matrix_Data)), m_rows(0), m_cols(0)
+	CLMatrixExT(const obj& m) 
 	{
 		*this = m;
 	}
-	CLMatrixT(obj&& m) noexcept
-		:matrix(*newObjAndNamed(Matrix, CLMatrixT_Inline_Matrix_Data)), m_rows(0), m_cols(0)
-	{		
+	CLMatrixExT(obj&& m) noexcept
+	{
 		*this = std::move(m);
-	} 	
-	template <class T2>	CLMatrixT(const CLMatrixT<T2>& m)
-		: matrix(*newObjAndNamed(Matrix, CLMatrixT_Inline_Matrix_Data)), m_rows(0), m_cols(0)
+	}
+	template <class T2>	CLMatrixExT(const CLMatrixExT<T2>& m)
 	{
 		*this = m;
 	}
-	CLMatrixT(const Matrix& m)
-		:matrix(*newObjAndNamed(Matrix, CLMatrixT_Inline_Matrix_Data)), m_rows(0), m_cols(0)
+	CLMatrixExT(const Matrix& m)
 	{
 		*this = m;
 	}
 
-	CLMatrixT(const MatrixL& m)
-		:matrix(*newObjAndNamed(Matrix, CLMatrixT_Inline_Matrix_Data)), m_rows(0), m_cols(0)
-	{
-		*this = m;
-	}
-#else
-	static long long getMatrixCreateTimes() {
-		return matrixCreateTimes;
-	}
-	//默认构造
-	CLMatrixT() :m_rows(0), m_cols(0)
-	{}
-	~CLMatrixT() {
-		matrixCreateTimes++;
-	}
-	//带初值设定的矩阵构造
-	CLMatrixT(size_t rows, size_t cols, T1 v = 0) :m_rows(0), m_cols(0)
-	{
-		make(rows, cols, v);
-	}
-	//带自定义赋值模式的矩阵构造
-	CLMatrixT(size_t rows, size_t cols, std::function<void(T1 & item, size_t row, size_t col)> const& func) :m_rows(0), m_cols(0)
-	{
-		make(rows, cols, func);
-	}
-	//带自定义赋值模式的方矩阵构造
-	CLMatrixT(size_t siRank, std::function<void(T1 & item, size_t row, size_t col)> const& func) :m_rows(0), m_cols(0)
-	{
-		make(siRank, siRank, func);
-	}
-	CLMatrixT(const obj& m) 
-		:m_rows(0), m_cols(0)
-	{
-		*this = m;
-	}
-	CLMatrixT(obj&& m) noexcept
-		:m_rows(0), m_cols(0)
-	{
-		*this = std::move(m);
-	}
-	template <class T2>	CLMatrixT(const CLMatrixT<T2>& m) : m_rows(0), m_cols(0)
-	{
-		*this = m;
-	}
-	CLMatrixT(const Matrix& m) :m_rows(0), m_cols(0)
+	CLMatrixExT(const MatrixL& m) 
 	{
 		*this = m;
 	}
 
-	CLMatrixT(const MatrixL& m) :m_rows(0), m_cols(0)
-	{
-		*this = m;
-	}
-#endif
 	// 返回矩阵对象右值引用（用于不需要拷贝构造或赋值的情况，提高赋值代码性能）
 	remove_ref move() {
 		return static_cast<remove_ref>(*this);
@@ -374,53 +169,64 @@ public:
 		return matrixUseSSEMinRankbk;
 	}
 	ref operator=(const obj& m) {
-		set(m.rows(), m.cols(), m.matrix);
+		//set(m.rows(), m.cols(), m.matrix);
+		base::operator=(m);
 		return *this;
 	}
 	ref operator= (obj&& m) noexcept {
-		std::swap(matrix, m.matrix);
-		m_rows = m.rows();
-		m_cols = m.cols();
+		std::swap(base::_data, m.base::_data);
+		base::update();
+		m.base::update();
 		m.clear();
 		return *this;
 	}
-	template <class T2>	ref operator=(const CLMatrixT<T2>& m) {
+	template <class T2>	ref operator=(const CLMatrixExT<T2>& m) {
 		auto r = m.rows(), c = m.cols();
 		resize(r, c);
 		for (size_t i = 0; i < r; ++i)
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				matrix[i][j] = T1(m[i][j]);
+				(*this)[i][j] = T1(m[i][j]);
 			}
 		}
 		return *this;
 	}
 	ref operator=(const Matrix& m) {
-		if ((m_rows = m.size()) > matrix.size()) {
-			matrix.resize(m_rows);
-		}
-		m_cols = 0;
-		for (size_t i = 0; i < m_rows; ++i)
+		auto row = m.size();
+		auto col = 0;
+		for (size_t i = 0; i < row; i++)
 		{
-			if (m_cols < m[i].size())
-				m_cols = m[i].size();
-			matrix[i] = m[i];
+			if (m[i].size() > col)
+				col = m[i].size();
+		}
+		resize(row, col);
+		for (size_t i = 0; i < rows(); i++)
+		{
+			for (size_t j = 0; j < m[i].size(); j++)
+			{
+				(*this)[i][j] = m[i][j];
+			}
 		}
 		valid();
 		return *this;
 	}
 	ref operator=(const MatrixL& m) {
-		if ((m_rows = m.size()) > matrix.size()) {
-			matrix.resize(m_rows);
-		}
-		m_cols = 0;
-		size_t i = 0;
-		for (auto it = m.begin(); it != m.end(); ++it)
+		auto row = m.size();
+		auto col = 0;
+		for (auto ite = m.begin();  ite !=  m.end(); ++ite)
 		{
-			if (m_cols < (*it).size())
-				m_cols = (*it).size();
-			matrix[i] = *it;
+			if (ite->size() > col)
+				col = ite->size();
+		}
+		resize(row, col);
+		size_t i = 0;
+		for (auto ite = m.begin(); i < rows(); ++ite)
+		{
+			for (size_t j = 0; j < ite->size(); j++)
+			{
+				(*this)[i][j] = ite->at(j);
+			}
 			++i;
 		}
 		valid();
@@ -435,13 +241,13 @@ public:
 		return print_(lpFlag), *this;
 	}
 	// 按指定规则构建矩阵,会按照指定规则修改每一项，方法区别于resize()
-	ref make(size_t rows, size_t cols, std::function<void(T1 & item, size_t row, size_t col)> const& func = [](T1& v, size_t r, size_t c) { v = 0; }) {
+	ref make(size_t rows, size_t cols, const std::function<void(T1 & item, size_t row, size_t col)> & func = [](T1& v, size_t r, size_t c) { v = 0; }) {
 		resize(rows, cols);
 		auto r = this->rows(), c = this->cols();
 		for (size_t i = 0; i < r; ++i)
 		{
 			for (size_t j = 0; j < c; ++j) {
-				func(matrix[i][j], i, j);
+				func((*this)[i][j], i, j);
 			}
 		}
 		return *this;
@@ -449,17 +255,23 @@ public:
 	// 按指定规则构建矩阵,会按照指定规则修改每一项，方法区别于resize()
 	ref make(size_t rows, size_t cols, T1 v = 0) {
 		resize(rows, cols);
+		if (v == 0)
+			return *this;
 		auto r = this->rows(), c = this->cols();
-		for (size_t i = 0; i < r; ++i)
+		for (size_t i = 0,si = base::size(); i < si; i++)
+		{
+			base::element(i) = v;
+		}
+		/*for (size_t i = 0; i < r; ++i)
 		{
 			for (size_t j = 0; j < c; ++j) {
-				matrix[i][j] = v;
+				(*this)[i][j] = v;
 			}
-		}
+		}*/
 		return *this;
 	}
 	// 按指定规则构建方正矩阵（默认状态填充全0）
-	ref makeSquare(size_t newRank, std::function<void(T1 & item, size_t row, size_t col)> const& func = [](T1& v, size_t r, size_t c) { v = 0; }) {
+	ref makeSquare(size_t newRank, const std::function<void(T1 & item, size_t row, size_t col)> & func = [](T1& v, size_t r, size_t c) { v = 0; }) {
 		return make(newRank, newRank, func);
 	}
 	// 按指定值填充构建方正矩阵并（默认状态填充全0）
@@ -470,254 +282,70 @@ public:
 	ref makeE(size_t newRank) {
 		return makeSquare(newRank, [](T1& v, size_t r, size_t c) { if (r == c)v = 1; else v = 0; });
 	}
-	// 改变当前矩阵大小,用特定值填充,对已有的项不作调整
-	ref resize(size_t rows, size_t cols, T1 v = 0)
-	{
-		if (rows > matrix.size()) {
-			matrix.resize(rows);
-			if (cols <= this->cols()) {
-				for (size_t i = this->rows(); i < rows; ++i)
-					matrix[i].resize(cols, v);
-			}
-			else {
-				for (size_t i = 0; i < rows; ++i)
-					matrix[i].resize(cols, v);
-			}
-		}
-		else {
-			if (cols > this->cols()) {
-				for (size_t i = 0; i < rows; ++i)
-					matrix[i].resize(cols, v);
-			}
-		}
-		m_rows = rows;
-		m_cols = cols;
+	// 改变当前矩阵大小,并清空所有内容,用0填充；维度含0，就清空
+	ref resize(size_t rows, size_t cols)
+	{	
+		//if (rows == 0 || cols == 0) {
+		//	//base::clear();
+		//	throw invalid_argument("dimension is 0!");
+		//}
+		//else 
+			base::resize(cols, rows);
 		return *this;
 	}
-	// 取得一个填充或裁剪行后的新矩阵
-	obj rerows(size_t newRows, T1 v = 0) const {
-		obj m = *this;
-		m.resize(newRows, cols(), v);
-		return std::move(m);
-	}
-	// 取得一个填充或裁剪列后的新矩阵
-	obj recols(size_t newCols, T1 v = 0) const {
-		obj m = *this;
-		m.resize(rows(), newCols, v);
-		return std::move(m);
-	}
-	// 取得一个填充或裁剪行列后的新矩阵
-	obj square(size_t newRank, T1 v = 0)const {
-		obj m = *this;
-		m.resize(newRank, newRank, v);
-		return std::move(m);
-	}
-	// 取得一个按最大行或列数填充或裁剪行列后的新矩阵
-	obj squareMax(T1 v = 0)const {
-		auto r = max(rows(), cols());
-		obj m = *this;
-		m.resize(r, r, v);
-		return std::move(m);
-	}
-	// 取得一个按最小行或列数填充或裁剪行列后的新矩阵
-	obj squareMin(T1 v = 0)const {
-		auto r = min(rows(), cols());
-		obj m = *this;
-		m.resize(r, r, v);
-		return std::move(m);
-	}
-	// 在矩阵末尾添加一行,增加的行会被裁剪到列与矩阵一致，矩阵为空则直接增加，若矩阵不为空增加向量为空则增加一个全0向量到末尾
-	ref add_row(const std::vector<T1>& Line)
-	{		
-		auto rs = rows();
-		resize(rows() + 1, cols() > 0 ? cols() : Line.size());
-		for (size_t i = 0; i < cols(); ++i)
-		{
-			if (i < Line.size())
-				matrix[rs][i] = Line[i];
-			else
-				matrix[rs][i] = 0;
-		}
-		return *this;
-	}
-	// 在矩阵末尾添加一行数据,用值v初始化，若矩阵本身是一个空矩阵则什么也不做
-	ref add_row(T1 v)
-	{
-		std::vector<T1> Line(cols(), v);
-		return add_row(Line);
-	}
-	// 在矩阵末尾添加n行,增加的行会被裁剪到列与矩阵一致，矩阵为空则直接增加，若矩阵不为空增加向量为空则增加一个全0向量到末尾
-	ref add_rows(const std::vector<T1>& Line, size_t nLine) {
-		for (size_t l = nLine; l > 0; add_row(Line), --l);
-		return *this;
-	}
-	// 在矩阵末尾添加n行数据,用值v初始化，若矩阵本身是一个空矩阵则什么也不做
-	ref add_rows(T1 v, size_t nLine) {
-		std::vector<T1> Line(cols(), v);
-		return add_rows(Line, nLine);
-	}
-	// 在矩阵某行前添加一行数据，rowPos从0开始,若插入行大于总行数，则增加到矩阵末尾
-	ref insert_row(const std::vector<T1>& Line, size_t rowPos) {
-		if (rows() <= rowPos)
-			return add_row(Line);
-		auto cos = cols();
-		auto it = matrix.insert(matrix.begin() + rowPos, Line);
-		++m_rows;
-		if (Line.size() > cos)
-			it->erase(it->begin() + cos - 1, it->begin() + Line.size() - 1);
-		else if (Line.size() < cos)
-			it->resize(cos, 0);
-		return *this;
-	}
-	// 在矩阵某行前添加一行数据，rowPos从0开始,若插入行大于总行数，则增加到矩阵末尾,用值v初始化，若矩阵本身是一个空矩阵则什么也不做
-	ref insert_row(T1 v, size_t rowPos) {
-		std::vector<T1> Line(cols(), v);
-		return insert_row(Line, rowPos);
-	}
-	// 在矩阵某行前添加n行数据，rowPos从0开始,若插入行大于总行数，则增加到矩阵末尾
-	ref insert_rows(const std::vector<T1>& Line, size_t rowPos, size_t nLine) {
-		for (size_t l = nLine; l > 0; insert_row(Line, rowPos), --l);
-		return *this;
-	}
-	// 在矩阵某行前添加n行数据，rowPos从0开始,若插入行大于总行数，则增加到矩阵末尾,用值v初始化，若矩阵本身是一个空矩阵则什么也不做
-	ref insert_rows(T1 v, size_t rowPos, size_t nLine) {
-		std::vector<T1> Line(cols(), v);
-		return insert_rows(Line, rowPos, nLine);
-	}
-	// 删除第rowPos行，rowPos从0开始
-	ref delete_row(size_t rowPos) {
-		auto cos = cols();
-		if (cos > 0) {
-			auto ros = rows();
-			if (rowPos + 1 <= ros) {
-				matrix.erase(matrix.begin() + rowPos);
-				m_rows--;
-			}
-			if (rows() == 0)clear();
-		}
-		return *this;
-	}
-	// 删除第rowPos开始计算的nLine行，rowPos从0开始,超出范围则删除从开始位置到末尾的全部行
-	ref delete_rows(size_t rowPos, size_t nLine) {
-		auto cos = cols();
-		if (cos > 0 && nLine > 0) {
-			auto ros = rows();
-			if (rowPos + nLine <= ros)
-				matrix.erase(matrix.begin() + rowPos, matrix.begin() + rowPos + nLine), m_rows -= nLine;
-			else if (rowPos < ros)
-				matrix.erase(matrix.begin() + rowPos, matrix.end()), m_rows -= (ros - rowPos);
-			if (rows() == 0)clear();
-		}
-		return *this;
-	}
+	//// 取得一个填充或裁剪行后的新矩阵
+	//obj rerows(size_t newRows, T1 v = 0) const {
+	//	static_assert(false, "has not completed!");
+	//	obj m = *this;
+	//	m.resize(newRows, cols(), v);
+	//	return std::move(m);
+	//}
+	//// 取得一个填充或裁剪列后的新矩阵
+	//obj recols(size_t newCols, T1 v = 0) const {
+	//	static_assert(false, "has not completed!");
+	//	obj m = *this;
+	//	m.resize(rows(), newCols, v);
+	//	return std::move(m);
+	//}
+	//// 取得一个填充或裁剪行列后的新矩阵
+	//obj square(size_t newRank, T1 v = 0)const {
+	//	static_assert(false, "has not completed!");
+	//	obj m = *this;
+	//	m.resize(newRank, newRank, v);
+	//	return std::move(m);
+	//}
+	//// 取得一个按最大行或列数填充或裁剪行列后的新矩阵
+	//obj squareMax(T1 v = 0)const {
+	//	static_assert(false, "has not completed!");
+	//	auto r = max(rows(), cols());
+	//	obj m = *this;
+	//	m.resize(r, r, v);
+	//	return std::move(m);
+	//}
+	//// 取得一个按最小行或列数填充或裁剪行列后的新矩阵
+	//obj squareMin(T1 v = 0)const {
+	//	static_assert(false, "has not completed!");
+	//	auto r = min(rows(), cols());
+	//	obj m = *this;
+	//	m.resize(r, r, v);
+	//	return std::move(m);
+	//}
+	
 	// 将换两行
 	ref swap_row(size_t row1, size_t row2)
 	{
 		if (row1 != row2 && row1 >= 0 &&
 			row1 < rows() && row2 >= 0 && row2 < rows())
 		{
-			std::swap(matrix[row1], matrix[row2]);
+			auto col = cols();
+			for (size_t i = 0, si = col; i < si; ++i)
+			{
+				std::swap((*this)[row1][i], (*this)[row2][i]);
+			}
 		}
 		return *this;
-	}         // 将换两行的数据
-	// 在矩阵末尾添加一列,增加的列会被裁剪到列与矩阵一致，矩阵为空则直接增加，若矩阵不为空增加向量为空则增加一个全0向量到末尾
-	ref add_col(const std::vector<T1>& line)
-	{
-		if(isEmpty())
-			resize(line.size(), 1);
-		else
-			resize(rows(), cols() + 1);
-		for (size_t i = 0; i < rows(); ++i)
-		{
-			if (i < line.size())
-				matrix[i][cols() - 1] = line[i];
-			else
-				matrix[i][cols() - 1] = 0;
-		}
-		return *this;
-	}
-	// 在矩阵末尾添加一列数据,用值v初始化，若矩阵本身是一个空矩阵则什么也不做
-	ref add_col(T1 v)
-	{
-		std::vector<T1> Line(rows(), v);
-		return add_col(Line);
-	}
-	// 在矩阵末尾添加n列,增加的列会被裁剪到列与矩阵一致，矩阵为空则直接增加，若矩阵不为空增加向量为空则增加一个全0向量到末尾
-	ref add_cols(const std::vector<T1>& Line, size_t nLine) {
-		for (size_t i = 0; i < nLine; ++i)
-			add_col(Line);
-		return *this;
-	}
-	// 在矩阵末尾添加n列数据,用值v初始化，若矩阵本身是一个空矩阵则什么也不做
-	ref add_cols(T1 v, size_t nLine) {
-		std::vector<T1> Line(rows(), v);
-		return add_cols(Line, nLine);
-	}
-	// 在矩阵某列前添加一列数据，rowPos从0开始,若插入列大于总列数，则增加到矩阵末尾
-	ref insert_col(const std::vector<T1>& Line, size_t colPos) {
-		if (cols() <= colPos)
-			return add_col(Line);
-		if (Line.size()) {
-			auto ros = rows();
-			size_t si = min(ros, Line.size());
-			for (size_t i = 0; i < si; ++i)
-				matrix[i].insert(matrix[i].begin() + colPos, Line[i]);
-			for (size_t i = si; i < ros; ++i)
-				matrix[i].insert(matrix[i].begin() + colPos, 0);
-		}
-		return *this;
-	}
-	// 在矩阵某列前添加一列数据，rowPos从0开始,若插入列大于总列数，则增加到矩阵末尾,用值v初始化，若矩阵本身是一个空矩阵则什么也不做
-	ref insert_col(T1 v, size_t colPos) {
-		std::vector<T1> Line(rows(), v);
-		return insert_col(Line, colPos);
-	}
-	// 在矩阵某列前添加n列数据，rowPos从0开始,若插入列大于总列数，则增加到矩阵末尾
-	ref insert_cols(const std::vector<T1>& Line, size_t colPos, size_t nLine) {
-		if (cols() <= colPos)
-			return add_cols(Line, nLine);
-		if (Line.size() && nLine) {
-			auto ros = rows();
-			size_t si = min(ros, Line.size());
-			for (size_t i = 0; i < si; ++i)
-				matrix[i].insert(matrix[i].begin() + colPos, nLine, Line[i]);
-			for (size_t i = si; i < ros; ++i)
-				matrix[i].insert(matrix[i].begin() + colPos, nLine, 0);
-		}
-		return *this;
-	}
-	// 在矩阵某列前添加n列数据，rowPos从0开始,若插入列大于总列数，则增加到矩阵末尾,用值v初始化，若矩阵本身是一个空矩阵则什么也不做
-	ref insert_cols(T1 v, size_t colPos, size_t nLine) {
-		std::vector<T1> Line(rows(), v);
-		return insert_cols(Line, colPos, nLine);
-	}
-	// 删除第rowPos列，rowPos从0开始
-	ref delete_col(size_t colPos) {
-		auto col = cols();
-		if (col > 0) {
-			auto ros = rows();
-			if (colPos + 1 <= col)
-				for (size_t i = 0; i < ros; ++i)
-					matrix[i].erase(matrix[i].begin() + colPos);
-			if (cols() == 0)clear();
-		}
-		return *this;
-	}
-	// 删除第rowPos开始计算的nLine列，rowPos从0开始,超出范围则删除从开始位置到末尾的全部列
-	ref delete_cols(size_t colPos, size_t nLine) {
-		auto col = cols();
-		if (col > 0 && nLine > 0) {
-			auto ros = rows();
-			if (colPos + nLine <= col)
-				for (size_t i = 0; i < ros; ++i)
-					matrix[i].erase(matrix[i].begin() + colPos, matrix[i].begin() + colPos + nLine);
-			else if (colPos < col)
-				for (size_t i = 0; i < ros; ++i)
-					matrix[i].erase(matrix[i].begin() + colPos, matrix[i].end());
-			if (cols() == 0)clear();
-		}
-		return *this;
-	}
+	}    
+	
 	// 将换两列数据
 	ref swap_col(size_t col1, size_t col2)
 	{
@@ -727,17 +355,20 @@ public:
 			auto ros = rows();
 			for (size_t i = 0, si = ros; i < si; ++i)
 			{
-				std::swap(matrix[i][col1], matrix[i][col2]);
+				std::swap((*this)[i][col1], (*this)[i][col2]);
 			}
 		}
 		return *this;
 	}
 	// 用目标向量设置某一行，不会改变维度，多余元素省略
 	ref setRow(size_t row, const std::vector<T1>& tag) {
+		return setRow(row, tag.data(), tag.size());
+	}
+	ref setRow(size_t row, const T1* tag,size_t tagSize) {
 		if (row < rows()) {
-			auto& r = matrix[row];
+			auto r = (*this)[row];
 			auto c = cols(); size_t i = 0;
-			for (size_t si = min(c, tag.size()); i < si; ++i)
+			for (size_t si = min(c, tagSize); i < si; ++i)
 				r[i] = tag[i];
 			for (; i < c; ++i)
 				r[i] = 0;
@@ -749,9 +380,9 @@ public:
 		if (col < cols()) {
 			auto r = rows(); size_t i = 0;
 			for (size_t si = min(r, tag.size()); i < si; ++i)
-				matrix[i][col] = tag[i];
+				(*this)[i][col] = tag[i];
 			for (; i < r; ++i)
-				matrix[i][col] = 0;
+				(*this)[i][col] = 0;
 		}
 		return *this;
 	}
@@ -764,9 +395,9 @@ public:
 			for (size_t j = 0; j < c; ++j)
 			{
 				if (tt < stt)
-					matrix[i][j] = tag[tt++];
+					(*this)[i][j] = tag[tt++];
 				else
-					matrix[i][j] = 0;
+					(*this)[i][j] = 0;
 			}
 		}
 		return *this;
@@ -785,7 +416,7 @@ public:
 				auto ci = c * i + j;
 				if (ci >= nCounts)
 					return buf;
-				buf[ci] = matrix[i][j];
+				buf[ci] = (*this)[i][j];
 			}
 		}
 		return buf;
@@ -793,11 +424,11 @@ public:
 	// 清理矩阵
 	ref clear()
 	{
-		m_rows = m_cols = 0;
+		base::clear();
 		return *this;
 	}
 	// 通过自定义方式修改矩阵中的每项，也可只修改一个子矩阵区域。若只是需要修改一份矩阵的副本请使用operate()方法。
-	ref foreach(std::function<void(T1 & item, size_t iRow, size_t iCol)> const& func,
+	ref foreach(const std::function<void(T1 & item, size_t iRow, size_t iCol)> & func,
 		size_t startRow = 0, size_t startCol = 0, size_t endRow = 0, size_t endCol = 0)
 	{
 		return ::foreach(*this, func, startRow, startCol, endRow, endCol);
@@ -812,7 +443,7 @@ public:
 	ref zero() { return this->foreach(0); }
 	// 拷贝并逐项操作函数，若是需要修改原矩阵请使用foreach()方法。
 	// 作用：取得原矩阵的拷贝并按规则处理每一项后的新矩阵（默认状态下只拷贝什么也不做），也可设定范围让规则只作用于一个子区域
-	obj operate(std::function<void(T1 & item, size_t iRow, size_t iCol)> const& func = [](T1&, size_t, size_t) {},
+	obj operate(const std::function<void(T1 & item, size_t iRow, size_t iCol)> & func = [](T1&, size_t, size_t) {},
 		size_t startRow = 0, size_t startCol = 0, size_t endRow = 0, size_t endCol = 0) const {
 		obj m = *this;
 		return std::move(::foreach(m, func, startRow, startCol, endRow, endCol));
@@ -834,9 +465,9 @@ public:
 		return std::move(m);
 	}
 	// 矩阵的行数
-	size_t  rows() const { return /*matrix.size() */ m_rows; }
+	size_t  rows() const { return base::dimlength(base::dim::row); }
 	// 矩阵的列数
-	size_t  cols() const { return /*matrix.size() ? matrix[0].size() : 0*/ m_cols; }
+	size_t  cols() const { return base::dimlength(base::dim::col); }
 	// 是否为空
 	bool isEmpty() const { return rows() == 0; }
 	// 是否为方阵
@@ -845,7 +476,7 @@ public:
 	bool isInvalid(size_t* row = nullptr, size_t* col = nullptr) const {
 		for (size_t i = 0; i < rows(); ++i)
 		{
-			auto& lay = matrix[i];
+			auto lay = (*this)[i];
 			for (size_t j = 0; j < cols(); ++j)
 			{
 				if (_isnan(lay[j]) || isinf(lay[j])) {
@@ -864,12 +495,8 @@ public:
 			throw std::runtime_error("Invalid Matrix");
 		}
 	}
-	// []操作符重载 
-	const MatrixLine& operator[](size_t row) const { return matrix[row]; }
-	//[]操作符重载 
-	MatrixLine& operator[](size_t row) { return matrix[row]; }
-
-	template <class T2>	obj& operator+=(const CLMatrixT<T2>& m)
+	
+	template <class T2>	obj& operator+=(const CLMatrixExT<T2>& m)
 	{
 #if CLMAT_USE_SSE > 0
 		if (matrixUseSSE)
@@ -881,7 +508,7 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				matrix[i][j] += m[i][j];
+				(*this)[i][j] += m[i][j];
 			}
 		}
 		return *this;
@@ -894,12 +521,12 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				matrix[i][j] += v;
+				(*this)[i][j] += v;
 			}
 		}
 		return *this;
 	}
-	template <class T2> obj& operator-=(const CLMatrixT<T2>& m)
+	template <class T2> obj& operator-=(const CLMatrixExT<T2>& m)
 	{
 #if CLMAT_USE_SSE > 0
 		if (matrixUseSSE)
@@ -912,7 +539,7 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				matrix[i][j] -= m[i][j];
+				(*this)[i][j] -= m[i][j];
 			}
 		}
 
@@ -922,7 +549,7 @@ public:
 	{
 		return *this += (-v);
 	}
-	template <class T2> obj& operator*=(const CLMatrixT<T2>& m)
+	template <class T2> obj& operator*=(const CLMatrixExT<T2>& m)
 	{
 		return *this = ::dotMul(*this, m, (ref)obj());
 	}
@@ -935,12 +562,12 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				matrix[i][j] *= v;
+				(*this)[i][j] *= v;
 			}
 		}
 		return *this;
 	}
-	template <class T2> obj& operator/=(const CLMatrixT<T2>& m)
+	template <class T2> obj& operator/=(const CLMatrixExT<T2>& m)
 	{
 		return operator*=(::inv(m, (ref)obj()));
 	}
@@ -953,7 +580,7 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				matrix[i][j] /= v;
+				(*this)[i][j] /= v;
 			}
 		}
 		return *this;
@@ -967,8 +594,7 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				auto& r = matrix[i][j];
-				r = int(r)% v;
+				(*this)[i][j] %= v;
 			}
 		}
 		return *this;
@@ -984,7 +610,7 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				m[i][j] = ::pow(matrix[i][j], v);
+				m[i][j] = ::pow((*this)[i][j], v);
 			}
 		}
 		return std::move(m);
@@ -999,7 +625,7 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				m[i][j] = ::pow(base, matrix[i][j]);
+				m[i][j] = ::pow(base, (*this)[i][j]);
 			}
 		}
 		return std::move(m);
@@ -1015,7 +641,7 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				m[i][j] = ::exp(matrix[i][j]);
+				m[i][j] = ::exp((*this)[i][j]);
 			}
 		}
 		return std::move(m);
@@ -1031,7 +657,7 @@ public:
 		{
 			for (size_t j = 0; j < c; ++j)
 			{
-				m[i][j] = ::sqrt(matrix[i][j]);
+				m[i][j] = ::sqrt((*this)[i][j]);
 			}
 		}
 		return std::move(m);
@@ -1042,7 +668,7 @@ public:
 		T1 ret = 0;
 		for (size_t i = 0; i < r; ++i)
 			for (size_t j = 0; j < c; ++j)
-				ret += matrix[i][j];
+				ret += (*this)[i][j];
 		return ret;
 	}
 	// 对矩阵的每一行分别求和，得到N行1列矩阵，结果矩阵每行保存原矩阵每行元素相加之和
@@ -1055,7 +681,7 @@ public:
 			T1 sm = 0;
 			for (size_t j = 0; j < c; ++j)
 			{
-				sm += matrix[i][j];
+				sm += (*this)[i][j];
 			}
 			m[i][0] = sm;
 		}
@@ -1071,42 +697,42 @@ public:
 			T1 sm = 0;
 			for (size_t i = 0; i < r; ++i)
 			{
-				sm += matrix[i][j];
+				sm += (*this)[i][j];
 			}
 			m[0][j] = sm;
 		}
 		return std::move(m);
 	}
 	// 矩阵内积。满足左列=右行条件
-	template <class T2> obj dotMul(const CLMatrixT<T2>& rhs) const {
+	template <class T2> obj dotMul(const CLMatrixExT<T2>& rhs) const {
 		return std::move(::dotMul(*this, rhs, (ref)obj()));
 	}
 	// 矩阵逐点相乘，即元素对应相乘。L行向量 X R横向量，左右操作数的列数必须相同；
 	// 右操作数行数 = 1：左操作数的每个行向量分别与右操作数的唯一行向量相乘；
 	// 右操作数行数 >= 左操作数的行：左操作数的每个行向量分别对应与右操作数的每个行向量相乘；
-	template <class T2> obj mul(const CLMatrixT<T2>& rhs) const {
+	template <class T2> obj mul(const CLMatrixExT<T2>& rhs) const {
 		return std::move(::mul(*this, rhs, (ref)obj()));
 	}
 	// 矩阵逐点相乘，即元素对应相乘。L行向量 X R列向量，左右操作数的列数和行数必须相同；（等价于 右操作数是按其转置来处理逐点相乘的。）
 	// 右操作数列数 = 1：左操作数的每个行向量分别与右操作数的唯一行列量相乘；
 	// 右操作数列数 >= 左操作数的行：左操作数的每个行向量分别对应与右操作数的每个列向量相乘；
-	template <class T2> obj mul_T(const CLMatrixT<T2>& rhs) const {
+	template <class T2> obj mul_T(const CLMatrixExT<T2>& rhs) const {
 		return std::move(::mul_T(*this, rhs, (ref)obj()));
 	}
 	// 矩阵按列逐点相乘，即元素对应相乘。L列向量 X R列向量，左右操作数的行数必须相同；
 	// 右操作数列数 = 1：左操作数的每个列向量分别与右操作数的唯一列向量相乘；
 	// 右操作数列数 >= 左操作数的列数：左操作数的每个列向量分别对应与右操作数的每个列向量相乘；
-	template <class T2> obj mul_V(const CLMatrixT<T2>& rhs) const {
+	template <class T2> obj mul_V(const CLMatrixExT<T2>& rhs) const {
 		return std::move(::mul_V(*this, rhs, (ref)obj()));
 	}
 	// 矩阵按列逐点相乘，即元素对应相乘。L列向量 X R行向量，左右操作数的列数和行数必须相同；（等价于 右操作数是按其转置来处理逐点相乘的。）
 	// 右操作数行数 = 1：左操作数的每个列向量分别与右操作数的唯一行列量相乘；
 	// 右操作数行数 >= 左操作数的列：左操作数的每个列向量分别对应与右操作数的每个行向量相乘；
-	template <class T2> obj mul_VT(const CLMatrixT<T2>& rhs) const {
+	template <class T2> obj mul_VT(const CLMatrixExT<T2>& rhs) const {
 		return std::move(::mul_VT(*this, rhs, (ref)obj()));
 	}
 	template<class T2> obj conv(
-		const CLMatrixT<T2>& K, //卷积核
+		const CLMatrixExT<T2>& K, //卷积核
 		size_t _stepX = 1, //卷积核X移动步长
 		size_t _stepY = 1, //卷积核Y移动步长
 		size_t padding = 0,//输入map，即本矩阵的边缘填充宽度
@@ -1170,20 +796,21 @@ public:
 	ref makeT() {
 		auto r = rows(), c = cols();
 		auto mi = min(r, c);
-		resize(c, r);
+		obj m(c, r);
 		for (size_t i = 0; i < mi; ++i)
 			for (size_t j = 0; j < i; ++j)
-				swap(matrix[i][j], matrix[j][i]);
+				m[j][i] = (*this)[i][j];
 		if (r > c) {
 			for (size_t i = mi; i < r; ++i)
 				for (size_t j = 0; j < c; ++j)
-					swap(matrix[i][j], matrix[j][i]);
+					m[j][i] = (*this)[i][j];
 		}
 		else if (r < c) {
 			for (size_t i = 0; i < r; ++i)
 				for (size_t j = mi; j < c; ++j)
-					swap(matrix[i][j], matrix[j][i]);
+					m[j][i] = (*this)[i][j];
 		}
+		*this = std::move(m);
 		return *this;
 	}
 	// 矩阵的子矩阵。rb开始行，re结束行，cb开始列，ce结束列。
@@ -1281,7 +908,7 @@ public:
 };
 
 template <class T1>
-size_t max_idx(const CLMatrixT<T1>& m,size_t k, size_t n)
+size_t max_idx(const CLMatrixExT<T1>& m, size_t k, size_t n)
 {
 	size_t p = k;
 	for (size_t i = k + 1; i < n; ++i)
@@ -1289,8 +916,9 @@ size_t max_idx(const CLMatrixT<T1>& m,size_t k, size_t n)
 			p = i;
 	return p;
 }
+
 // 通过自定义方式修改矩阵中的每项，也可只修改一个子矩阵区域
-template<class T1> CLMatrixT<T1>& foreach(CLMatrixT<T1>& m, std::function<void(T1 & item, size_t iRow, size_t iCol)> const& func,
+template<class T1> CLMatrixExT<T1>& foreach(CLMatrixExT<T1>& m, const std::function<void(T1 & item, size_t iRow, size_t iCol)> & func,
 	size_t startRow = 0, size_t startCol = 0, size_t endRow = 0, size_t endCol = 0)
 {
 	size_t i = min(startRow, endRow), j = min(startCol, endCol);
@@ -1302,7 +930,7 @@ template<class T1> CLMatrixT<T1>& foreach(CLMatrixT<T1>& m, std::function<void(T
 	return m;
 }
 // 矩阵转置
-template<class T1, class T2> CLMatrixT<T2>& T(const CLMatrixT<T1>& m, CLMatrixT<T2>& ret)
+template<class T1, class T2> CLMatrixExT<T2>& T(const CLMatrixExT<T1>& m, CLMatrixExT<T2>& ret)
 {
 	if (m.isEmpty()) 
 		return ret.clear();
@@ -1319,27 +947,28 @@ template<class T1, class T2> CLMatrixT<T2>& T(const CLMatrixT<T1>& m, CLMatrixT<
 	return ret;
 }
 #ifdef _WINDOWS_
-#define _CLMatrixT_Runtime_Error_Box(err) ::MessageBoxA(nullptr, (err), "CLMatrixT Runtime Error", MB_ICONERROR);
+#define _CLMatrixExT_Runtime_Error_Box(err) ::MessageBoxA(nullptr, (err), "CLMatrixExT Runtime Error", MB_ICONERROR);
 #else
-#define _CLMatrixT_Runtime_Error_Box(err)
+#define _CLMatrixExT_Runtime_Error_Box(err)
 #endif
-#define _CLMatrix_Runtime_Error(funcName,ReasonString)\
+#define _CLMatrixEx_Runtime_Error(funcName,ReasonString)\
 	{std::string name = #funcName;\
-	_CLMatrixT_Runtime_Error_Box(("Error: CLMatrixT method \" " + name + " \" \n" + #ReasonString).c_str());\
+	_CLMatrixExT_Runtime_Error_Box(("Error: CLMatrixExT method \" " + name + " \" \n" + #ReasonString).c_str());\
 	throw std::runtime_error(("CLMatrixT Runtime Error: " + name).c_str());}
+
 // 计算方阵行列式
-template<class T1> T1 det(const CLMatrixT<T1>& m)
+template<class T1> T1 det(const CLMatrixExT<T1>& m)
 {
 	if (m.isEmpty())
 	{
-		_CLMatrix_Runtime_Error(det, matix obj is empty matrix!);
+		_CLMatrixEx_Runtime_Error(det, matix obj is empty matrix!);
 	}
 	else if (!m.isSquare()) {
-		_CLMatrix_Runtime_Error(det, matix obj is not a square matrix!);
+		_CLMatrixEx_Runtime_Error(det, matix obj is not a square matrix!);
 	}
 	T1 ret = 0;
 
-	CLMatrixT<T1> N;
+	CLMatrixExT<T1> N;
 	LU(m, N);
 
 	if (N.isEmpty()) return ret;
@@ -1350,7 +979,7 @@ template<class T1> T1 det(const CLMatrixT<T1>& m)
 		ret *= N[i][i];
 	}
 
-	if (isSignRev(N[N.rows() - 1]))
+	if (isSignRev(&N[N.rows() - 1],N.dimlength(CLMatrixExT<T1>::dim::col)))
 	{
 		return -ret;
 	}
@@ -1358,17 +987,17 @@ template<class T1> T1 det(const CLMatrixT<T1>& m)
 	return ret;
 }
 // 计算矩阵指定子方阵的行列式 
-template<class T1> T1 det(const CLMatrixT<T1>& m, size_t start, size_t end)
+template<class T1> T1 det(const CLMatrixExT<T1>& m, size_t start, size_t end)
 {
-	return det(subMatrix(m, start, end, start, end, CLMatrixT<T1>()));
+	return det(subMatrix(m, start, end, start, end, CLMatrixExT<T1>()));
 }
 // 计算绝对值
-template<class T1, class T2> CLMatrixT<T2>& abs(const CLMatrixT<T1>& m, CLMatrixT<T2>& ret)
+template<class T1, class T2> CLMatrixExT<T2>& abs(const CLMatrixExT<T1>& m, CLMatrixExT<T2>& ret)
 {
 	if (m.isEmpty())
 	{
 		ret.clear();
-		_CLMatrix_Runtime_Error(abs, matix obj is empty matrix!);
+		_CLMatrixEx_Runtime_Error(abs, matix obj is empty matrix!);
 	}
 	size_t r = m.rows();
 	size_t c = m.cols();
@@ -1385,7 +1014,7 @@ template<class T1, class T2> CLMatrixT<T2>& abs(const CLMatrixT<T1>& m, CLMatrix
 	return ret;
 }
 // 返回矩阵所有元素的最大值
-template<class T1> T1 maxElement(const CLMatrixT<T1>& m)
+template<class T1> T1 maxElement(const CLMatrixExT<T1>& m)
 {
 	if (m.isEmpty()) 
 		return 0;
@@ -1405,7 +1034,7 @@ template<class T1> T1 maxElement(const CLMatrixT<T1>& m)
 	return ret;
 }
 // 计算矩阵最大值，并返回该元素的引用
-template<class T1> T1 maxElement(const CLMatrixT<T1>& m, size_t& row, size_t& col)
+template<class T1> T1 maxElement(const CLMatrixExT<T1>& m, size_t& row, size_t& col)
 {
 	if (m.isEmpty()) 
 		return 0.;
@@ -1432,7 +1061,7 @@ template<class T1> T1 maxElement(const CLMatrixT<T1>& m, size_t& row, size_t& co
 	return ret;
 }
 // 计算矩阵所有元素最小值
-template<class T1> T1 minElement(const CLMatrixT<T1>& m)
+template<class T1> T1 minElement(const CLMatrixExT<T1>& m)
 {
 	if (m.isEmpty())
 		return 0;
@@ -1452,7 +1081,7 @@ template<class T1> T1 minElement(const CLMatrixT<T1>& m)
 	return ret;
 }
 // 计算矩阵最小值，并返回该元素的引用
-template<class T1> T1 minElement(const CLMatrixT<T1>& m, size_t& row, size_t& col)
+template<class T1> T1 minElement(const CLMatrixExT<T1>& m, size_t& row, size_t& col)
 {
 	if (m.isEmpty()) 
 		return 0.;
@@ -1479,7 +1108,7 @@ template<class T1> T1 minElement(const CLMatrixT<T1>& m, size_t& row, size_t& co
 	return ret;
 }
 // 取矩阵中指定位置的子矩阵。rb开始行，re结束行，cb开始列，ce结束列。
-template<class T1, class T2> CLMatrixT<T2>& subMatrix(const CLMatrixT<T1>& m, size_t _rb, size_t _cb, size_t _re, size_t _ce, CLMatrixT<T2>& ret)
+template<class T1, class T2> CLMatrixExT<T2>& subMatrix(const CLMatrixExT<T1>& m, size_t _rb, size_t _cb, size_t _re, size_t _ce, CLMatrixExT<T2>& ret)
 {
 	if (m.isEmpty()) return ret.clear();
 	
@@ -1503,21 +1132,21 @@ template<class T1, class T2> CLMatrixT<T2>& subMatrix(const CLMatrixT<T1>& m, si
 	return ret;
 }
 // 计算逆矩阵
-template<class T1, class T2> CLMatrixT<T2>& inv(const CLMatrixT<T1>& m, CLMatrixT<T2>& ret)
+template<class T1, class T2> CLMatrixExT<T2>& inv(const CLMatrixExT<T1>& m, CLMatrixExT<T2>& ret)
 {
 	return LUP_Inverse(m, ret);
 }
 // 计算方阵 M 的 LU 分解,取得增广和矩阵
-template<class T1, class T2> CLMatrixT<T2>& LU(const CLMatrixT<T1>& m, CLMatrixT<T2>& ret)
+template<class T1, class T2> CLMatrixExT<T2>& LU(const CLMatrixExT<T1>& m, CLMatrixExT<T2>& ret)
 {
 	if (m.isEmpty())
 	{
 		ret.clear();
-		_CLMatrix_Runtime_Error(LU, matix obj is empty matrix!);
+		_CLMatrixEx_Runtime_Error(LU, matix obj is empty matrix!);
 	}
 	else if (!m.isSquare()) {
 		ret.clear();
-		_CLMatrix_Runtime_Error(LU, matix obj is not a square matrix!);
+		_CLMatrixEx_Runtime_Error(LU, matix obj is not a square matrix!);
 	}
 
 	size_t n = m.rows();
@@ -1564,12 +1193,12 @@ template<class T1, class T2> CLMatrixT<T2>& LU(const CLMatrixT<T1>& m, CLMatrixT
 	return ret;
 }
 // 从输入流读取矩阵
-template<class T1> CLMatrixT<T1>& readMatrix(CLMatrixT<T1>& M, istream& in = std::cin)
+template<class T1> CLMatrixExT<T1>& readMatrix(CLMatrixExT<T1>& M, istream& in = std::cin)
 {
 	M.clear();
 	string str;
 	T1 b;
-	//CLMatrixT<T1>::MatrixLine v;
+	//CLMatrixExT<T1>::MatrixLine v;
 	size_t i = 0, r = 0, c = 0;
 	while (getline(in, str))
 	{
@@ -1604,7 +1233,7 @@ template<class T1> CLMatrixT<T1>& readMatrix(CLMatrixT<T1>& M, istream& in = std
 	return M;
 }               // 从指定输入流读入矩阵
 // 从文本文件读入矩阵
-template<class T1> CLMatrixT<T1>& readMatrix(CLMatrixT<T1>& M, const tstring& file)
+template<class T1> CLMatrixExT<T1>& readMatrix(CLMatrixExT<T1>& M, const tstring& file)
 {
 	ifstream fin(file.c_str());
 	if (!fin)
@@ -1616,7 +1245,7 @@ template<class T1> CLMatrixT<T1>& readMatrix(CLMatrixT<T1>& M, const tstring& fi
 	return M;
 }                          // 从文本文件读入矩阵
 // 从二进制文件load矩阵
-template<class T1> CLMatrixT<T1>& loadMatrix(CLMatrixT<T1>& m, const tstring& file)
+template<class T1> CLMatrixExT<T1>& loadMatrix(CLMatrixExT<T1>& m, const tstring& file)
 {
 	ifstream fin(file.c_str(), std::ios_base::in | std::ios::binary);
 	if (!fin) return m.clear();
@@ -1651,7 +1280,7 @@ template<class T1> CLMatrixT<T1>& loadMatrix(CLMatrixT<T1>& m, const tstring& fi
 	return m;
 }                          // 从二进制文件读取矩阵
 // 将矩阵输出到指定输出流
-template<class T1> void  printMatrix(const CLMatrixT<T1>& m, ostream& out = std::cout)
+template<class T1> void  printMatrix(const CLMatrixExT<T1>& m, ostream& out = std::cout)
 {
 	size_t r = m.rows();
 	size_t c = m.cols();
@@ -1686,7 +1315,7 @@ template<class T1> void  printMatrix(const CLMatrixT<T1>& m, ostream& out = std:
 	out << std::setprecision(6);
 } 
 // 将矩阵打印到指定文件 
-template<class T1> void  printMatrix(const CLMatrixT<T1>& m, const tstring& file)
+template<class T1> void  printMatrix(const CLMatrixExT<T1>& m, const tstring& file)
 {
 	ofstream fout(file.c_str());
 	if (!fout) return;
@@ -1695,10 +1324,10 @@ template<class T1> void  printMatrix(const CLMatrixT<T1>& m, const tstring& file
 	fout.close();
 }              
 // 将矩阵数据存为二进制文件 
-template<class T1> void  saveMatrix(const CLMatrixT<T1>& m, const tstring& file)
+template<class T1> void  saveMatrix(const CLMatrixExT<T1>& m, const tstring& file)
 {
 	if (m.isEmpty()) 
-		_CLMatrix_Runtime_Error(saveMatrix, matix obj is empty matrix!);
+		_CLMatrixEx_Runtime_Error(saveMatrix, matix obj is empty matrix!);
 
 	ofstream fout(file.c_str(), std::ios_base::out | std::ios::binary);
 	if (!fout) return;
@@ -1723,7 +1352,7 @@ template<class T1> void  saveMatrix(const CLMatrixT<T1>& m, const tstring& file)
 }                 // 将矩阵保存为二进制文件
 
 template<class T1, class T2>
-bool  operator==(const CLMatrixT<T1>& lhs, const CLMatrixT<T2>& rhs)
+bool  operator==(const CLMatrixExT<T1>& lhs, const CLMatrixExT<T2>& rhs)
 {
 	auto r = lhs.rows(), c = lhs.cols();
 	if (r != rhs.rows() || c != rhs.cols())
@@ -1744,8 +1373,8 @@ bool  operator==(const CLMatrixT<T1>& lhs, const CLMatrixT<T2>& rhs)
 
 	return true;
 }
-template<class T1, class T2>
-bool  operator==(const CLMatrixT<T1>& lhs, T2 v)
+template<class T1>
+bool  operator==(const CLMatrixExT<T1>& lhs, T1 v)
 {
 	auto r = lhs.rows(), c = lhs.cols();
 	if (r == 0 || c == 0)
@@ -1764,107 +1393,69 @@ bool  operator==(const CLMatrixT<T1>& lhs, T2 v)
 	}
 	return true;
 }
-template<class T1, class T2>
-bool  operator==(T2 v, const CLMatrixT<T1>& lhs)
+template<class T1>
+bool  operator==(T1 v, const CLMatrixExT<T1>& lhs)
 {
 	return lhs == v;
 }
 template<class T1, class T2>
-bool  operator!=(const CLMatrixT<T1>& lhs, const CLMatrixT<T2>& rhs)
+bool  operator!=(const CLMatrixExT<T1>& lhs, const CLMatrixExT<T2>& rhs)
 {
 	return !(lhs == rhs);
 }
-template<class T1, class T2>
-bool  operator!=(const CLMatrixT<T1>& lhs, T2 v)
+template<class T1>
+bool  operator!=(const CLMatrixExT<T1>& lhs, T1 v)
+{
+	return !(lhs == v);
+}
+template<class T1>
+bool  operator!=(T1 v, const CLMatrixExT<T1>& lhs)
 {
 	return !(lhs == v);
 }
 template<class T1, class T2>
-bool  operator!=(T2 v, const CLMatrixT<T1>& lhs)
-{
-	return !(lhs == v);
-}
-template<class T1, class T2>
-CLMatrixT<T1> operator+(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs)
+CLMatrixExT<T1> operator+(const  CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs)
 {
 	auto m = lhs;
 	m += rhs;
 	return std::move(m);
 }
-template<class T1, class T2>
-CLMatrixT<T1> operator+(const  CLMatrixT<T1>& lhs, T2 v)
+template<class T1>
+CLMatrixExT<T1> operator+(const  CLMatrixExT<T1>& lhs, T1 v)
+{
+	auto m = lhs;
+	m += v;
+	return std::move(m);
+}
+template<class T1>
+CLMatrixExT<T1> operator+(T1 v, const  CLMatrixExT<T1>& lhs)
 {
 	auto m = lhs;
 	m += v;
 	return std::move(m);
 }
 template<class T1, class T2>
-CLMatrixT<T1> operator+(T2 v, const  CLMatrixT<T1>& lhs)
-{
-	auto m = lhs;
-	m += v;
-	return std::move(m);
-}
-template<class T1, class T2>
-CLMatrixT<T1> operator-(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs)
+CLMatrixExT<T1> operator-(const  CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs)
 {
 	auto m = lhs;
 	m -= rhs;
 	return std::move(m);
 }
-template<class T1, class T2>
-CLMatrixT<T1> operator-(const  CLMatrixT<T1>& lhs, T2 v)
+template<class T1>
+CLMatrixExT<T1> operator-(const  CLMatrixExT<T1>& lhs, T1 v)
 {
 	auto m = lhs;
 	m -= v;
 	return std::move(m);
 }
-template<class T1, class T2>
-CLMatrixT<T1> operator-(T2 v, const  CLMatrixT<T1>& lhs)
+template<class T1>
+CLMatrixExT<T1> operator-(T1 v, const  CLMatrixExT<T1>& lhs)
 {
 	return std::move(lhs * (-1) + v);
 }
 
-// 以下在window平台使用PPL加速
-#ifdef _WINDOWS_
-#include "ppl.h" //windows ppl
-using namespace Concurrency;
-#ifndef CLMAT_USE_CXX_PPL
-#define CLMAT_USE_CXX_PPL 1  //打开PPL
-#define DOTMUL_RANK_LIMIT 80 //可调参，及其性能不同调整，尽量在64-128间
-#define DOTMUL_BLOCKS     32 //分块最小单元
-#define CONV_RANK_LIMIT   32 //可调参，及其性能不同调整，尽量在32-128间，卷积运算单元过程复杂，设置阶数可降低
-#define CONV_BLOCKS       16 //分块最小单元
-#endif
-#endif
 
-#if CLMAT_USE_SSE > 0
-
-#include <pmmintrin.h>
-#include <immintrin.h>
-
-#define CLMAT_FLOAT_USEAVX 1 //float 采用256bit AVX
-
-//sse逐点相+
-inline void lineAdd_sse(const float* left, const float* right, int nCounts, float* save) {
-#if CLMAT_FLOAT_USEAVX > 0
-	for (int k = nCounts - 8; k >= 0; k -= 8)  // do every 8 elements 
-		_mm256_storeu_ps(save + k, _mm256_add_ps(_mm256_loadu_ps(left + k), _mm256_loadu_ps(right + k)));
-	for (int k = (nCounts % 8) - 4; k >= 0; k -= 4)  // do every 4 elements 
-#else
-	for (int k = nCounts - 4; k >= 0; k -= 4)  // do every 4 elements 
-#endif
-		_mm_storeu_ps(save + k, _mm_add_ps(_mm_loadu_ps(left + k), _mm_loadu_ps(right + k)));
-	for (int k = (nCounts % 4) - 1; k >= 0; --k) // handle the last n%4elements
-		save[k] = left[k] + right[k];
-}
-inline void lineAdd_sse(const double* left, const double* right, int nCounts, double* save) {
-	for (int k = nCounts - 4; k >= 0; k -= 4)  // sum every 4 elements 
-		_mm256_storeu_pd(save + k, _mm256_add_pd(_mm256_loadu_pd(left + k), _mm256_loadu_pd(right + k)));
-	for (int k = (nCounts % 4) - 1; k >= 0; --k) // handle the last n%4elements
-		save[k] = left[k] + right[k];
-}
-template<class T1, class T2>  CLMatrixT<T1>& matrixAddSelf(CLMatrixT<T1>& m, const CLMatrixT<T2>& rhs)
+template<class T1, class T2>  CLMatrixExT<T1>& matrixAddSelf(CLMatrixExT<T1>& m, const CLMatrixExT<T2>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1873,7 +1464,7 @@ template<class T1, class T2>  CLMatrixT<T1>& matrixAddSelf(CLMatrixT<T1>& m, con
 			m[i][j] += rhs[i][j];
 	return m;
 }
-template<>inline  CLMatrixT<float>& matrixAddSelf(CLMatrixT<float>& m, const CLMatrixT<float>& rhs)
+template<>inline  CLMatrixExT<float>& matrixAddSelf(CLMatrixExT<float>& m, const CLMatrixExT<float>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1881,7 +1472,7 @@ template<>inline  CLMatrixT<float>& matrixAddSelf(CLMatrixT<float>& m, const CLM
 		lineAdd_sse(&m[i][0], &rhs[i][0], (int)c, &m[i][0]);
 	return m;
 }
-template<>inline  CLMatrixT<double>& matrixAddSelf(CLMatrixT<double>& m, const CLMatrixT<double>& rhs)
+template<>inline  CLMatrixExT<double>& matrixAddSelf(CLMatrixExT<double>& m, const CLMatrixExT<double>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1889,26 +1480,8 @@ template<>inline  CLMatrixT<double>& matrixAddSelf(CLMatrixT<double>& m, const C
 		lineAdd_sse(&m[i][0], &rhs[i][0], (int)c, &m[i][0]);
 	return m;
 }
-//sse逐点相-
-inline void lineSub_sse(const float* left, const float* right, int nCounts, float* save) {
-#if CLMAT_FLOAT_USEAVX > 0
-	for (int k = nCounts - 8; k >= 0; k -= 8)  // do every 8 elements 
-		_mm256_storeu_ps(save + k, _mm256_sub_ps(_mm256_loadu_ps(left + k), _mm256_loadu_ps(right + k)));
-	for (int k = (nCounts % 8) - 4; k >= 0; k -= 4)  // do every 4 elements 
-#else
-	for (int k = nCounts - 4; k >= 0; k -= 4)  // do every 4 elements 
-#endif
-		_mm_storeu_ps(save + k, _mm_sub_ps(_mm_loadu_ps(left + k), _mm_loadu_ps(right + k)));
-	for (int k = (nCounts % 4) - 1; k >= 0; --k) // handle the last n%4elements
-		save[k] = left[k] - right[k];
-}
-inline void lineSub_sse(const double* left, const double* right, int nCounts, double* save) {
-	for (int k = nCounts - 4; k >= 0; k -= 4)  // sum every 4 elements 
-		_mm256_storeu_pd(save + k, _mm256_sub_pd(_mm256_loadu_pd(left + k), _mm256_loadu_pd(right + k)));
-	for (int k = (nCounts % 4) - 1; k >= 0; --k) // handle the last n%4elements
-		save[k] = left[k] - right[k];
-}
-template<class T1, class T2>  CLMatrixT<T1>& matrixSubSelf(CLMatrixT<T1>& m, const CLMatrixT<T2>& rhs)
+
+template<class T1, class T2>  CLMatrixExT<T1>& matrixSubSelf(CLMatrixExT<T1>& m, const CLMatrixExT<T2>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1917,7 +1490,7 @@ template<class T1, class T2>  CLMatrixT<T1>& matrixSubSelf(CLMatrixT<T1>& m, con
 			m[i][j] -= rhs[i][j];
 	return m;
 }
-template<>inline  CLMatrixT<float>& matrixSubSelf(CLMatrixT<float>& m, const CLMatrixT<float>& rhs)
+template<>inline  CLMatrixExT<float>& matrixSubSelf(CLMatrixExT<float>& m, const CLMatrixExT<float>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1925,60 +1498,20 @@ template<>inline  CLMatrixT<float>& matrixSubSelf(CLMatrixT<float>& m, const CLM
 		lineSub_sse(&m[i][0], &rhs[i][0], (int)c, &m[i][0]);
 	return m;
 }
-template<>inline  CLMatrixT<double>& matrixSubSelf(CLMatrixT<double>& m, const CLMatrixT<double>& rhs)
+template<>inline  CLMatrixExT<double>& matrixSubSelf(CLMatrixExT<double>& m, const CLMatrixExT<double>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
 	for (size_t i = 0; i < r; ++i)
 		lineSub_sse(&m[i][0], &rhs[i][0], (int)c, &m[i][0]);
 	return m;
-}
-//sse逐点相乘取并取和(内积)
-inline float lineDotMul_sse(const float* left, const float* right, int nCounts) {	
-#if CLMAT_FLOAT_USEAVX > 0
-	if (nCounts >= 64) { //大于64阶才有效率体现
-		__m256 sum8 = _mm256_setzero_ps();
-		for (int k = nCounts - 8; k >= 0; k -= 8)  // do every 8 elements 
-			sum8 = _mm256_add_ps(sum8, _mm256_mul_ps(_mm256_loadu_ps(left + k), _mm256_loadu_ps(right + k)));
-		sum8 = _mm256_hadd_ps(sum8, sum8);
-		sum8 = _mm256_hadd_ps(sum8, sum8);
-		float c = (sum8.m256_f32[0] + sum8.m256_f32[4]);
-		for (int k = (nCounts % 8) - 1; k >= 0; --k) // handle the last n%4elements
-			c += left[k] * right[k];
-		return c;
-	}
-#endif
-	float c = 0;
-	if (nCounts >= 4) {
-		__m128 sum = _mm_setzero_ps();  //Initialize
-		for (int k = nCounts - 4; k >= 0; k -= 4)  // do every 4 elements 
-			sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(left + k), _mm_loadu_ps(right + k)));
-		sum = _mm_hadd_ps(sum, sum);
-		_mm_store_ss(&c, _mm_hadd_ps(sum, sum));
-	}
-	for (int k = (nCounts % 4) - 1; k >= 0; --k) // handle the last n%4elements
-		c += left[k] * right[k];
-	return c;
-}
-inline double lineDotMul_sse(const double* left, const double* right, int nCounts) {
-	double c = 0;
-	if (nCounts >= 4) {
-		__m256d sum = _mm256_setzero_pd();  //Initialize
-		for (int k = nCounts - 4; k >= 0; k -= 4)  // sum every 4 elements 
-			sum = _mm256_add_pd(sum, _mm256_mul_pd(_mm256_loadu_pd(left + k), _mm256_loadu_pd(right + k)));
-		sum = _mm256_hadd_pd(sum, sum);
-		c = sum.m256d_f64[0] + sum.m256d_f64[2];
-	}
-	for (int k = (nCounts % 4) - 1; k >= 0; --k) // handle the last n%4elements
-		c += left[k] * right[k];
-	return c;
 }
 
 template<class T1, class T2, class T3>
-CLMatrixT<T3>& _dotMul_sse(const CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m)
+CLMatrixExT<T3>& _dotMul_sse(const CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m)
 {
 	auto I = lhs.rows(), K = lhs.cols(), J = rhs.cols();
-	CLMatrixT<double> _b, a = lhs;
+	CLMatrixExT<double> _b, a = lhs;
 	m.resize(I, J);
 	::T(rhs, _b);
 #if CLMAT_USE_CXX_PPL > 0
@@ -2006,11 +1539,11 @@ CLMatrixT<T3>& _dotMul_sse(const CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, 
 	return m;
 }
 template<class T2, class T3>
-CLMatrixT<T3>& _dotMul_sse(const CLMatrixT<double>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m)
+CLMatrixExT<T3>& _dotMul_sse(const CLMatrixExT<double>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m)
 {
 	auto I = lhs.rows(), K = lhs.cols(), J = rhs.cols();
 	m.resize(I, J);
-	CLMatrixT<double> _b; ::T(rhs, _b);
+	CLMatrixExT<double> _b; ::T(rhs, _b);
 #if CLMAT_USE_CXX_PPL > 0
 	auto total = I * J;
 	if (total >= DOTMUL_RANK_LIMIT * DOTMUL_RANK_LIMIT) {
@@ -2036,11 +1569,11 @@ CLMatrixT<T3>& _dotMul_sse(const CLMatrixT<double>& lhs, const  CLMatrixT<T2>& r
 	return m;
 }
 template<class T2, class T3>
-CLMatrixT<T3>& _dotMul_sse(const CLMatrixT<float>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m)
+CLMatrixExT<T3>& _dotMul_sse(const CLMatrixExT<float>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m)
 {
 	auto I = lhs.rows(), K = lhs.cols(), J = rhs.cols();
 	m.resize(I, J);
-	CLMatrixT<float> _b; ::T(rhs, _b);
+	CLMatrixExT<float> _b; ::T(rhs, _b);
 #if CLMAT_USE_CXX_PPL > 0
 	auto total = I * J;	
 	if (total >= DOTMUL_RANK_LIMIT * DOTMUL_RANK_LIMIT) {
@@ -2065,27 +1598,8 @@ CLMatrixT<T3>& _dotMul_sse(const CLMatrixT<float>& lhs, const  CLMatrixT<T2>& rh
 	}
 	return m;
 }
-//sse逐点相乘
-inline void lineMul_sse(const float* left, const float* right, int nCounts, float* save) {
-#if CLMAT_FLOAT_USEAVX > 0
-	for (int k = nCounts - 8; k >= 0; k -= 8)  // do every 8 elements 
-		_mm256_storeu_ps(save + k, _mm256_mul_ps(_mm256_loadu_ps(left + k), _mm256_loadu_ps(right + k)));
-	for (int k = (nCounts % 8) - 4; k >= 0; k -= 4)  // do every 4 elements 
-#else
-	for (int k = nCounts - 4; k >= 0; k -= 4)  // do every 4 elements 
-#endif
-		_mm_storeu_ps(save + k, _mm_mul_ps(_mm_loadu_ps(left + k), _mm_loadu_ps(right + k)));
-	for (int k = (nCounts % 4) - 1; k >= 0; --k) // handle the last n%4elements
-		save[k] = left[k] * right[k];
-}
-inline void lineMul_sse(const double* left, const double* right, int nCounts, double* save) {
-	for (int k = nCounts - 4; k >= 0; k -= 4)  // sum every 4 elements 
-		_mm256_storeu_pd(save + k, _mm256_mul_pd(_mm256_loadu_pd(left + k), _mm256_loadu_pd(right + k)));
-	for (int k = (nCounts % 4) - 1; k >= 0; --k) // handle the last n%4elements
-		save[k] = left[k] * right[k];
-}
 template<class T1, class T2, class T3>
-CLMatrixT<T3>& _mul_sse(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m) {
+CLMatrixExT<T3>& _mul_sse(const  CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
 	if (rhs.rows() == 1)
@@ -2098,7 +1612,7 @@ CLMatrixT<T3>& _mul_sse(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CL
 				m[i][j] = T3(lhs[i][j] * rhs[i][j]);
 	return m;
 }
-template<>inline CLMatrixT<float>& _mul_sse(const  CLMatrixT<float>& lhs, const  CLMatrixT<float>& rhs, CLMatrixT<float>& m) {
+template<>inline CLMatrixExT<float>& _mul_sse(const  CLMatrixExT<float>& lhs, const  CLMatrixExT<float>& rhs, CLMatrixExT<float>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
 	if (rhs.rows() == 1)
@@ -2109,7 +1623,7 @@ template<>inline CLMatrixT<float>& _mul_sse(const  CLMatrixT<float>& lhs, const 
 			lineMul_sse(&lhs[i][0], &rhs[i][0], (int)c1, &m[i][0]);
 	return m;
 }
-template<>inline CLMatrixT<double>& _mul_sse(const  CLMatrixT<double>& lhs, const  CLMatrixT<double>& rhs, CLMatrixT<double>& m) {
+template<>inline CLMatrixExT<double>& _mul_sse(const  CLMatrixExT<double>& lhs, const  CLMatrixExT<double>& rhs, CLMatrixExT<double>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
 	if (rhs.rows() == 1)
@@ -2121,7 +1635,7 @@ template<>inline CLMatrixT<double>& _mul_sse(const  CLMatrixT<double>& lhs, cons
 	return m;
 }
 template<class T1, class T2, class T3>
-CLMatrixT<T3>& _mul_T_sse(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m) {
+CLMatrixExT<T3>& _mul_T_sse(const  CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
 	if (rhs.rows() == 1)
@@ -2134,10 +1648,10 @@ CLMatrixT<T3>& _mul_T_sse(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, 
 				m[i][j] = T3(lhs[i][j] * rhs[j][i]);
 	return m;
 }
-template<>inline CLMatrixT<float>& _mul_T_sse(const  CLMatrixT<float>& lhs, const  CLMatrixT<float>& rhs, CLMatrixT<float>& m) {
+template<>inline CLMatrixExT<float>& _mul_T_sse(const  CLMatrixExT<float>& lhs, const  CLMatrixExT<float>& rhs, CLMatrixExT<float>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
-	CLMatrixT<float> b;
+	CLMatrixExT<float> b;
 	::T(rhs, b);
 	if (b.rows() == 1)
 		for (size_t i = 0; i < r1; i++)
@@ -2147,10 +1661,10 @@ template<>inline CLMatrixT<float>& _mul_T_sse(const  CLMatrixT<float>& lhs, cons
 			lineMul_sse(&lhs[i][0], &b[i][0], (int)c1, &m[i][0]);
 	return m;
 }
-template<>inline CLMatrixT<double>& _mul_T_sse(const  CLMatrixT<double>& lhs, const  CLMatrixT<double>& rhs, CLMatrixT<double>& m) {
+template<>inline CLMatrixExT<double>& _mul_T_sse(const  CLMatrixExT<double>& lhs, const  CLMatrixExT<double>& rhs, CLMatrixExT<double>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
-	CLMatrixT<double> b;
+	CLMatrixExT<double> b;
 	::T(rhs, b);
 	if (b.rows() == 1)
 		for (size_t i = 0; i < r1; i++)
@@ -2160,10 +1674,10 @@ template<>inline CLMatrixT<double>& _mul_T_sse(const  CLMatrixT<double>& lhs, co
 			lineMul_sse(&lhs[i][0], &b[i][0], (int)c1, &m[i][0]);
 	return m;
 }
-inline CLMatrixT<float>& conv( //float 特化
-	const CLMatrixT<float>& M, //卷积输入map
-	const CLMatrixT<float>& K, //卷积核
-	CLMatrixT<float>& F, //结果集feature map
+inline CLMatrixExT<float>& conv( //float 特化
+	const CLMatrixExT<float>& M, //卷积输入map
+	const CLMatrixExT<float>& K, //卷积核
+	CLMatrixExT<float>& F, //结果集feature map
 	size_t _stepX = 1, //卷积核X移动步长
 	size_t _stepY = 1, //卷积核Y移动步长
 	size_t padding = 0,//输入map边缘填充宽度
@@ -2171,11 +1685,11 @@ inline CLMatrixT<float>& conv( //float 特化
 ) {
 	if (M.isEmpty() || K.isEmpty()) {
 		F.clear();
-		_CLMatrix_Runtime_Error(conv, param matrix M is empty or matrix K is empty!);
+		_CLMatrixEx_Runtime_Error(conv, param matrix M is empty or matrix K is empty!);
 	}
 	if (padding >= min(K.rows(), K.cols())) {
 		F.clear();
-		_CLMatrix_Runtime_Error(conv, padding >= K.rows() or K.cols()!);
+		_CLMatrixEx_Runtime_Error(conv, padding >= K.rows() or K.cols()!);
 	}
 	int stepX = max(int(_stepX), 1);
 	int stepY = max(int(_stepY), 1);
@@ -2270,10 +1784,10 @@ inline CLMatrixT<float>& conv( //float 特化
 	};
 	return F;
 } //end func
-inline CLMatrixT<double>& conv( //double 特化
-	const CLMatrixT<double>& M, //卷积输入map
-	const CLMatrixT<double>& K, //卷积核
-	CLMatrixT<double>& F, //结果集feature map
+inline CLMatrixExT<double>& conv( //double 特化
+	const CLMatrixExT<double>& M, //卷积输入map
+	const CLMatrixExT<double>& K, //卷积核
+	CLMatrixExT<double>& F, //结果集feature map
 	size_t _stepX = 1, //卷积核X移动步长
 	size_t _stepY = 1, //卷积核Y移动步长
 	size_t padding = 0,//输入map边缘填充宽度
@@ -2281,11 +1795,11 @@ inline CLMatrixT<double>& conv( //double 特化
 ) {
 	if (M.isEmpty() || K.isEmpty()) {
 		F.clear();
-		_CLMatrix_Runtime_Error(conv, param matrix M is empty or matrix K is empty!);
+		_CLMatrixEx_Runtime_Error(conv, param matrix M is empty or matrix K is empty!);
 	}
 	if (padding >= min(K.rows(), K.cols())) {
 		F.clear();
-		_CLMatrix_Runtime_Error(conv, padding >= K.rows() or K.cols()!);
+		_CLMatrixEx_Runtime_Error(conv, padding >= K.rows() or K.cols()!);
 	}
 	int stepX = max(int(_stepX), 1);
 	int stepY = max(int(_stepY), 1);
@@ -2381,20 +1895,20 @@ inline CLMatrixT<double>& conv( //double 特化
 	return F;
 } //end func
 
-#endif //end sse
+
 
 // 矩阵的标准乘法(内积)
 template<class T1, class T2, class T3>
-CLMatrixT<T3>& dotMul(const CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m)
+CLMatrixExT<T3>& dotMul(const CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m)
 {
 	auto c = lhs.cols(), r = rhs.rows();
 	if (c != r)
 	{
 		m.clear();
 		char err[256];
-		sprintf_s(err, "Error: CLMatrixT method \" dotMul \", left obj cols(%d) != right obj rows(%d)!", (int)c, (int)r);
+		sprintf_s(err, "Error: CLMatrixExT method \" dotMul \", left obj cols(%d) != right obj rows(%d)!", (int)c, (int)r);
 		_CLMatrixT_Runtime_Error_Box(err);
-		throw std::runtime_error("CLMatrixT Runtime Error:dotMul");
+		throw std::runtime_error("CLMatrixExT Runtime Error:dotMul");
 	}
 #if CLMAT_USE_SSE > 0
 	if (matrixUseSSE && c >= matrixUseSSEMinRank) //经过测试矩阵横向宽度小于16将没有速度优势，故不再使用SSE
@@ -2441,7 +1955,7 @@ CLMatrixT<T3>& dotMul(const CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMat
 // 右操作数行数 = 1：左操作数的每个行向量分别与右操作数的唯一行向量相乘；
 // 右操作数行数 >= 左操作数的行：左操作数的每个行向量分别对应与右操作数的每个行向量相乘；
 template<class T1, class T2, class T3>
-CLMatrixT<T3>& mul(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m)
+CLMatrixExT<T3>& mul(const  CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m)
 {
 	auto c1 = lhs.cols(), r1 = lhs.rows();
 	auto c2 = rhs.cols(), r2 = rhs.rows();
@@ -2471,23 +1985,23 @@ CLMatrixT<T3>& mul(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMatri
 		m.clear();
 		// never arrive here.
 		char err[256];
-		sprintf_s(err, "Error: CLMatrixT method \" mul \", cols match, but right obj rows(%d) != 1 and < left obj rows(%d)!", (int)r2, (int)r1);
+		sprintf_s(err, "Error: CLMatrixExT method \" mul \", cols match, but right obj rows(%d) != 1 and < left obj rows(%d)!", (int)r2, (int)r1);
 		_CLMatrixT_Runtime_Error_Box(err);
-		throw std::runtime_error("CLMatrixT Runtime Error:operator*");
+		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 	else {
 		m.clear();
 		char err[256];
-		sprintf_s(err, "Error: CLMatrixT method \" mul \", cols ( %d != %d ) it is not match!", (int)c1, (int)c2);
+		sprintf_s(err, "Error: CLMatrixExT method \" mul \", cols ( %d != %d ) it is not match!", (int)c1, (int)c2);
 		_CLMatrixT_Runtime_Error_Box(err);
-		throw std::runtime_error("CLMatrixT Runtime Error:operator*");
+		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 }
 // 矩阵逐点相乘，即元素对应相乘。L行向量 X R列向量，左右操作数的列数和行数必须相同；（等价于 右操作数是按其转置来处理逐点相乘的。）
 // 右操作数列数 = 1：左操作数的每个行向量分别与右操作数的唯一行列量相乘；
 // 右操作数列数 >= 左操作数的行：左操作数的每个行向量分别对应与右操作数的每个列向量相乘；
 template<class T1, class T2, class T3>
-CLMatrixT<T3>& mul_T(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m)
+CLMatrixExT<T3>& mul_T(const  CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m)
 {
 	auto c1 = lhs.cols(), r1 = lhs.rows();
 	auto c2 = rhs.rows(), r2 = rhs.cols();
@@ -2517,23 +2031,23 @@ CLMatrixT<T3>& mul_T(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMat
 		m.clear();
 		// never arrive here.
 		char err[256];
-		sprintf_s(err, "Error: CLMatrixT method \" mul_T \", cols match, but right obj cols(%d) != 1 and < left obj rows(%d)!", (int)r2, (int)r1);
+		sprintf_s(err, "Error: CLMatrixExT method \" mul_T \", cols match, but right obj cols(%d) != 1 and < left obj rows(%d)!", (int)r2, (int)r1);
 		_CLMatrixT_Runtime_Error_Box(err);
-		throw std::runtime_error("CLMatrixT Runtime Error:operator*");
+		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 	else {
 		m.clear();
 		char err[256];
-		sprintf_s(err, "Error: CLMatrixT method \" mul_T \", left cols(%d) !=  right rows(%d) , it is not match!", (int)c1, (int)c2);
+		sprintf_s(err, "Error: CLMatrixExT method \" mul_T \", left cols(%d) !=  right rows(%d) , it is not match!", (int)c1, (int)c2);
 		_CLMatrixT_Runtime_Error_Box(err);
-		throw std::runtime_error("CLMatrixT Runtime Error:operator*");
+		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 }
 //矩阵按列逐点相乘，即元素对应相乘。L列向量 X R列向量，左右操作数的行数必须相同；
 //右操作数列数 = 1：左操作数的每个列向量分别与右操作数的唯一列向量相乘；
 //右操作数列数 >= 左操作数的列数：左操作数的每个列向量分别对应与右操作数的每个列向量相乘；
 template<class T1, class T2, class T3>
-CLMatrixT<T3>& mul_V(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m)
+CLMatrixExT<T3>& mul_V(const  CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m)
 {
 	auto c1 = lhs.cols(), r1 = lhs.rows();
 	auto c2 = rhs.cols(), r2 = rhs.rows();
@@ -2541,7 +2055,7 @@ CLMatrixT<T3>& mul_V(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMat
 		if (c2 == 1) {
 #if CLMAT_USE_SSE > 0
 			//if (matrixUseSSE && r2 >= matrixUseSSEMinRank)
-			//	return ::_mul_T_sse(::T(lhs, CLMatrixT<T1>()), rhs, m).makeT();
+			//	return ::_mul_T_sse(::T(lhs, CLMatrixExT<T1>()), rhs, m).makeT();
 			// 此位置不能采用加速
 #endif
 			m.resize(r1, c1);
@@ -2564,23 +2078,23 @@ CLMatrixT<T3>& mul_V(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMat
 		m.clear();
 		// never arrive here.
 		char err[256];
-		sprintf_s(err, "Error: CLMatrixT method \" mul_V \", rows match, but right obj cols(%d) != 1 and < left obj cols(%d)!", (int)c2, (int)c1);
+		sprintf_s(err, "Error: CLMatrixExT method \" mul_V \", rows match, but right obj cols(%d) != 1 and < left obj cols(%d)!", (int)c2, (int)c1);
 		_CLMatrixT_Runtime_Error_Box(err);
-		throw std::runtime_error("CLMatrixT Runtime Error:operator*");
+		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 	else {
 		m.clear();
 		char err[256];
-		sprintf_s(err, "Error: CLMatrixT method \" mul_V \", rows ( %d != %d ) it is not match!", (int)r1, (int)r2);
+		sprintf_s(err, "Error: CLMatrixExT method \" mul_V \", rows ( %d != %d ) it is not match!", (int)r1, (int)r2);
 		_CLMatrixT_Runtime_Error_Box(err);
-		throw std::runtime_error("CLMatrixT Runtime Error:operator*");
+		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 }
 //矩阵按列逐点相乘，即元素对应相乘。L列向量 X R行向量，左右操作数的列数和行数必须相同；（等价于 右操作数是按其转置来处理逐点相乘的。）
 //右操作数行数 = 1：左操作数的每个列向量分别与右操作数的唯一行列量相乘；
 //右操作数行数 >= 左操作数的列：左操作数的每个列向量分别对应与右操作数的每个行向量相乘；
 template<class T1, class T2, class T3>
-CLMatrixT<T3>& mul_VT(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMatrixT<T3>& m)
+CLMatrixExT<T3>& mul_VT(const  CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs, CLMatrixExT<T3>& m)
 {
 	auto c1 = lhs.cols(), r1 = lhs.rows();
 	auto r2 = rhs.cols(), c2 = rhs.rows();
@@ -2588,7 +2102,7 @@ CLMatrixT<T3>& mul_VT(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMa
 		if (c2 == 1) {
 #if CLMAT_USE_SSE > 0
 			//if (matrixUseSSE && r1 >= matrixUseSSEMinRank)
-			//	return  ::_mul_sse(::T(lhs, CLMatrixT<T1>()), rhs, m).makeT();
+			//	return  ::_mul_sse(::T(lhs, CLMatrixExT<T1>()), rhs, m).makeT();
 			// 此位置不能采用加速
 #endif
 			m.resize(r1, c1);
@@ -2600,7 +2114,7 @@ CLMatrixT<T3>& mul_VT(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMa
 		else if (c2 >= c1) {
 #if CLMAT_USE_SSE > 0
 			//if (matrixUseSSE && r1 >= matrixUseSSEMinRank)
-			//	return  ::_mul_sse(::T(lhs, CLMatrixT<T1>()), rhs, m).makeT();
+			//	return  ::_mul_sse(::T(lhs, CLMatrixExT<T1>()), rhs, m).makeT();
 #endif
 			m.resize(r1, c1);
 			for (size_t i = 0; i < r1; ++i)
@@ -2611,27 +2125,27 @@ CLMatrixT<T3>& mul_VT(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs, CLMa
 		m.clear();
 		// never arrive here.
 		char err[256];
-		sprintf_s(err, "Error: CLMatrixT method \" mul_VT \", rows and cols is match, but right obj rows(%d) != 1 and < left obj cols(%d)!", (int)c2, (int)c1);
+		sprintf_s(err, "Error: CLMatrixExT method \" mul_VT \", rows and cols is match, but right obj rows(%d) != 1 and < left obj cols(%d)!", (int)c2, (int)c1);
 		_CLMatrixT_Runtime_Error_Box(err);
-		throw std::runtime_error("CLMatrixT Runtime Error:operator*");
+		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 	else {
 		m.clear();
 		char err[256];
-		sprintf_s(err, "Error: CLMatrixT method \" mul_VT \", left rows(%d) !=  right cols(%d) , it is not match!", (int)r1, (int)r2);
+		sprintf_s(err, "Error: CLMatrixExT method \" mul_VT \", left rows(%d) !=  right cols(%d) , it is not match!", (int)r1, (int)r2);
 		_CLMatrixT_Runtime_Error_Box(err);
-		throw std::runtime_error("CLMatrixT Runtime Error:operator*");
+		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 }
 // 矩阵的标准乘法(内积)
 template<class T1, class T2>
-CLMatrixT<T1> operator*(const CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs)
+CLMatrixExT<T1> operator*(const CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs)
 {
-	return std::move(::dotMul(lhs, rhs, (CLMatrixT<T1>&)CLMatrixT<T1>()));
+	return std::move(::dotMul(lhs, rhs, (CLMatrixExT<T1>&)CLMatrixExT<T1>()));
 }
 // 矩阵的元素与数分别相乘，即矩阵按比例缩放数值大小
 template<class T1, class T2>
-CLMatrixT<T1> operator*(const  CLMatrixT<T1>& lhs, T2 v)
+CLMatrixExT<T1> operator*(const  CLMatrixExT<T1>& lhs, T2 v)
 {
 	auto m = lhs;
 	m *= T1(v);
@@ -2639,7 +2153,7 @@ CLMatrixT<T1> operator*(const  CLMatrixT<T1>& lhs, T2 v)
 }
 // 矩阵的元素与数分别相乘，即矩阵按比例缩放数值大小
 template<class T1, class T2>
-CLMatrixT<T1> operator*(T2 v, const  CLMatrixT<T1>& lhs)
+CLMatrixExT<T1> operator*(T2 v, const  CLMatrixExT<T1>& lhs)
 {
 	auto m = lhs;
 	m *= T1(v);
@@ -2647,9 +2161,9 @@ CLMatrixT<T1> operator*(T2 v, const  CLMatrixT<T1>& lhs)
 }
 // 矩阵标准除法，即左操作数 * 右操作数的逆矩阵
 template<class T1, class T2>
-CLMatrixT<T1> operator/(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs)
+CLMatrixExT<T1> operator/(const  CLMatrixExT<T1>& lhs, const  CLMatrixExT<T2>& rhs)
 {
-	CLMatrixT<T2> tmp;
+	CLMatrixExT<T2> tmp;
 	inv(rhs, tmp);
 	if (tmp.isEmpty())
 		return std::move(tmp);
@@ -2657,7 +2171,7 @@ CLMatrixT<T1> operator/(const  CLMatrixT<T1>& lhs, const  CLMatrixT<T2>& rhs)
 }
 // 矩阵的元素与数分别相除，即矩阵按比例缩放数值大小
 template<class T1, class T2>
-CLMatrixT<T1> operator/(const  CLMatrixT<T1>& lhs, T2 v)
+CLMatrixExT<T1> operator/(const  CLMatrixExT<T1>& lhs, T2 v)
 {
 	auto m = lhs;
 	m /= v;
@@ -2665,32 +2179,32 @@ CLMatrixT<T1> operator/(const  CLMatrixT<T1>& lhs, T2 v)
 }
 // 数除以矩阵的元素，即矩阵的倒数矩阵与数相乘
 template<class T1, class T2>
-CLMatrixT<T1> operator/(T2 v, const  CLMatrixT<T1>& lhs)
+CLMatrixExT<T1> operator/(T2 v, const  CLMatrixExT<T1>& lhs)
 {
 	return std::move(lhs.pow(-1.0) * v);
 }
 // 计算方阵 M 的 LU 分解,使得 M = LU
 // 其中L为对角线元素全为1的下三角阵，U为对角元素依赖M的上三角阵
-template<class T1, class T2, class T3>bool LU(const CLMatrixT<T1>& A, CLMatrixT<T2>& L, CLMatrixT<T3>& U)
+template<class T1, class T2, class T3>bool LU(const CLMatrixExT<T1>& A, CLMatrixExT<T2>& L, CLMatrixExT<T3>& U)
 {
 	if (A.isEmpty())
 	{
 		L.clear(); U.clear();
-		_CLMatrix_Runtime_Error(LUP, matix obj is empty matrix!);
+		_CLMatrixEx_Runtime_Error(LUP, matix obj is empty matrix!);
 	}
 	else if (!A.isSquare()) {
 		L.clear(); U.clear();
-		_CLMatrix_Runtime_Error(LUP, matix obj is not a square matrix!);
+		_CLMatrixEx_Runtime_Error(LUP, matix obj is not a square matrix!);
 	}
 	auto M = A;
-	if (!LUP_Descomposition(M, L, U, CLMatrixT<size_t>())) {
+	if (!LUP_Descomposition(M, L, U, CLMatrixExT<size_t>())) {
 		cout << endl << "[Runtime error]: Matrix is singular, unable to calculate inverse!" << endl;
 		return false;
 	}
 	return true;
 }
 // LUP分解
-template<class T1, class T2, class T3>bool LUP_Descomposition(CLMatrixT<T1>& A, CLMatrixT<T2>& L, CLMatrixT<T3>& U, CLMatrixT<size_t>& PLine)
+template<class T1, class T2, class T3>bool LUP_Descomposition(CLMatrixExT<T1>& A, CLMatrixExT<T2>& L, CLMatrixExT<T3>& U, CLMatrixExT<size_t>& PLine)
 {
 	size_t N = A.rows();
 	L.resize(N, N);
@@ -2770,7 +2284,7 @@ template<class T1, class T2, class T3>bool LUP_Descomposition(CLMatrixT<T1>& A, 
 }
 //LUP求解方程
 template<class T1, class T2, class T3>
-void LUP_Solve(size_t N, CLMatrixT<T1>& X, CLMatrixT<T1>& Y, const CLMatrixT<T2>& L, const CLMatrixT<T3>& U, const CLMatrixT<size_t>& PLine, const CLMatrixT<T1>& B)
+void LUP_Solve(size_t N, CLMatrixExT<T1>& X, CLMatrixExT<T1>& Y, const CLMatrixExT<T2>& L, const CLMatrixExT<T3>& U, const CLMatrixExT<size_t>& PLine, const CLMatrixExT<T1>& B)
 {
 	auto& P = PLine[0];
 	auto& b = B[0];
@@ -2799,37 +2313,29 @@ void LUP_Solve(size_t N, CLMatrixT<T1>& X, CLMatrixT<T1>& Y, const CLMatrixT<T2>
 	}
 }
 // LUP分解求逆
-template<class T1, class T2> CLMatrixT<T2>& LUP_Inverse(const CLMatrixT<T1>& A, CLMatrixT<T2>& ret)
+template<class T1, class T2> CLMatrixExT<T2>& LUP_Inverse(const CLMatrixExT<T1>& A, CLMatrixExT<T2>& ret)
 {
 	if (A.isEmpty())
 	{
 		ret.clear();
-		_CLMatrix_Runtime_Error(inv, matix obj is empty matrix!);
+		_CLMatrixEx_Runtime_Error(inv, matix obj is empty matrix!);
 	}
 	else if (!A.isSquare()) {
 		ret.clear();
-		_CLMatrix_Runtime_Error(inv, matix obj is not a square matrix!);
+		_CLMatrixEx_Runtime_Error(inv, matix obj is not a square matrix!);
 	}
 
 	size_t N = A.cols();
 
-	CLMatrixT<float> A_mirror(N, N);
-	CLMatrixT<float> inv_A(N, N);//最终的逆矩阵（还需要转置）
-	CLMatrixT<float> inv_A_each(1, N);//矩阵逆的各列
-	CLMatrixT<float> B(1, N);//b阵为B阵的列矩阵分量
-	CLMatrixT<float> Y(1, N);//b阵为B阵的列矩阵分量
-	CLMatrixT<float> L(N, N);
-	CLMatrixT<float> U(N, N);
+	CLMatrixExT<float> A_mirror(N, N);
+	CLMatrixExT<float> inv_A(N, N);//最终的逆矩阵（还需要转置）
+	CLMatrixExT<float> inv_A_each(1, N);//矩阵逆的各列
+	CLMatrixExT<float> B(1, N);//b阵为B阵的列矩阵分量
+	CLMatrixExT<float> Y(1, N);//b阵为B阵的列矩阵分量
+	CLMatrixExT<float> L(N, N);
+	CLMatrixExT<float> U(N, N);
 
-	//CLMatrixT<T1> A_mirror(N, N);
-	//CLMatrixT<T1> inv_A(N, N);//最终的逆矩阵（还需要转置）
-	//CLMatrixT<T1> inv_A_each(1, N);//矩阵逆的各列
-	//CLMatrixT<T1> B(1, N);//b阵为B阵的列矩阵分量
-	//CLMatrixT<T1> Y(1, N);//b阵为B阵的列矩阵分量
-	//CLMatrixT<T1> L(N, N);
-	//CLMatrixT<T1> U(N, N);
-
-	CLMatrixT<size_t> P(1, N);
+	CLMatrixExT<size_t> P(1, N);
 	for (size_t i = 0; i < N; ++i)
 	{
 		//构造单位阵的每一列
@@ -2838,19 +2344,18 @@ template<class T1, class T2> CLMatrixT<T2>& LUP_Inverse(const CLMatrixT<T1>& A, 
 		A_mirror = A;
 		if (!LUP_Descomposition(A_mirror, L, U, P)) {
 			//奇异矩阵返回矩阵
-			//cout << endl << "[Runtime error]: Matrix is singular, unable to calculate inverse!" << endl;
 			return ret.clear();
 		}
 		LUP_Solve(N, inv_A_each, Y, L, U, P, B);
-		inv_A.setRow(i, inv_A_each[0]);
+		inv_A.setRow(i, &inv_A_each[0], inv_A_each.cols());
 	}
 	return ::T(inv_A, ret);
 }
-template<class T2> CLMatrixT<T2>& LUP_Inverse(const CLMatrixT<double>& A, CLMatrixT<T2>& ret) {
-	return ::LUP_Inverse<float, T2>(CLMatrixT<float>(A), ret);
+template<class T2> CLMatrixExT<T2>& LUP_Inverse(const CLMatrixExT<double>& A, CLMatrixExT<T2>& ret) {
+	return ::LUP_Inverse<float, T2>(CLMatrixExT<float>(A), ret);
 }
 // 将一个矩阵变换到对角线矩阵，同一行列的值都加到主对角上
-template<class T1, class T2>CLMatrixT<T2>& diag(const CLMatrixT<T1>& m, CLMatrixT<T2>& ret) {
+template<class T1, class T2>CLMatrixExT<T2>& diag(const CLMatrixExT<T1>& m, CLMatrixExT<T2>& ret) {
 	auto r = m.rows(), c = m.cols();
 	if (r == 0 || c == 0)
 		return ret.clear();
@@ -2869,10 +2374,10 @@ template<class T1, class T2>CLMatrixT<T2>& diag(const CLMatrixT<T1>& m, CLMatrix
 	return ret;
 }
 // 矩阵卷积计算
-template<class T1, class T2, class T3> CLMatrixT<T3>& conv(
-	const CLMatrixT<T1>& M, //卷积输入map
-	const CLMatrixT<T2>& K, //卷积核
-	CLMatrixT<T3>& F, //结果集feature map
+template<class T1, class T2, class T3> CLMatrixExT<T3>& conv(
+	const CLMatrixExT<T1>& M, //卷积输入map
+	const CLMatrixExT<T2>& K, //卷积核
+	CLMatrixExT<T3>& F, //结果集feature map
 	size_t _stepX = 1, //卷积核X移动步长
 	size_t _stepY = 1, //卷积核Y移动步长
 	size_t padding = 0,//输入map边缘填充宽度
@@ -2880,11 +2385,11 @@ template<class T1, class T2, class T3> CLMatrixT<T3>& conv(
 ) {
 	if (M.isEmpty() || K.isEmpty()) {
 		F.clear();
-		_CLMatrix_Runtime_Error(conv, param matrix M is empty or matrix K is empty!);
+		_CLMatrixEx_Runtime_Error(conv, param matrix M is empty or matrix K is empty!);
 	}
 	if (padding >= min(K.rows(), K.cols())) {
 		F.clear();
-		_CLMatrix_Runtime_Error(conv, padding >= K.rows() or K.cols()!);
+		_CLMatrixEx_Runtime_Error(conv, padding >= K.rows() or K.cols()!);
 	}
 	int stepX = max(int(_stepX), 1);
 	int stepY = max(int(_stepY), 1);
@@ -2969,39 +2474,32 @@ template<class T1, class T2, class T3> CLMatrixT<T3>& conv(
 	return F;
 } //end func
 
-#define CLMATRIX_CALLBACK_PARAM float& v, size_t r, size_t c //传参类型:v元素项引用，r元素行标，c元素列标
-typedef CLMatrixT<float> CLMatrix;//float型矩阵类
-#define CLMATRIXD_CALLBACK_PARAM double& v, size_t r, size_t c
-typedef CLMatrixT<double> CLMatrixD;//double型矩阵类
-#define CLMATRIXF_CALLBACK_PARAM float& v, size_t r, size_t c
-typedef CLMatrixT<float> CLMatrixF;//float型矩阵类
-#define CLMATRIXS_CALLBACK_PARAM short& v, size_t r, size_t c
-typedef CLMatrixT<short> CLMatrixS;//short型矩阵类
-#define CLMATRIXI_CALLBACK_PARAM int& v, size_t r, size_t c
-typedef CLMatrixT<int> CLMatrixI;//int型矩阵类
-#define CLMATRIXLL_CALLBACK_PARAM long long& v, size_t r, size_t c
-typedef CLMatrixT<long long> CLMatrixLL;//long long型矩阵类
-#define CLMATRIXL_CALLBACK_PARAM long& v, size_t r, size_t c
-typedef CLMatrixT<long> CLMatrixL;//long型矩阵类
+typedef CLMatrixExT<float> CLMatrixEx;//float型矩阵类
+typedef CLMatrixExT<double> CLMatrixExD;//double型矩阵类
+typedef CLMatrixExT<float> CLMatrixExF;//float型矩阵类
+typedef CLMatrixExT<short> CLMatrixExS;//short型矩阵类
+typedef CLMatrixExT<int> CLMatrixExI;//int型矩阵类
+typedef CLMatrixExT<long long> CLMatrixExLL;//long long型矩阵类
+typedef CLMatrixExT<long> CLMatrixExL;//long型矩阵类
 
-template class CLMatrixT<float>;
+template class CLMatrixExT<float>;
 
-// 测试检查本机SSE参数的最佳值，返回值用于CLMatrix::setUseSSEMinRank()的参数
-inline size_t matrixSSEParamFitValue() {
+// 测试检查本机SSE参数的最佳值，返回值用于CLMatrixEx::setUseSSEMinRank()的参数
+inline size_t matrixExSSEParamFitValue() {
 	auto MakeXF = [](CLMATRIXF_CALLBACK_PARAM) { v = 1; };
 	auto MakeXD = [](CLMATRIXD_CALLBACK_PARAM) { v = 1; };
 	auto MakeXI = [](CLMATRIXI_CALLBACK_PARAM) { v = 1; };
 	size_t base = 1, times = 1000;
-	auto bkset = CLMatrix::setUseSSE(true);
-	auto bksi = CLMatrix::setUseSSEMinRank(0);
+	auto bkset = CLMatrixEx::setUseSSE(true);
+	auto bksi = CLMatrixEx::setUseSSEMinRank(0);
 	size_t mk1 = 0, mk2 = 0, mk3 = 0;
 	for (size_t i = 0; i < 20; i++)
 	{
 		base += 1;
-		CLMatrixF a(base, MakeXF), b(base, MakeXF);
-		CLMatrixD c(base, MakeXD), d(base, MakeXD);
-		CLMatrixI e(base, MakeXI), f(base, MakeXI);
-		CLMatrix::setUseSSE(true);
+		CLMatrixExF a(base, MakeXF), b(base, MakeXF);
+		CLMatrixExD c(base, MakeXD), d(base, MakeXD);
+		CLMatrixExI e(base, MakeXI), f(base, MakeXI);
+		CLMatrixEx::setUseSSE(true);
 		auto t0 = clock();
 		for (size_t j = 0; j < times; j++)a* b;
 		auto t1 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
@@ -3009,7 +2507,7 @@ inline size_t matrixSSEParamFitValue() {
 		auto t2 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
 		for (size_t j = 0; j < times; j++)e* f;
 		auto t5 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
-		CLMatrix::setUseSSE(false);
+		CLMatrixEx::setUseSSE(false);
 		for (size_t j = 0; j < times; j++)a* b;
 		auto t3 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
 		for (size_t j = 0; j < times; j++)c* d;
@@ -3022,13 +2520,13 @@ inline size_t matrixSSEParamFitValue() {
 		if (mk1 && mk2 && mk3)
 			break;
 	}
-	CLMatrix::setUseSSE(bkset);
-	CLMatrix::setUseSSEMinRank(bksi);
+	CLMatrixEx::setUseSSE(bkset);
+	CLMatrixEx::setUseSSEMinRank(bksi);
 	size_t rt = (2 * mk2 + 7 * mk1 + 1 * mk3) / 10;
 	return rt;
 }
 // 做本地效率测试,并输出结果
-inline void matrixLocalTest() {
+inline void matrixExLocalTest() {
 #undef AXB
 #undef CXD
 #undef EXF
@@ -3053,7 +2551,7 @@ inline void matrixLocalTest() {
 //#define AXB (a+b)
 //#define CXD (c-d)
 //#define EXF (e+f)
-	auto bku = CLMatrix::isUseSSE();
+	auto bku = CLMatrixEx::isUseSSE();
 	cout << "\n\n测试本机不同大小矩阵的类型运行效率----------------------------------";
 	srand((unsigned int)time(0));
 	auto MakeXF = [](CLMATRIXF_CALLBACK_PARAM) { v = rand() % 100 * 0.01f; };
@@ -3068,11 +2566,12 @@ inline void matrixLocalTest() {
 		base *= 2; times /= 4;
 		times = max(1, times);
 		//base2 = base;//卷积测试时候注释掉这一行定义
-		CLMatrixF a(base, MakeXF), b(base2, MakeXF);
-		CLMatrixD c(base, MakeXD), d(base2, MakeXD);
-		CLMatrixI e(base, MakeXI), f(base2, MakeXI);
-		base2 = max(1,min(base/4, 64));
-		CLMatrix::setUseSSE(true);
+		CLMatrixExF a(base, MakeXF), b(base2, MakeXF);
+		CLMatrixExD c(base, MakeXD), d(base2, MakeXD);
+		CLMatrixExI e(base, MakeXI), f(base2, MakeXI);
+		base2 = max(min(base/4, 64),1);
+		//base2 = min(base/4, 64);
+		CLMatrixEx::setUseSSE(true);
 		auto t0 = clock();
 		for (size_t j = 0; j < times; j++)AXB;
 		auto t1 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
@@ -3080,7 +2579,7 @@ inline void matrixLocalTest() {
 		auto t2 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
 		for (size_t j = 0; j < times; j++)EXF;
 		auto t5 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
-		CLMatrix::setUseSSE(false);
+		CLMatrixEx::setUseSSE(false);
 		for (size_t j = 0; j < times; j++)AXB;
 		auto t3 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
 		for (size_t j = 0; j < times; j++)CXD;
@@ -3093,9 +2592,9 @@ inline void matrixLocalTest() {
 			t5, (t5 < t6 ? "快<" : ">"), t6, (t5 - t6) / t6 * 100);
 	}
 	cout << endl;
-	CLMatrixF M1, M3;
-	CLMatrixD M2, M4;
-	CLMatrixI M5, M6;
+	CLMatrixExF M1, M3;
+	CLMatrixExD M2, M4;
+	CLMatrixExI M5, M6;
 	int open = 1;
 	base = 1, base2 = 1; times = 1000000;
 	cout << "\n线性递增测试";
@@ -3103,11 +2602,11 @@ inline void matrixLocalTest() {
 	{
 		base += 1; times = times * 4 / 5;
 		//base2 = base;//卷积测试时候注释掉这一行定义
-		CLMatrixF a(base, MakeXF), b(base2, MakeXF);
-		CLMatrixD c(base, MakeXD), d(base2, MakeXD);
-		CLMatrixI e(base, MakeXI), f(base2, MakeXI);
+		CLMatrixExF a(base, MakeXF), b(base2, MakeXF);
+		CLMatrixExD c(base, MakeXD), d(base2, MakeXD);
+		CLMatrixExI e(base, MakeXI), f(base2, MakeXI);
 		base2 = min(base / 2, 7);
-		CLMatrix::setUseSSE(true);
+		CLMatrixEx::setUseSSE(true);
 		auto t0 = clock();
 		for (size_t j = 0; j < times; j++)AXB;
 		auto t1 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
@@ -3115,7 +2614,7 @@ inline void matrixLocalTest() {
 		auto t2 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
 		for (size_t j = 0; j < times; j++)EXF;
 		auto t5 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
-		CLMatrix::setUseSSE(false);
+		CLMatrixEx::setUseSSE(false);
 		for (size_t j = 0; j < times; j++)AXB;
 		auto t3 = double(clock() - t0) / CLOCKS_PER_SEC; t0 = clock();
 		for (size_t j = 0; j < times; j++)CXD;
@@ -3128,11 +2627,11 @@ inline void matrixLocalTest() {
 			t5, (t5 < t6 ? "快<" : ">"), t6, (t5 - t6) / t6 * 100);
 		if (base > 8 && open) {
 			open = 0;
-			CLMatrix::setUseSSE(false);
+			CLMatrixEx::setUseSSE(false);
 			M1 = AXB;
 			M2 = CXD;
 			M5 = EXF;
-			CLMatrix::setUseSSE(true);
+			CLMatrixEx::setUseSSE(true);
 			M3 = AXB;
 			M4 = CXD;
 			M6 = EXF;
@@ -3146,383 +2645,7 @@ inline void matrixLocalTest() {
 	if (M5 != M6)
 		M5.print(_T(" e * f no use")), M6.print(_T(" e * f use")), (M5 - M6).print(_T(" delta e f use"));
 	cout << "\n当前矩阵的加速优化宽度最小宽度" << matrixUseSSEMinRank << endl << endl;
-	CLMatrix::setUseSSE(bku);//还原
+	CLMatrixEx::setUseSSE(bku);//还原
 }
-
-#ifndef CLMatrixEx_Data_Check_Open 
-#ifdef NDEBUG
-#define CLMatrixEx_Data_Check_Open false
-#else
-#define CLMatrixEx_Data_Check_Open true
-#endif
-#endif
-
-//坐标包装结构，他不会动态分配空间，需要调用者管理分配空间
-//坐标结构Coord需要由对应的维度id来取得对应维度的坐标长度，且id是从1开始的，一个坐标的最大维度id就是多维数据的维度总数；
-struct Coord {
-	typedef size_t dimId;//从1开始的维度编号id
-	typedef size_t dimSize;///单个维度长度
-	typedef dimSize dimCounts;//维度个数
-	Coord() = delete;
-	explicit Coord(size_t* _cod, dimCounts _dim) :cod(_cod), dim(_dim){
-#if CLMatrixEx_Data_Check_Open
-		if(cod == nullptr)throw runtime_error("CLMultiDimData Coord construct para error!");
-#endif
-	}
-	Coord(const Coord& v) :cod(v.cod), dim(v.dimension()){}
-	dimCounts dimension() const { return dim; }
-	//取得对应维度id所指向维度的坐标长度值，维度id是从1开始的与构造多维空间匹配的标记id；
-	dimSize operator[](dimId id) const {
-		return cod[id - 1];
-	}
-	//取得对应维度id所指向维度的坐标长度值的索引，维度id是从1开始的与构造多维空间匹配的标记id；
-	dimSize& operator[](dimId id) {
-		return cod[id - 1];
-	}
-	//用坐标序列设置坐标结构体（输入坐标的写法是倒序的，例如3维矩阵（层, 行, 列），2维矩阵（行, 列），3维坐标（z, y, x），2维坐标（y, x））
-	//输入序列超过会被截断，不够按0长度补足；
-	template<class ...Args>
-	Coord& set(Args ...xyz) {
-		_set(dimension(), std::forward<Args>(xyz)...);
-		return *this;
-	}
-private:
-	size_t* const cod;
-	const dimCounts dim;
-	template<class ...Args>
-	void _set(dimId din, dimSize length, Args ...xyz) {
-		if (din == 0)
-			return;
-		(*this)[din] = length;
-		_set(din - 1, std::forward<Args>(xyz)...);
-	}
-	void _set(dimId din, dimSize length) {
-		if (din == 0) //截断
-			return;
-		(*this)[din--] = length;
-		for (; din >= 1;) //补0
-			(*this)[din--] = 0;
-	}
-};
-
-//多维数据空间
-template<class T>
-struct CLMultiDimData {
-	//维度id是从1开始的与构造多维数据匹配的各维度的标记id，最大编个号的维度id值与多维数据的维度总数值是相等的；
-	enum dim {
-		D1 = 1, D2, D3, D4, D5, D6, D7, D8, D9,
-		X = D1, Y = D2, Z = D3,
-		x = X, y = Y, z = Z,
-		col = X, row = Y, plan = Z, time = D4,
-	};
-	using value_type = T;
-	using valueType = value_type;
-	using obj = CLMultiDimData;
-	using index = size_t;//0开始索引
-	using dimSize = size_t;///单个维度长度
-	using dimCounts = dimSize;//维度个数
-	using dimId = size_t;//从1开始的维度编号id
-	using dimInfo = std::vector<dimSize>;//维度信息结构体[维度个数，维度1长度，...，维度N长度，1，维度1跨度，...，维度N跨度]
-	using mainData = std::vector<valueType>;//主数据
-
-	struct dimData {
-		dimData(valueType* value, dimSize* span
-#if CLMatrixEx_Data_Check_Open
-			, dimId dim
-#endif
-		) :_value(value), _span(span)
-#if CLMatrixEx_Data_Check_Open
-			, _dim(dim)
-#endif
-		{}
-		dimData operator[](const index idx) const noexcept {
-#if CLMatrixEx_Data_Check_Open
-			auto ndim = _dim - 1;
-			if (ndim == 0) {
-				throw out_of_range("dimData: operator[] out of dim counts range!");
-			}
-#endif
-			return dimData(_value + idx * (*_span), _span - 1
-#if CLMatrixEx_Data_Check_Open
-				, ndim
-#endif
-			);
-		}
-		operator valueType() const { return *_value; }
-		operator valueType& () { return *_value; }
-		valueType* operator &() const{ return _value; }
-		valueType operator=(const valueType v) { return store(v); }
-		valueType operator%=(const int v) { return store(int(load()) % v); }
-		valueType store(const valueType v) { return *_value = v; }
-		valueType load() const { return *_value; }
-#if CLMatrixEx_Data_Check_Open
-		dimId dim() const { return _dim; }
-#endif
-	protected:
-		valueType* _value;
-		dimSize* _span;
-#if CLMatrixEx_Data_Check_Open
-		dimId _dim;
-#endif
-	};
-	
-protected:
-	valueType* _head;
-	dimSize* _info;
-#if CLMAT_USE_MEMPOOLS > 0
-	std::vector<valueType>& _data;
-#else
-	std::vector<valueType> _data;
-#endif
-
-	//更新指针数据
-	void update() {
-		if (_info = (size_t*)_data.data())
-			if (size()) {
-				_head = _data.data() + infoHeadSize(dimension());
-				return;
-			}
-		_head = nullptr;
-	}
-	size_t openArgs(size_t* upsave, size_t* save, size_t perDimNodes, size_t thisDimCounts) {
-		*upsave = thisDimCounts;
-		return *save = perDimNodes * thisDimCounts;
-	}
-	template <class ...Args>
-	size_t openArgs(size_t* upsave, size_t* save, size_t perDimNodes, size_t thisDimCounts, Args&& ...xyz) {
-		*upsave = thisDimCounts;
-		*save = perDimNodes * thisDimCounts;
-		return  openArgs(upsave + 1, save + 1, *save, std::forward<Args>(xyz)...);
-	}
-	size_t _index(size_t _dim, size_t _dimLength) const {
-		if (_dim > size_t(dim::D1))
-			return dimNodeSpan(_dim - 1) * _dimLength;
-		else 
-			return _dimLength;
-	}
-	template<class ...Args>
-	size_t _index(size_t _dim, size_t _dimLength, Args&& ...xyz) const {
-		if (_dim > size_t(dim::D1))
-			return dimNodeSpan(_dim - 1) * _dimLength + _index(_dim - 1, std::forward<Args>(xyz)...);
-		else 
-			return _dimLength;
-	}
-	size_t infoHeadSizeOrg(size_t argsSize) const noexcept {
-		return (argsSize * 2 + 2);
-	}
-	size_t infoHeadSize(size_t argsSize) const noexcept {
-		auto org = infoHeadSizeOrg(argsSize);
-		return org * sizeof(size_t) % sizeof(valueType) == 0 ?
-			org * sizeof(size_t) / sizeof(valueType) :
-			(org + 1) * sizeof(size_t) / sizeof(valueType);
-	}
-public:
-
-#if CLMAT_USE_MEMPOOLS > 0
-	~CLMultiDimData() { giveUpObj(&_data); }
-#endif
-	CLMultiDimData()
-		:_head(nullptr), _info(nullptr)
-#if CLMAT_USE_MEMPOOLS > 0
-		, _data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-#endif
-	{}
-	//构造函数，通过显示指定多维空间各个维度长度定义来定义一个多维空间，例如CLMultiDimData(5，6，7)，生成总计7层，每层6行，每行5列的矩阵；
-	template<class ...Args>
-	CLMultiDimData(dimSize v1, Args&& ...xyz)
-#if CLMAT_USE_MEMPOOLS > 0
-		:_data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-#endif
-	{
-		this->resize(v1, std::forward<Args>(xyz)...);
-	}
-	//构造函数，通过显示指定多维空间各个维度长度定义来定义一个多维空间，例如CLMultiDimData(5，6，7)，生成总计7层，每层6行，每行5列的矩阵；
-	template<class ...Args>
-	CLMultiDimData(const std::function<void(valueType&, index,const Coord&)>&& fun, Args&& ...xyz)
-#if CLMAT_USE_MEMPOOLS > 0
-		:_data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-#endif
-	{
-		this->resize(std::forward<Args>(xyz)...);
-		size_t _coord[sizeof...(xyz)];
-		Coord cod(_coord, sizeof...(xyz));
-		for (size_t i = 0; i < size(); i++)
-		{
-			coordinate(i, cod);//索引转为坐标
-			fun(element(i), i, cod); //遍历每个元素
-		}
-	}
-	CLMultiDimData(const CLMultiDimData& v)
-#if CLMAT_USE_MEMPOOLS > 0
-		:_data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-	{
-		_data = v._data;
-#else
-		:_data(v._data)
-	{
-#endif
-		update();
-	}
-	template<class T2>
-	CLMultiDimData(const CLMultiDimData<T2> & v)
-#if CLMAT_USE_MEMPOOLS > 0
-		:_data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-#endif
-	{
-		*this = v;
-	}
-	CLMultiDimData& operator=(const CLMultiDimData & v) {
-		_data = v._data;
-		update();
-		return *this;
-	}
-	template<class T2>
-	CLMultiDimData& operator=(const CLMultiDimData<T2> & v) {
-		auto tdc = v.dimension();
-		_data.resize(infoHeadSize(tdc));
-		size_t* pt = (size_t*)_data.data();
-		*pt = tdc;
-		*(pt + tdc + 1) = 1;
-		for (size_t i = 1; i <= tdc; i++)
-		{
-			pt[i] = v.dimlength(i);
-			pt[i + tdc + 1] = v.dimNodeSpan(i - 1) * pt[i];
-		}
-		_data.resize(_data.size() + v.size());
-		update();
-		for (size_t i = 0; i < size(); i++)
-			element(i) = v.element(i);
-		return *this;
-	}
-	//索引转为坐标；坐标结构Coord需要由对应的维度id来取得坐标长度；
-	void coordinate(index idx, Coord& _coord) const {
-		size_t i = dimension();
-		for (; i > 1; --i)
-		{
-			auto _ndSpan = dimNodeSpan(i - 1);
-			_coord[i] = idx / _ndSpan;
-			idx = idx % _ndSpan;
-		}
-		_coord[i] = idx;
-	}
-	//矩阵元素个数
-	size_t size() const {
-		return dimNodeSpan(dimension());
-	}
-	//将矩阵按参数表达的维度方式重构，例如resize(5，6，7)，生成总计7层，每层6行，每行5列的矩阵；
-	template<class ...Args>
-	void resize(Args&& ...xyz) {
-		_data.resize(infoHeadSize(sizeof...(xyz)));
-		size_t* pt = (size_t*)_data.data();
-		*pt = sizeof...(xyz);
-		*(pt + sizeof...(xyz) + 1) = 1;
-		auto total = openArgs(pt + 1, pt + sizeof...(xyz) + 2, 1, std::forward<Args>(xyz)...);
-		_data.resize(_data.size() + total);
-		update();
-	}
-	//用维度下标索引取得维度数据，输入维度坐标的写法应该是倒序的，例如：m1[层][行][列] 或 m1[z][y][x] ；
-	//到达根维度后将不能在继续[]操作，继续[]操作将会得到不可预料的结果。（不会抛出异常）
-	dimData operator[](dimSize idx) const {
-		return dimData(&_head[dimNodeSpan(dimension() - 1) * idx], _info + dimension() * 2 - 1
-#if CLMatrixEx_Data_Check_Open
-			, dimension()
-#endif
-		);
-	}
-	//坐标结构取得元素，该方法采用循环展开，效率慢，请使用operator[index]操作代替；
-	valueType operator[](const Coord& cod)const {
-#if CLMatrixEx_Data_Check_Open
-		if( dimension() != cod.dimension())
-			throw runtime_error("Coord dimension is not match!");
-#endif
-		index _dim = 0;
-		auto psi = _info + dimension() + 1;
-		for (size_t i = 1; i <= dimension();++i,++psi)
-		{
-			_dim += cod[i] * (*psi);
-		}
-		return _head[_dim];
-	}
-	//坐标结构取得元素，该方法采用循环展开，效率慢，请使用operator[index]操作代替；
-	valueType& operator[](const Coord& cod){
-#if CLMatrixEx_Data_Check_Open
-		if (dimension() != cod.dimension())
-			throw runtime_error("Coord dimension is not match!");
-#endif
-		index _dim = 0;
-		auto psi = _info + dimension() + 1;
-		for (size_t i = 1; i <= dimension(); ++i, ++psi)
-		{
-			_dim += cod[i] * (*psi);
-		}
-		return _head[_dim];
-	}
-	//坐标取得元素（输入坐标的写法是倒序的，例如3维矩阵（层,行,列），2维矩阵（行,列），3维坐标（z,y,x），2维坐标（y,x））；
-	//该方法采用递归参数展开，效率慢，请使用operator[index]操作代替；
-	template<class ...Args>
-	valueType& operator()(Args&& ...xyz) {
-		return _head[_index(dimension(), std::forward<Args>(xyz)...)];
-	}
-	//坐标取得元素（输入坐标的写法是倒序的，例如3维矩阵（层,行,列），2维矩阵（行,列），3维坐标（z,y,x），2维坐标（y,x））；
-	//该方法采用递归参数展开，效率慢，请使用operator[index]操作代替；
-	template<class ...Args>
-	valueType operator()(Args&& ...xyz) const {
-		return _head[_index(dimension(), std::forward<Args>(xyz)...)];
-	}
-	//把多维矩阵忽略维度信息，表示为一维数列，按下标索引取得元素对象；
-	valueType& element(index idx) { return _head[idx]; }
-	//把多维矩阵忽略维度信息，表示为一维数列，按下标索引取得元素值；
-	valueType element(index idx)const { return _head[idx]; }
-	//取得矩阵的维度数
-	dimCounts dimension() const {
-		return *_info;
-	}
-	//取得某一维度的长度；
-	dimSize dimlength(dimId _dim) const {
-		return *(_info + _dim);
-	}
-	//取得某一维度的跨度，即本维度内包含的所有节点（元素）的数量；
-	size_t dimNodeSpan(dimId _dim) const {
-		return *(_info + dimension() + _dim + 1);
-	}
-	//取得矩阵的信息[维度数，维度1长，...，维度N长，1，维度1跨度，...，维度N跨度]，最后一个维度的跨度即为总元素个数；
-	dimInfo& getDimInfo(dimInfo & info) {
-		auto si = infoHeadSizeOrg(dimension());
-		info.resize(si);
-		memcpy_s(info.data(), si * sizeof(dimSize), _info, si * sizeof(dimSize));
-		return info;
-	}
-	//遍历回调传参
-#define CLMULTIDIM_MATRIX_CALLBACK_PARAM( type ) type& v, size_t _idx, const Coord& _cod
-	//对每个元素执行操作；
-	obj& foreach(const std::function<void(valueType&, index,const Coord&)> && doCallFunc) {
-		vector<dimSize> _coord(dimension());
-		Coord cod(_coord.data(), dimension());
-		for (index i = 0,si = size(); i < si; i++)
-		{
-			coordinate(i, cod);//索引转为坐标
-			doCallFunc(element(i), i, cod); //遍历每个元素
-		}
-		return *this;
-	}
-	obj& fastForeach(const std::function<void(valueType&, index)>&& doCallFunc) {
-		for (index i = 0, si = size(); i < si; i++)
-			doCallFunc(element(i), i); //遍历每个元素
-		return *this;
-	}
-	obj& fastForeach(const valueType v = 0) {
-		for (index i = 0, si = size(); i < si; i++)		
-			element(i) = v; //遍历每个元素		
-		return *this;
-	}
-	//返回数据区头指针
-	valueType* data() const { return _head; }
-	//清理过程将保留，维度个数信息
-	void clear() {
-		if (_info)
-			ZeroMemory(_info + 1, (infoHeadSize(dimension()) - 1) * sizeof(size_t));
-		_head = nullptr;
-	}
-};
 
 #endif

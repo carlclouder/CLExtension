@@ -45,6 +45,7 @@ using namespace std;
 
 //引入矩阵运算类库
 #include "_cl_matrix/CLMatrix.h"
+#include "_cl_matrix/CLMatrixEx.h"
 
 //引入时间处理工具类库
 #include "_cl_time/CLTime.h"

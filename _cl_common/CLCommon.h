@@ -1165,7 +1165,6 @@ BOOL uninstallService(LPCTSTR servName);
 BOOL startService(LPCTSTR servName);
 BOOL stopService(LPCTSTR servName);
 
-
 //带定时功能的，消息框
 int messageBoxTimeoutA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType, DWORD dwMilliseconds = INFINITE);
 int messageBoxTimeoutW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType, DWORD dwMilliseconds = INFINITE);
@@ -1176,6 +1175,9 @@ int messageBoxTimeoutW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType,
 #define messageBoxTimeout messageBoxTimeoutA
 #define messageBoxT messageBoxTimeoutA
 #endif
+
+//查看主机的加速设备,type = 0手动选择，= 1 输出简化，= 2 输出详细
+void showAcceleratorDeviceAmpBase(UINT type = 2);
 
 class CLString;
 //取得cpu完整信息，包括cpu型号名，cpu类型名，cpu核心线程数，cpu主频(GHz)

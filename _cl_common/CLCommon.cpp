@@ -1797,3 +1797,100 @@ inline void CLParallelPass::reclaimAllPass() {
 inline UINT CLParallelPass::getPassCounts() const {
 	return m_counts;
 }
+
+#include <amp.h>
+#include <amp_math.h>
+#include <iomanip>
+
+void _showAcceleratorDeviceAmpBase(bool show_all = false, bool old_format = false) {
+	using namespace concurrency;
+	std::vector<accelerator> accls;
+	try {
+		accls = accelerator::get_all();
+	}
+	catch (const std::exception& e) {
+		printf(e.what());
+	}
+	if (!show_all)
+	{
+		accls.erase(std::remove_if(accls.begin(), accls.end(), [](accelerator& a)
+			{
+				return (a.device_path == accelerator::cpu_accelerator) || (a.device_path == accelerator::direct3d_ref);
+			}), accls.end());
+	}
+
+	if (accls.empty())
+	{
+		std::wcout << "No accelerators found that are compatible with C++ AMP" << std::endl << std::endl;
+		return;
+	}
+	std::cout << std::endl << "Show " << (show_all ? "all " : "") << "AMP Devices (";
+#if defined(_DEBUG)
+	std::cout << "DEBUG";
+#else
+	std::cout << "RELEASE";
+#endif
+	std::cout << " build)" << std::endl;
+	std::wcout << "Found " << accls.size()
+		<< " accelerator device(s) that are compatible with C++ AMP:" << std::endl;
+	int n = 0;
+	if (old_format)
+	{
+		std::for_each(accls.cbegin(), accls.cend(), [=, &n](const accelerator& a)
+			{
+				std::wcout << "  " << ++n << ": " << a.description
+					<< ", has_display = " << (a.has_display ? "true" : "false")
+					<< ", is_emulated = " << (a.is_emulated ? "true" : "false")
+					<< std::endl;
+			});
+		std::wcout << std::endl;
+		return;
+	}
+
+	std::for_each(accls.cbegin(), accls.cend(), [=, &n](const accelerator& a)
+		{
+			std::wcout << "  " << ++n << ": " << a.description << " "
+				<< std::endl << "       device_path                       = " << a.device_path
+				<< std::endl << "       dedicated_memory                  = " << std::setprecision(4) << float(a.dedicated_memory) / (1024.0f * 1024.0f) << " Mb"
+				<< std::endl << "       has_display                       = " << (a.has_display ? "true" : "false")
+				<< std::endl << "       is_debug                          = " << (a.is_debug ? "true" : "false")
+				<< std::endl << "       is_emulated                       = " << (a.is_emulated ? "true" : "false")
+				<< std::endl << "       supports_double_precision         = " << (a.supports_double_precision ? "true" : "false")
+				<< std::endl << "       supports_limited_double_precision = " << (a.supports_limited_double_precision ? "true" : "false")
+				<< std::endl << "       supports_cpu_shared_memory        = " << (a.supports_cpu_shared_memory ? "true" : "false")
+				<< std::endl;
+		});
+	std::wcout << std::endl;
+}
+//查看主机的加速设备,type = 0手动选择，= 1 输出简化，= 2 输出详细
+void showAcceleratorDeviceAmpBase(UINT type) {
+	if (type == 1)
+		return _showAcceleratorDeviceAmpBase(false, true);
+	if (type == 2)
+		return _showAcceleratorDeviceAmpBase(true, false);
+	CLString cmd;
+	while (CLString::getCharCmd(cmd.store(256), 255, ("退出Esc，确认Enter，请输入 /a 或 /o [直接Enter] ： "))) {
+		bool show_all = false;
+		bool old_format = false;
+		cmd.trim();
+		if (cmd.compare("/a") == 0)
+		{
+			show_all = true;
+		}
+		else if (cmd.compare("/o") == 0)
+		{
+			show_all = false;
+			old_format = true;
+		}
+		else if (cmd.size() == 0) {
+			show_all = false;
+			old_format = true;
+		}
+		else
+			continue;
+
+		_showAcceleratorDeviceAmpBase(show_all, old_format);
+		system("pause");
+	}
+	return;
+}

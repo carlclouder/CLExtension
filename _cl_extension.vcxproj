@@ -249,6 +249,7 @@
     <ClInclude Include="_cl_jsonTask\CLJsonTask.h" />
     <ClInclude Include="_cl_matcher\CLMatcher.h" />
     <ClInclude Include="_cl_matrix\CLMatrix.h" />
+    <ClInclude Include="_cl_matrix\CLMatrixEx.h" />
     <ClInclude Include="_cl_neuralNetwork\CreativeLus.h" />
     <ClInclude Include="_cl_neuralNetwork\CreativeLusEx.h" />
     <ClInclude Include="_cl_neuralNetwork\CreativeLusExTools.h" />

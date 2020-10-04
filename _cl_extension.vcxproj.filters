@@ -81,8 +81,11 @@
     <ClInclude Include="_rapidjson\CLRapidjsonTX.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="_cl_matrix\CLMatrixEx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="_cl_atomic\CLAtomic.hpp">
-      <Filter>源文件</Filter>
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

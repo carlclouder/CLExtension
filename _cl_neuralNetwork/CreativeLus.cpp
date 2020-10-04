@@ -932,9 +932,11 @@ void _showAcceleratorDeviceAmp(Bool show_all = false, Bool old_format = false) {
 #endif
 }
 
+
 void showAcceleratorDeviceAmp(Uint type)
 {
 #if UseCppAmp > 0
+	return showAcceleratorDeviceAmpBase(type);
 	if (type == 1)
 		return _showAcceleratorDeviceAmp(false, true);
 	if (type == 2)
