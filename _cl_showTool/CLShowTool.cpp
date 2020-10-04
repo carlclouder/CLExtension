@@ -630,10 +630,7 @@ BOOL CLShowTool::drawGrapher(CLDC& dc)
 		//bottonWD = BOTTONWIDE;
 		//优先计算左像素宽
 		if (m_isYAxis > 0) 
-			drawUtAxisY(dc, m_mpUtHdr[m_isYAxis]);		
-		//其次计算下宽
-		if (m_isXAxis > 0)
-			drawUtAxisX(dc, m_mpUtHdr[m_isXAxis]);
+			drawUtAxisY(dc, m_mpUtHdr[m_isYAxis]);				
 		//最后计算各线条
 		for (auto i = m_mpUtHdr.begin(); i != m_mpUtHdr.end(); ++i)
 		{
@@ -652,6 +649,9 @@ BOOL CLShowTool::drawGrapher(CLDC& dc)
 			default:break;
 			}
 		}
+		//其次计算下宽
+		if (m_isXAxis > 0)
+			drawUtAxisX(dc, m_mpUtHdr[m_isXAxis]);
 	}
 	else if (m_type == SHOWGRAPHER_TYPE_BITMAP)
 	{
@@ -722,7 +722,7 @@ void CLShowTool::drawUtLine(CLDC& dc, STUTHEADER& hdr, DOUBLE* line, std::map<lo
 		y = TOP_WIDE + maxy * (1 - (line[i] - m_minY) / disY);
 		if (!((hdr.exFlag & STEF_NODRAWLINE_0) && (line[i - 1] == 0 || line[i] == 0))) {
 			drawLine(&dc, ptbak.x, ptbak.y, x, y);
-			if ((hdr.exFlag & STEF_USE_AXIS_X_DATA) && (lx != NULL)) {
+			if ((hdr.exFlag & STEF_USE_AXIS_X_DATA) && (lx != NULL)) { //在使用X坐标模式下，把计算出的x像素位置记录到表中
 				//long cx = ((int)ptbak.x + (int)x) / 2;
 				long cx = (int)x;
 				auto pr = &((*lx)[cx]);
@@ -802,7 +802,7 @@ void CLShowTool::drawUtVerline(CLDC& dc, STUTHEADER& hdr, DOUBLE* line, std::map
 			rt.top = y1;
 			rt.bottom = y0;
 			dc.FillRect(&rt, ((_isUseDB && (line[i] < 0)) ? &bruEx : &bru));
-			if ((hdr.exFlag & STEF_USE_AXIS_X_DATA) && (lx != NULL)) {
+			if ((hdr.exFlag & STEF_USE_AXIS_X_DATA) && (lx != NULL)) { //在使用X坐标模式下，把计算出的x像素位置记录到表中
 				//long cx = ((int)ptbak.x + (int)x) / 2;
 				long cx = (rt.left + rt.right) / 2;
 				auto pr = &((*lx)[cx]);
@@ -874,7 +874,8 @@ void CLShowTool::drawUtAxisX(CLDC& dc, STUTHEADER& hdr)
 	GetTextExtentPoint32(dc.m_hDC, szMinV.string(), szMinV.strlen(), &szMinVSize);
 	GetTextExtentPoint32(dc.m_hDC, szMaxV.string(), szMaxV.strlen(), &szMaxVSize);
 	DOUBLE _min = xLeft, _max = xRight; //最小和最大像素值
-	DOUBLE x0 = (0 - m_minX) / (m_maxX - m_minX) * xASpan + LEFT_WIDE; //计算x0的x坐标
+	//DOUBLE x0 = (0 - m_minX) / (m_maxX - m_minX) * xASpan + LEFT_WIDE; //计算x0的x坐标
+	DOUBLE x0 = findBasePtX0(m_minX, m_maxX, xASpan); //计算x0的x坐标
 	DOUBLE _maxWD = BOTTONWIDE; //底部最大像素宽度
 	if (xASpan > szMinVSize.cx) { //最小值的宽度小于x轴像素值
 		if(yBotton > TOP_WIDE)
@@ -2084,6 +2085,43 @@ void CLShowTool::releaseSubWndLst()
 		}
 	}
 	m_subWndLst.clear();
+}
+
+DOUBLE CLShowTool::findBasePtX0(IN DOUBLE _minX, IN DOUBLE _maxX, IN DOUBLE xASpan)
+{	
+	if(m_isXdata != 0) {
+		int i = 0;
+		for (auto ie = m_mpUtHdr.cbegin(); ie != m_mpUtHdr.cend(); i++)
+		{
+			if (
+				(ie->second.utType == STLT_LINE || ie->second.utType == STLT_VERLINE) &&
+				(ie->second.exFlag & STEF_USE_AXIS_X_DATA)
+				) {
+				auto p = &(m_mplineLst[ie->first]);
+				auto je = p->LineX.cbegin(),jebk = je;
+				if (je != p->LineX.cend()) {
+					++je;
+				}
+				for (; je != p->LineX.cend(); )
+				{
+					if (BETWEEN((double)0, jebk->second.XV, je->second.XV)) {
+						//basePtX = je->first;
+						//baseX = je->second.XV;
+						auto midbk = (jebk->second.LB + jebk->second.RT) / 2;
+						auto mid = (je->second.LB + je->second.RT) / 2;
+						if (je->second.XV - jebk->second.XV != 0)
+							return (0 - jebk->second.XV) / (je->second.XV - jebk->second.XV) * (mid - midbk) + midbk;
+						else
+							break;
+					}
+					jebk = je;
+					++je;
+				}
+			}
+			++ie;
+		}
+	}
+	return (0 - _minX) / (_maxX - _minX) * xASpan + LEFT_WIDE;
 }
 
 void CLShowTool::getBasePtX(OUT LONG& basePtX, OUT DOUBLE& baseX, IN LONG orgX, IN DOUBLE xLeft, IN DOUBLE xASpan)

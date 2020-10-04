@@ -131,8 +131,8 @@ typedef struct CLPOINT {
 	void set(double _x, double _y) { x = _x; y = _y; }
 } *PCLPOINT;
 typedef struct _str_Rage {
-	double LB, RT;
-	double XV;
+	double LB, RT;//左范围坐标值，右范围坐标值
+	double XV;//该范围的中间代表数值
 	_str_Rage() : LB(0), RT(0), XV(0) { };
 	_str_Rage(double _LB, double _RT) : LB(_LB), RT(_RT), XV(0) {  };
 	_str_Rage(double _LB, double _RT, double _XV) : LB(_LB), RT(_RT), XV(_XV) {  };

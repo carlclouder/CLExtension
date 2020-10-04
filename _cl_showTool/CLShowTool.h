@@ -196,7 +196,7 @@ protected:
 	CLRect m_strRect;
 	CLPoint m_strPt,m_strPtN;
 	size_t m_bitUpdateTimes;
-	LONG m_isXdata;
+	LONG m_isXdata;//标记是否右X尺寸数据
 	COLORREF m_gbkColor = RGB(0, 0, 0);
 
 	std::map<LONG,LINEBUF> m_mplineLst;
@@ -233,6 +233,9 @@ protected:
 	DOUBLE getWide(LONG pos);
 	void release();
 	void releaseSubWndLst();
+	//当有X数据时寻找x0的像素坐标位置
+	DOUBLE findBasePtX0(IN DOUBLE _minX, IN DOUBLE _maxX, IN DOUBLE xASpan);
+	//鼠标点x取得当前所在的X轴范围数据
 	void getBasePtX(OUT LONG & basePtX, OUT DOUBLE & baseX, IN LONG orgX, IN DOUBLE xLeft, IN DOUBLE xASpan);
 	void updateMaxYMinY(DOUBLE* line,STUTHEADER* i) throw(...);
  	void doExFlag(CLDC& dc,STUTHEADER& hdr,DOUBLE* line);
