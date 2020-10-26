@@ -115,7 +115,7 @@ template<class T1> bool isSignRev(const std::vector<T1>& v){
 }
 
 //sse指令集数据拷贝
-template<class Ty> void memcpy_sse(Ty* left, const Ty* right, size_t nCounts) {
+template<class Ty> void memcpy_sse(Ty* left, const Ty* right, size_t nCounts) noexcept{
 	struct block_4 { Ty a[4]; };
 	struct block_8 { Ty a[8]; };
 	struct block_16 { Ty a[16]; };
@@ -1795,14 +1795,14 @@ template<class T1, class T2>
 CLMatrixT<T1> operator+(const  CLMatrixT<T1>& lhs, T2 v)
 {
 	auto m = lhs;
-	m += v;
+	m += T1(v);
 	return std::move(m);
 }
 template<class T1, class T2>
 CLMatrixT<T1> operator+(T2 v, const  CLMatrixT<T1>& lhs)
 {
 	auto m = lhs;
-	m += v;
+	m += T1(v);
 	return std::move(m);
 }
 template<class T1, class T2>
@@ -1816,7 +1816,7 @@ template<class T1, class T2>
 CLMatrixT<T1> operator-(const  CLMatrixT<T1>& lhs, T2 v)
 {
 	auto m = lhs;
-	m -= v;
+	m -= T1(v);
 	return std::move(m);
 }
 template<class T1, class T2>
@@ -3160,9 +3160,11 @@ inline void matrixLocalTest() {
 //坐标包装结构，他不会动态分配空间，需要调用者管理分配空间
 //坐标结构Coord需要由对应的维度id来取得对应维度的坐标长度，且id是从1开始的，一个坐标的最大维度id就是多维数据的维度总数；
 struct Coord {
+
 	typedef size_t dimId;//从1开始的维度编号id
 	typedef size_t dimSize;///单个维度长度
 	typedef dimSize dimCounts;//维度个数
+
 	Coord() = delete;
 	explicit Coord(size_t* _cod, dimCounts _dim) :cod(_cod), dim(_dim){
 #if CLMatrixEx_Data_Check_Open
@@ -3205,8 +3207,194 @@ private:
 	}
 };
 
-//多维数据空间
+//数据结构模式计算
 template<class T>
+struct CLMDDataMod {
+	//取得信息头在size_t类型下对应的内存空间个数
+	static size_t infoSize(const size_t* head) noexcept {
+		return infoSize(dimension(head));
+	}
+	//取得信息头在size_t类型下对应的内存空间个数
+	static size_t infoSize(size_t dimSize) noexcept {
+		return (dimSize * 2 + 2);
+	}
+	//取得信息头在对应类型T下的实际长度（内存空间个数）
+	static size_t infoSizeT(size_t argsSize) noexcept {
+		auto org = infoSize(argsSize);
+		return org * sizeof(size_t) % sizeof(T) == 0 ?
+			org * sizeof(size_t) / sizeof(T) :
+			(org + 1) * sizeof(size_t) / sizeof(T);
+	}
+	//取得信息头在对应类型T下的实际长度（内存空间个数）
+	static size_t infoSizeT(const size_t* head) noexcept {
+		return infoSizeT(dimension(head));
+	}
+	//取得维度数据
+	static size_t dimension(const size_t* info) noexcept {
+		return *info;
+	}
+	//取得某一维度的长度；
+	static size_t  dimlength(const size_t* info, size_t dim) noexcept {
+		return *(info + dim);
+	}
+	//取得某一维度的跨度，即本维度内包含的所有节点（元素）的数量；
+	static size_t  dimNodeSpan(const size_t* info, size_t dim) noexcept {
+		return *(info + dimension(info) + dim + 1);
+	}
+	//由信息头计算元素个数
+	static size_t size(const size_t* info) noexcept {
+		return *(info + dimension(info) * 2 + 1);
+	}
+	//清除结构信息（只清理维度长，元素个数为0，保留维度个数和信息结构）
+	static void clear(size_t* info) noexcept {
+		*(info + dimension(info) * 2 + 1) = 0;
+		ZeroMemory(info + 1, dimension(info) * sizeof(size_t));
+	}
+	//由可变参数设置信息头，返回元素个数；
+	template<class ...Args>
+	static size_t setInfo(size_t* info,Args ...xyz) {
+		*info = sizeof...(xyz);
+		*(info + sizeof...(xyz) + 1) = 1;
+		return _openArgs(info + 1, info + sizeof...(xyz) + 2, 1, std::forward<Args>(xyz)...);
+	}
+	//拷贝信息头
+	static size_t* copyInfo(size_t* infoTag, const size_t* infoOrg) noexcept {
+		auto si = infoSize(dimension(infoOrg)) * sizeof(size_t);
+		memcpy_s(infoTag, si, infoOrg, si);
+		return infoTag;
+	}
+	//拷贝数据区
+	template<class T2>
+	static void copyHead(T* headTag, const T2* headOrg, size_t dataCounts) noexcept {
+		for (auto headTagEnd = headTag + dataCounts; 
+			headTag != headTagEnd; *headTag = *headOrg, ++headTag, ++headOrg);
+	}
+	//拷贝数据区
+	static void copyHead(T* headTag, const T* headOrg, size_t dataCounts) noexcept {
+		::memcpy_sse(headTag, headOrg, dataCounts);
+	}
+private:
+	static size_t _openArgs(size_t* upsave, size_t* save, size_t perDimNodes) noexcept {
+		return 0;
+	}
+	static size_t _openArgs(size_t* upsave, size_t* save, size_t perDimNodes, size_t thisDimCounts) noexcept {
+		*upsave = thisDimCounts;
+		return *save = perDimNodes * thisDimCounts;
+	}
+	template <class ...Args>
+	static size_t _openArgs(size_t* upsave, size_t* save, size_t perDimNodes, size_t thisDimCounts, Args&& ...xyz) noexcept {
+		*upsave = thisDimCounts;
+		*save = perDimNodes * thisDimCounts;
+		return  _openArgs(upsave + 1, save + 1, *save, std::forward<Args>(xyz)...);
+	}
+};
+
+//CLMD数据分配器接口声明,什么也不做，表达分配器应该具有如下功能集合；
+template<class T>
+struct ICLMDDataAlloc {
+	template<class ...Args>
+	void resize(Args&& ...xyz) {}
+	size_t* info() { return nullptr; }
+	T* head() { return nullptr; }
+	void clear() {}
+};
+
+template<class T>
+struct CLMultiDimDataAlloc :ICLMDDataAlloc<T> {
+protected:
+#if CLMAT_USE_MEMPOOLS > 0
+	std::vector<T>& _data;
+#else
+	std::vector<T> _data;
+#endif
+
+public:
+	using obj = CLMultiDimDataAlloc;
+	using mainData = std::vector<T>;//主数据
+	using mod = CLMDDataMod<T>;
+
+#if CLMAT_USE_MEMPOOLS > 0
+	~CLMultiDimDataAlloc() { giveUpObj(&_data); }
+#endif
+
+	//构造函数，通过显示指定多维空间各个维度长度定义来定义一个多维空间，例如CLMultiDimData(5，6，7)，生成总计7层，每层6行，每行5列的矩阵；
+	template<class ...Args>
+	CLMultiDimDataAlloc(Args&& ...xyz)
+#if CLMAT_USE_MEMPOOLS > 0
+		:_data(*newObjAndNamed(mainData, CLMultiDimDataAllocT_Inline_MainData))
+#endif
+	{
+		this->resize(std::forward<Args>(xyz)...);
+	}
+	CLMultiDimDataAlloc(const obj& v)
+#if CLMAT_USE_MEMPOOLS > 0
+		:_data(*newObjAndNamed(mainData, CLMultiDimDataAllocT_Inline_MainData))
+#endif
+	{
+		*this = v;
+	}
+	template<class T2>
+	CLMultiDimDataAlloc(const CLMultiDimDataAlloc<T2>& v) 
+#if CLMAT_USE_MEMPOOLS > 0
+		:_data(*newObjAndNamed(mainData, CLMultiDimDataAllocT_Inline_MainData))
+#endif
+	{
+		*this = v;
+	}
+	CLMultiDimDataAlloc(obj&& v) noexcept
+#if CLMAT_USE_MEMPOOLS > 0
+		:_data(*newObjAndNamed(mainData, CLMultiDimDataAllocT_Inline_MainData))
+#endif
+	{
+		*this = std::move(v);
+	}
+	obj& operator=(const obj& v) {
+		_data = v._data;
+		return *this;
+	}
+	template<class T2>
+	obj& operator=(const CLMultiDimDataAlloc<T2>& v) {
+		using mod2 = CLMDDataMod<T2>;
+		auto si = mod2::size(v.info());
+		_data.resize(mod::infoSizeT(mod2::dimension(v.info())) + si);
+		mod::copyInfo(info(), v.info());
+		mod::copyHead(head(), v.head(), si);
+		return *this;
+	}
+	obj& operator= (obj&& m) noexcept {
+		std::swap(_data, m._data);
+		m.clear();
+		return *this;
+	}
+
+	//将矩阵按参数表达的维度方式重构，例如resize(5，6，7)，生成总计7层，每层6行，每行5列的矩阵；
+	template<class ...Args>
+	void resize(Args&& ...xyz) {
+		if (sizeof...(xyz) == 0) { //无参数直接快速返回
+			_data.clear();
+			_data.resize(mod::infoSizeT((size_t)0));
+			mod::clear(info());
+			return;
+		}
+		_data.resize(mod::infoSizeT(sizeof...(xyz)));
+		auto si = mod::setInfo(info(), std::forward<Args>(xyz)...);
+		_data.resize(_data.size() + si);
+	}
+	size_t* info() {
+		return (size_t*)_data.data();
+	}
+	T* head() {
+		return _data.data() + mod::infoSizeT(info());
+	}	
+	//本类的实现位：清理过程将保留维度信息，把size的返回值变为0
+	void clear() {
+		if (info())
+			mod::clear(info());
+	}
+	
+};
+//多维数据空间
+template<class T ,class DataBase = CLMultiDimDataAlloc<T>>
 struct CLMultiDimData {
 	//维度id是从1开始的与构造多维数据匹配的各维度的标记id，最大编个号的维度id值与多维数据的维度总数值是相等的；
 	enum dim {
@@ -3222,8 +3410,7 @@ struct CLMultiDimData {
 	using dimSize = size_t;///单个维度长度
 	using dimCounts = dimSize;//维度个数
 	using dimId = size_t;//从1开始的维度编号id
-	using dimInfo = std::vector<dimSize>;//维度信息结构体[维度个数，维度1长度，...，维度N长度，1，维度1跨度，...，维度N跨度]
-	using mainData = std::vector<valueType>;//主数据
+	using dimInfo = std::vector<dimSize>;//维度信息结构体[维度个数，维度1长度，...，维度N长度，1，维度1跨度，...，维度N跨度]	
 
 	struct dimData {
 		dimData(valueType* value, dimSize* span
@@ -3269,31 +3456,18 @@ struct CLMultiDimData {
 protected:
 	valueType* _head;
 	dimSize* _info;
-#if CLMAT_USE_MEMPOOLS > 0
-	std::vector<valueType>& _data;
-#else
-	std::vector<valueType> _data;
-#endif
+	DataBase _data;
 
 	//更新指针数据
 	void update() {
-		if (_info = (size_t*)_data.data())
+		if (_info = _data.info())
 			if (size()) {
-				_head = _data.data() + infoHeadSize(dimension());
+				_head = _data.head();
 				return;
 			}
 		_head = nullptr;
 	}
-	size_t openArgs(size_t* upsave, size_t* save, size_t perDimNodes, size_t thisDimCounts) {
-		*upsave = thisDimCounts;
-		return *save = perDimNodes * thisDimCounts;
-	}
-	template <class ...Args>
-	size_t openArgs(size_t* upsave, size_t* save, size_t perDimNodes, size_t thisDimCounts, Args&& ...xyz) {
-		*upsave = thisDimCounts;
-		*save = perDimNodes * thisDimCounts;
-		return  openArgs(upsave + 1, save + 1, *save, std::forward<Args>(xyz)...);
-	}
+	
 	size_t _index(size_t _dim, size_t _dimLength) const {
 		if (_dim > size_t(dim::D1))
 			return dimNodeSpan(_dim - 1) * _dimLength;
@@ -3307,43 +3481,25 @@ protected:
 		else 
 			return _dimLength;
 	}
-	size_t infoHeadSizeOrg(size_t argsSize) const noexcept {
-		return (argsSize * 2 + 2);
-	}
-	size_t infoHeadSize(size_t argsSize) const noexcept {
-		auto org = infoHeadSizeOrg(argsSize);
-		return org * sizeof(size_t) % sizeof(valueType) == 0 ?
-			org * sizeof(size_t) / sizeof(valueType) :
-			(org + 1) * sizeof(size_t) / sizeof(valueType);
-	}
+	
 public:
 
-#if CLMAT_USE_MEMPOOLS > 0
-	~CLMultiDimData() { giveUpObj(&_data); }
-#endif
 	CLMultiDimData()
-		:_head(nullptr), _info(nullptr)
-#if CLMAT_USE_MEMPOOLS > 0
-		, _data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-#endif
+		:_head(nullptr), _info(nullptr), _data()
 	{}
 	//构造函数，通过显示指定多维空间各个维度长度定义来定义一个多维空间，例如CLMultiDimData(5，6，7)，生成总计7层，每层6行，每行5列的矩阵；
 	template<class ...Args>
 	CLMultiDimData(dimSize v1, Args&& ...xyz)
-#if CLMAT_USE_MEMPOOLS > 0
-		:_data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-#endif
+		: _data(v1, std::forward<Args>(xyz)...)
 	{
-		this->resize(v1, std::forward<Args>(xyz)...);
+		update();
 	}
 	//构造函数，通过显示指定多维空间各个维度长度定义来定义一个多维空间，例如CLMultiDimData(5，6，7)，生成总计7层，每层6行，每行5列的矩阵；
 	template<class ...Args>
-	CLMultiDimData(const std::function<void(valueType&, index,const Coord&)>&& fun, Args&& ...xyz)
-#if CLMAT_USE_MEMPOOLS > 0
-		:_data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-#endif
+	CLMultiDimData(const std::function<void(valueType&, index, const Coord&)>&& fun, Args&& ...xyz)
+		: _data(std::forward<Args>(xyz)...)
 	{
-		this->resize(std::forward<Args>(xyz)...);
+		update();
 		size_t _coord[sizeof...(xyz)];
 		Coord cod(_coord, sizeof...(xyz));
 		for (size_t i = 0; i < size(); i++)
@@ -3353,23 +3509,20 @@ public:
 		}
 	}
 	CLMultiDimData(const CLMultiDimData& v)
-#if CLMAT_USE_MEMPOOLS > 0
-		:_data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-	{
-		_data = v._data;
-#else
 		:_data(v._data)
 	{
-#endif
+		update();
+	}
+	CLMultiDimData(CLMultiDimData&& v) noexcept
+		:_data(std::move(v._data))
+	{
 		update();
 	}
 	template<class T2>
 	CLMultiDimData(const CLMultiDimData<T2> & v)
-#if CLMAT_USE_MEMPOOLS > 0
-		:_data(*newObjAndNamed(mainData, CLMultiDimMatrixT_Inline_MainData))
-#endif
+		:_data(v._data)
 	{
-		*this = v;
+		update();
 	}
 	CLMultiDimData& operator=(const CLMultiDimData & v) {
 		_data = v._data;
@@ -3378,22 +3531,17 @@ public:
 	}
 	template<class T2>
 	CLMultiDimData& operator=(const CLMultiDimData<T2> & v) {
-		auto tdc = v.dimension();
-		_data.resize(infoHeadSize(tdc));
-		size_t* pt = (size_t*)_data.data();
-		*pt = tdc;
-		*(pt + tdc + 1) = 1;
-		for (size_t i = 1; i <= tdc; i++)
-		{
-			pt[i] = v.dimlength(i);
-			pt[i + tdc + 1] = v.dimNodeSpan(i - 1) * pt[i];
-		}
-		_data.resize(_data.size() + v.size());
-		update();
-		for (size_t i = 0; i < size(); i++)
-			element(i) = v.element(i);
+		_data = v._data;
+		update();		
 		return *this;
 	}
+	obj& operator= (obj&& m) noexcept {
+		_data = std::move(m._data);
+		m.update();
+		update();
+		return *this;
+	}
+
 	//索引转为坐标；坐标结构Coord需要由对应的维度id来取得坐标长度；
 	void coordinate(index idx, Coord& _coord) const {
 		size_t i = dimension();
@@ -3412,12 +3560,7 @@ public:
 	//将矩阵按参数表达的维度方式重构，例如resize(5，6，7)，生成总计7层，每层6行，每行5列的矩阵；
 	template<class ...Args>
 	void resize(Args&& ...xyz) {
-		_data.resize(infoHeadSize(sizeof...(xyz)));
-		size_t* pt = (size_t*)_data.data();
-		*pt = sizeof...(xyz);
-		*(pt + sizeof...(xyz) + 1) = 1;
-		auto total = openArgs(pt + 1, pt + sizeof...(xyz) + 2, 1, std::forward<Args>(xyz)...);
-		_data.resize(_data.size() + total);
+		_data.resize(std::forward<Args>(xyz)...);
 		update();
 	}
 	//用维度下标索引取得维度数据，输入维度坐标的写法应该是倒序的，例如：m1[层][行][列] 或 m1[z][y][x] ；
@@ -3485,16 +3628,9 @@ public:
 	size_t dimNodeSpan(dimId _dim) const {
 		return *(_info + dimension() + _dim + 1);
 	}
-	//取得矩阵的信息[维度数，维度1长，...，维度N长，1，维度1跨度，...，维度N跨度]，最后一个维度的跨度即为总元素个数；
-	dimInfo& getDimInfo(dimInfo & info) {
-		auto si = infoHeadSizeOrg(dimension());
-		info.resize(si);
-		memcpy_s(info.data(), si * sizeof(dimSize), _info, si * sizeof(dimSize));
-		return info;
-	}
 	//遍历回调传参
 #define CLMULTIDIM_MATRIX_CALLBACK_PARAM( type ) type& v, size_t _idx, const Coord& _cod
-	//对每个元素执行操作；
+	//对每个元素执行操作,获得编号，和坐标；
 	obj& foreach(const std::function<void(valueType&, index,const Coord&)> && doCallFunc) {
 		vector<dimSize> _coord(dimension());
 		Coord cod(_coord.data(), dimension());
@@ -3505,12 +3641,14 @@ public:
 		}
 		return *this;
 	}
-	obj& fastForeach(const std::function<void(valueType&, index)>&& doCallFunc) {
+	//对每个元素执行操作,获得编号；
+	obj& foreach(const std::function<void(valueType&, index)>&& doCallFunc) {
 		for (index i = 0, si = size(); i < si; i++)
 			doCallFunc(element(i), i); //遍历每个元素
 		return *this;
 	}
-	obj& fastForeach(const valueType v = 0) {
+	//对每个元素执行赋值；
+	obj& foreach(const valueType v = 0) {
 		for (index i = 0, si = size(); i < si; i++)		
 			element(i) = v; //遍历每个元素		
 		return *this;
@@ -3519,9 +3657,20 @@ public:
 	valueType* data() const { return _head; }
 	//清理过程将保留，维度个数信息
 	void clear() {
-		if (_info)
-			ZeroMemory(_info + 1, (infoHeadSize(dimension()) - 1) * sizeof(size_t));
+		_data.clear();
 		_head = nullptr;
+	}
+	//取得矩阵的信息[维度数，维度1长，...，维度N长，1，维度1跨度，...，维度N跨度]，最后一个维度的跨度即为总元素个数；
+	dimInfo& getDimInfo(dimInfo& info) {
+		if (_info) {
+			auto si = dimension() * 2 + 2;//数据规则
+			info.resize(si);
+			memcpy_s(info.data(), si * sizeof(dimSize), _info, si * sizeof(dimSize));
+		}
+		else {
+			info.clear();
+		}
+		return info;
 	}
 };
 

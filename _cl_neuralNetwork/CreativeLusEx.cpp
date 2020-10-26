@@ -573,7 +573,6 @@ CLBpExtend& CLBpExtend::showGraphParam(Uint maxToShow, Int posX, Int posY)
 	return *this;
 }
 
-
 CLBpExtend& CLBpExtend::showGraphNetStruct(Bool isShowDetail, Int posX, Int posY)
 {
 	if (kernel.layerCounts() >= Minimum_Layers) {
@@ -941,11 +940,13 @@ CLBpExtend& CLBpExtend::setTransFunc(Byte iBpTypeHide, Byte iBpTypeOut)
 	outLayerTrsFunType = iBpTypeOut;
 	return kernel.updateTransFunc(hideLayerTrsFunType, outLayerTrsFunType), * this;
 }
+
 //损失函数实现--------------------------------------------------
 #define LOSS_FUNC( NAME ) \
 	Float ls_##NAME(const Float y,const Float t,const Bool isDev)
 #define LOSS_FUNC_G( NAME ) \
 	Float ls_##NAME##_amp(const Float y,const Float t,const Bool isDev) restrict(amp)
+
 LOSS_FUNC(MeanSquareLoss) {
 	if (isDev) {
 		return (y - t);
@@ -954,6 +955,7 @@ LOSS_FUNC(MeanSquareLoss) {
 		return (y - t) * (y - t) / 2;
 	}
 }
+
 LOSS_FUNC_G(MeanSquareLoss) {
 	if (isDev) {
 		return (y - t);
@@ -962,6 +964,7 @@ LOSS_FUNC_G(MeanSquareLoss) {
 		return (y - t) * (y - t) / 2;
 	}
 }
+
 void CLBpKernel::setLossFunc(Byte lossId)
 {
 	vm_LossFuncType = lossId;
@@ -998,6 +1001,7 @@ Bool CLBpKernel::getOutput(VLF& out_yi) const
 	memcpy_s(out_yi.data(), outputDimension() * sizeof(Float), lastLayYi0Start(), outputDimension() * sizeof(Float));
 	return true;
 }
+
 Bool CLBpKernel::_getOutput(const Float* pyiData, VLF& out_yi) const
 {
 	out_yi.clear();
@@ -1007,6 +1011,7 @@ Bool CLBpKernel::_getOutput(const Float* pyiData, VLF& out_yi) const
 	memcpy_s(out_yi.data(), outputDimension() * sizeof(Float), &pyiData[lastLayStartNnIndex()], outputDimension() * sizeof(Float));
 	return true;
 }
+
 Float CLBpExtend::lossDerv(const Float y, const Float t)
 {
 	return (kernel.pLossFunc)(y, t, true);
@@ -1024,7 +1029,6 @@ void bpnnCallBack(PVoid _pCbFun, PVoid _pIns, Int c, Int max, PCStr info = (""))
 			(*(Bpnn::PCBMonitor)_pCbFun)(c, max, info);
 	}
 }
-
 
 void CLBpExtend::releasBitmapBuf() {
 	if (hBitmapInfo) {
@@ -1786,8 +1790,8 @@ Bool CLBpExtend::doPrepair(PVoid _pCbFun, PVoid _pIns) {
 				else return false;
 			}
 		}
-		work.samSi = vm_samUsage->size();
-		work.wbSi = kernel.vm_wbpack.size();
+		work.ws_samSi = vm_samUsage->size();
+		work.ws_wbSi = kernel.vm_wbpack.size();
 		if (kernel.vm_bnMi > 0) //bn模式变换线程组到bn模式
 			work.setPermissions(PERS_TURN_BN);
 		else
@@ -2197,6 +2201,7 @@ Uint CLBpExtend::getNeuronMenSize()
 {
 	return sizeof(neuron);
 }
+
 static const int encDeep = 10;
 Bool CLBpKernel::writeBpnnToFile(PCStr lpFileFullPathName, Bool binMode, Bool _encrypteMod) {
 	if (!lpFileFullPathName) {
@@ -2235,14 +2240,12 @@ Bool CLBpKernel::writeBpnnToFile(PCStr lpFileFullPathName, Bool binMode, Bool _e
 				this->flag = flag;
 			}
 		};
-		//tt.writeLineToFile();
 		tt << CLRet;
 		//写权值
 		try {
 			for (Uint i = 0, si = (vm_wbpack).size(); i < si; i++)
 			{
 				auto& p = vm_wbpack[i];
-				//tt% i << CLComma << p.bFlag << CLComma << wb_bi(p) << CLComma << wb_Wji_size(p);
 				tt << i << CLComma << p.bFlag << CLComma << wb_bi(p) << CLComma << wb_Wji_size(p);
 				for (Uint j = 0, sj = wb_Wji_size(p); j < sj; j++)
 				{
@@ -2254,9 +2257,7 @@ Bool CLBpKernel::writeBpnnToFile(PCStr lpFileFullPathName, Bool binMode, Bool _e
 					throw _Exeption(false);
 			}
 
-			//tt % ("\r\n\r\n\r\n#网络结构数据，意义注释：\r\n#每行为一个神经元定义 [ 本层所含神经元总数，本神经元层编号，本神经元位置编号，激活函数类别TransFunc，权值组合类型WcFuncType，更新标记，本神经元对前层神经元的链接标记向量的维度N_link，链接向量< l1 , l2, ... , lN >，权值结构编号 ]");
 			tt << ("\r\n\r\n\r\n#网络结构数据，意义注释：\r\n#每行为一个神经元定义 [ 本层所含神经元总数，本神经元层编号，本神经元位置编号，激活函数类别TransFunc，权值组合类型WcFuncType，更新标记，本神经元对前层神经元的链接标记向量的维度N_link，链接向量< l1 , l2, ... , lN >，权值结构编号 ]");
-			//tt.writeLineToFile();
 			tt << CLRet;
 			//写节点
 			for (Uint i = 0; i < layerCounts(); i++)
@@ -2267,9 +2268,7 @@ Bool CLBpKernel::writeBpnnToFile(PCStr lpFileFullPathName, Bool binMode, Bool _e
 				for (Uint j = 0; j < pSi; j++)
 				{
 					neuron* p1 = &p[j];
-					//tt% nns << CLComma << (i) << CLComma << (j) /*<< CLComma << p1->bi*/
-					tt << nns << CLComma << (i) << CLComma << (j) /*<< CLComma << p1->bi*/
-						<< CLComma << p1->transFuncType << CLComma << p1->wcFuncType << CLComma << p1->bitFlag;
+					tt << nns << CLComma << (i) << CLComma << (j) << CLComma << p1->transFuncType << CLComma << p1->wcFuncType << CLComma << p1->bitFlag;
 					//写链接
 					tt << CLComma << (link_size(*p1));
 					for (Uint k = 0; k < link_size(*p1); k++)
@@ -2277,7 +2276,6 @@ Bool CLBpKernel::writeBpnnToFile(PCStr lpFileFullPathName, Bool binMode, Bool _e
 						tt << CLComma << (plink(*p1)[k]);
 					}
 					tt << CLComma << (Wb(*p1).index);
-					//tt.writeLineToFile();
 					tt << CLRet;
 					if (tt.size() > limitSi)
 						throw _Exeption(false);
@@ -2560,7 +2558,7 @@ Bool CLBpKernel::readBpnnFormFile(PCStr lpFile, Bool binMode)
 			tt >> nn.wb;
 			if (nn.wb > vm_wbpack.size()) {
 				clearContainer();
-				CLString(("权值参数结构指针被，文件已失效！")).messageBoxRef(_lpBpnnMsgBoxTitle, MB_ICONERROR | MB_OK).throw_runtime_error();
+				CLString(("权值参数结构指针损坏，文件已失效！")).messageBoxRef(_lpBpnnMsgBoxTitle, MB_ICONERROR | MB_OK).throw_runtime_error();
 			}
 		}
 	}
@@ -2811,7 +2809,7 @@ Float CLBpExtend::getCorrectRate(const BpnnSampSets* tag, Uint nCounst, Bool use
 
 		vm_samSets = tag;
 		vm_samUsage = &predict_samUsage;
-		work.method = work.getWorkType(work.samSi = sl);
+		work.method = work.getWorkType(work.ws_samSi = sl);
 		setFordParam(nullptr, &vm_yi_predict[0], vm_yi_span_predict, nullptr, 0);
 
 		//采用预测模式的多线程过程
@@ -2899,7 +2897,7 @@ Float CLBpExtend::getCorrectRate(const BpnnSampSets* tag, Uint nCounst, Bool use
 
 		vm_samSets = train_samSets;
 		vm_samUsage = &train_samUsage;
-		work.method = work.getWorkType(work.samSi = vm_samUsage->size());
+		work.method = work.getWorkType(work.ws_samSi = vm_samUsage->size());
 		setFordParam(&vm_xi[0], &vm_yi[0], vm_xy_span, &vm_neuronExData, vm_grad_span);
 	}
 	else {
@@ -3121,6 +3119,7 @@ Bool drawText(HDC dc, PCStr str, Int szlen, Int x, Int y, Int alignFlag)
 #define Xnn 1000
 
 #define SZOFF 20
+
 void CLBpExtend::drawNode(Uint _lay, Uint _pos, Int upNnBase, Int type, HDC hp, Int r, Int lwidth, Int lheight, Int layernns, Int nlayers, Uint siFord, Int pr,
 	neuron* nn, Int iStyle, Int iWide, COLORREF cls, HBRUSH hbr,
 	Float wmin, Float wmax, Float wqmin, Float wqmax, Bool isDetail
@@ -3292,7 +3291,6 @@ void CLBpExtend::checkMultiThreadStartup()
 			.throw_runtime_error();
 	}
 }
-
 
 Bool CLBpExtend::getBitmapData(HANDLE& hBitmapInfo, BITMAPFILEHEADER& fileHdr, BITMAPINFO*& pdata, Uint& bufSize, Bool bUseDetailMode) {
 	CLRect rect;
@@ -5301,8 +5299,6 @@ end1:
 
 #endif
 
-
-
 Bool readBpnnStructDefFromFile(BpnnStructDef& mod, PCStr lpFile)
 {
 	mod.clear();
@@ -5968,6 +5964,7 @@ void CLBpExtend::modify_wi_and_bi(Uint nSiSams, Uint is, Uint ie)
 		_modify_wi_and_bi(wb[i], nSiSams);
 	}
 }
+
 void CLBpExtend::_modify_wi_and_bi(wbpack& wb, Uint nSiSams)
 {
 	if (wb.bFlag & FG_WB_NotUpdate)
@@ -6310,6 +6307,7 @@ Float CLBpKernel::_Er(const Float* pyiData, const Float* target, Uint targetSi) 
 }
 
 #define makeTransFuncVecUnit(Name) tf_##Name
+
 static const vector<PTransFunc> g_TransFunc = {
 	makeTransFuncVecUnit(PRelu),        //传递函数为： y = max(0.7x,x);		
 	makeTransFuncVecUnit(Purelin),      //传递函数为： 纯线性函数 y = x;
@@ -6339,6 +6337,7 @@ static const vector<PTransFunc> g_TransFunc = {
 	makeTransFuncVecUnit(Exp), //取e指数
 	makeTransFuncVecUnit(Ln), //取ln对数
 };
+
 inline PTransFunc getTFunc(Uint tfType) {
 	return g_TransFunc[tfType];
 }
@@ -6380,6 +6379,7 @@ void CLBpExtend::forward_lay_bn_UpdateParam(const Uint is, const Uint ie)
 		vm_bnData[i].forwardUpdate();
 	}
 }
+
 void CLBpExtend::gradient_lay_bn_createParam(const Uint is, const Uint ie)
 {
 	for (Uint i = is; i < ie; i++)
@@ -6488,7 +6488,6 @@ void CLBpExtend::_forward_i(_forward_param_def)
 	}
 }
 
-
 void CLBpExtend::_forward_i_dp(_forward_param_def)
 {
 	if (nn.bitFlag & FG_NN_Dropout) {
@@ -6513,7 +6512,6 @@ void CLBpExtend::_forward_h(_forward_param_def)
 			pExdata, exdata_span, l);
 	}
 }
-
 
 void CLBpExtend::_forward_i_bn(_forward_param_def)
 {
@@ -6550,8 +6548,6 @@ void CLBpExtend::_forward_h_dp(_forward_param_def)
 	}
 	else _forward_h(_forward_param);
 }
-
-
 
 Float CLBpExtend::getMaxMinWij(neuron& nn, Float& vmin, Float& vmax)
 {
@@ -6595,31 +6591,31 @@ void CLBpKernel::createWbByWbDef(Float* pwji, Float* pbi, const WbDef& def)
 DWORD WorkSvc::run(PCLTaskSvcTrdParam var) {
 	if (!bpnn)
 		throw std::runtime_error("bpnn class point is null!");
-	if (!flag)
+	if (!ws_flag)
 		throw std::runtime_error("works flag is null!");
 	Uint i = Uint(var->info.nIndex) - 1;
 
 	normType:
 	while (true)
 	{
-		switch (flag[i]) {
+		switch (ws_flag[i]) {
 		case PERS_STANDBY: {
 			SwitchToThread();
 		}break;
 		case PERS_FORD: {
 			if (method == 0) {
-				GET_TRD_SECTION_TASK(var, samSi, is, ie);
+				GET_TRD_SECTION_TASK(var, ws_samSi, is, ie);
 				bpnn->forward(is, ie);
 			}
 			else {
 				GET_TRD_SECTION_TASK(var, pclaySize, js, je);
-				bpnn->forward_lay(clayIndex, js, je, 0, samSi);
+				bpnn->forward_lay(clayIndex, js, je, 0, ws_samSi);
 			}
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_FORD_PREDICT: {
 			if (method == 0) {
-				GET_TRD_SECTION_TASK(var, samSi, is, ie);
+				GET_TRD_SECTION_TASK(var, ws_samSi, is, ie);
 				for (Uint lay = 0, si = bpnn->kernel.layerCounts(); lay < si; lay++)//正向执行
 				{
 					auto pFunc = lay == 0 ? &CLBpExtend::_forward_i : &CLBpExtend::_forward_h;
@@ -6631,112 +6627,112 @@ DWORD WorkSvc::run(PCLTaskSvcTrdParam var) {
 				GET_TRD_SECTION_TASK(var, pclaySize, js, je);
 				auto pFunc = clayIndex == 0 ? &CLBpExtend::_forward_i : &CLBpExtend::_forward_h;
 				for (Uint pos = js, index = bpnn->kernel.LayStartNnIndex(clayIndex) + js; pos < je; pos++, index++)
-					(bpnn->*pFunc)(index, clayIndex, pos, bpnn_Nn(index), 0, samSi);
+					(bpnn->*pFunc)(index, clayIndex, pos, bpnn_Nn(index), 0, ws_samSi);
 			}
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_GRAD: {
 			if (method == 0) {
-				GET_TRD_SECTION_TASK(var, samSi, is, ie);
+				GET_TRD_SECTION_TASK(var, ws_samSi, is, ie);
 				bpnn->gradient(is, ie);
 			}
 			else {
 				GET_TRD_SECTION_TASK(var, pclaySize, js, je);
-				bpnn->gradient_lay(clayIndex, js, je, 0, samSi);
+				bpnn->gradient_lay(clayIndex, js, je, 0, ws_samSi);
 			}
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_MODIFY: {
-			GET_TRD_SECTION_TASK(var, wbSi, is, ie);
-			bpnn->modify_wi_and_bi(samSi, is, ie);
-			flag[i] = PERS_STANDBY;
+			GET_TRD_SECTION_TASK(var, ws_wbSi, is, ie);
+			bpnn->modify_wi_and_bi(ws_samSi, is, ie);
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_QUIT: {
 			goto ret;
 		}break;
 		case PERS_TURN_NORM: {
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_TURN_BN: {
 			goto bnType;
 		}break;
 		default: {
-			if (flag[i] > PERS_TURN_BN)
+			if (ws_flag[i] > PERS_TURN_BN)
 				CLString("\n错误：Bpnn工作线程组未切换到“Bn”模式！（当前为“正常”模式）\n").printf().messageBoxRef(_lpBpnnMsgBoxTitle, MB_ICONERROR).throw_runtime_error();
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		}
 	}
 
 	bnType:
 	while (true) {
-		switch (flag[i]) {
+		switch (ws_flag[i]) {
 		case PERS_STANDBY: {
 			SwitchToThread();
 		}break;
 		case PERS_BN_FORD_XI: {
 			GET_TRD_SECTION_TASK(var, pclaySize, js, je);
 			//1）：前向输入数据
-			bpnn->forward_lay_bn_xi(clayIndex, js, je, 0, samSi);
-			flag[i] = PERS_STANDBY;
+			bpnn->forward_lay_bn_xi(clayIndex, js, je, 0, ws_samSi);
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_BN_FORD_UPDATE: {
 			auto& layInfo = bpnn->kernel.vm_layInfo[clayIndex];
 			GET_TRD_SECTION_TASK(var, layInfo.iLayWbCounts, js, je);
 			//2）：更新权值的u和a2
 			bpnn->forward_lay_bn_UpdateParam(layInfo.iLayWbStartIndex + js, layInfo.iLayWbStartIndex + je);
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_BN_FORD_YI: {
 			GET_TRD_SECTION_TASK(var, pclaySize, js, je);
 			//3）：提取真实变换的Yi
-			bpnn->forward_lay_bn_yi(clayIndex, js, je, 0, samSi);
-			flag[i] = PERS_STANDBY;
+			bpnn->forward_lay_bn_yi(clayIndex, js, je, 0, ws_samSi);
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_BN_FORD_NO: {
 			GET_TRD_SECTION_TASK(var, pclaySize, js, je);
-			bpnn->forward_lay_bn_no(clayIndex, js, je, 0, samSi);
-			flag[i] = PERS_STANDBY;
+			bpnn->forward_lay_bn_no(clayIndex, js, je, 0, ws_samSi);
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_BN_GRAD_PUSH: {
 			GET_TRD_SECTION_TASK(var, pclaySize, js, je);
 			//1）：压入梯度
-			bpnn->gradient_lay_bn_pushGrad(clayIndex, js, je, 0, samSi);
-			flag[i] = PERS_STANDBY;
+			bpnn->gradient_lay_bn_pushGrad(clayIndex, js, je, 0, ws_samSi);
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_BN_GRAD_CREATE: {
 			auto& layInfo = bpnn->kernel.vm_layInfo[clayIndex];
 			GET_TRD_SECTION_TASK(var, layInfo.iLayWbCounts, js, je);
 			//2）：构造梯度传递参数
 			bpnn->gradient_lay_bn_createParam(layInfo.iLayWbStartIndex + js, layInfo.iLayWbStartIndex + je);
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_BN_GRAD_SEND: {
 			GET_TRD_SECTION_TASK(var, pclaySize, js, je);
 			//3）：传递梯度到上层
-			bpnn->gradient_lay_bn_sendGrad(clayIndex, js, je, 0, samSi);
-			flag[i] = PERS_STANDBY;
+			bpnn->gradient_lay_bn_sendGrad(clayIndex, js, je, 0, ws_samSi);
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_BN_GRAD_UPDATE: {
 			auto& layInfo = bpnn->kernel.vm_layInfo[clayIndex];
 			GET_TRD_SECTION_TASK(var, layInfo.iLayWbCounts, js, je);
 			//4）：更新bn数据参数
 			bpnn->gradient_lay_bn_UpdateParam(layInfo.iLayWbStartIndex + js, layInfo.iLayWbStartIndex + je);
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_BN_GRAD_NO: {
 			GET_TRD_SECTION_TASK(var, pclaySize, js, je);
-			bpnn->gradient_lay_bn_no(clayIndex, js, je, 0, samSi);
-			flag[i] = PERS_STANDBY;
+			bpnn->gradient_lay_bn_no(clayIndex, js, je, 0, ws_samSi);
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_MODIFY: {
-			GET_TRD_SECTION_TASK(var, wbSi, is, ie);
-			bpnn->modify_wi_and_bi(samSi, is, ie);
-			flag[i] = PERS_STANDBY;
+			GET_TRD_SECTION_TASK(var, ws_wbSi, is, ie);
+			bpnn->modify_wi_and_bi(ws_samSi, is, ie);
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_BN_FORD_PREDICT: {
 			if (method == 0) {
-				GET_TRD_SECTION_TASK(var, samSi, is, ie);
+				GET_TRD_SECTION_TASK(var, ws_samSi, is, ie);
 				for (Uint lay = 0, si = bpnn->kernel.layerCounts(); lay < si; lay++)//正向执行
 				{
 					auto pFunc = lay == 0 ? &CLBpExtend::_forward_i_bn : &CLBpExtend::_forward_h_bn;
@@ -6749,9 +6745,9 @@ DWORD WorkSvc::run(PCLTaskSvcTrdParam var) {
 				GET_TRD_SECTION_TASK(var, pclaySize, js, je);
 				auto pFunc = clayIndex == 0 ? &CLBpExtend::_forward_i_bn : &CLBpExtend::_forward_h_bn;
 				for (Uint pos = js, index = bpnn->kernel.LayStartNnIndex(clayIndex) + js;pos < je; pos++, index++)
-					(bpnn->*pFunc)(index, clayIndex, pos, bpnn_Nn(index), 0, samSi);
+					(bpnn->*pFunc)(index, clayIndex, pos, bpnn_Nn(index), 0, ws_samSi);
 			}
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		case PERS_QUIT: {
 			goto ret;
@@ -6760,12 +6756,12 @@ DWORD WorkSvc::run(PCLTaskSvcTrdParam var) {
 			goto normType;
 		}break;
 		case PERS_TURN_BN: {
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		default: {
-			if (flag[i] < PERS_TURN_NORM)
+			if (ws_flag[i] < PERS_TURN_NORM)
 				CLString("\n错误：Bpnn工作线程组未切换到“正常”模式！（当前为“Bn”模式）\n").printf().messageBoxRef(_lpBpnnMsgBoxTitle, MB_ICONERROR).throw_runtime_error();
-			flag[i] = PERS_STANDBY;
+			ws_flag[i] = PERS_STANDBY;
 		}break;
 		}
 	}
@@ -6807,3 +6803,19 @@ Uint BpnnLayInfo::getLayerMinNnCountsInNet() const
 	}
 	return max == UINT_MAX ? 0 : max;
 }
+
+//前向
+inline void GRU::forward(in Xt, in S_t_1, in Wr, in Ur, in Br, in Wz, in Uz, in Bz, in Whh, in Uhh, in Bhh, out s_t) {
+	auto r_t = (Xt * Wr + S_t_1 * Ur + Br).foreach([](CLMATRIXEX_CALLBACK_PARAM) { v = tf_Sigmoid(v, false); }).move();
+	auto z_t = (Xt * Wz + S_t_1 * Uz + Bz).foreach([](CLMATRIXEX_CALLBACK_PARAM) { v = tf_Sigmoid(v, false); }).move();
+	auto hh_t = (Xt * Whh + (r_t.mul(S_t_1)) * Uhh + Bhh).foreach([](CLMATRIXEX_CALLBACK_PARAM) { v = tf_Tanh(v, false); }).move();
+	s_t = ((1 - z_t).mul(S_t_1) + z_t.mul(hh_t)).move();
+}
+
+//前向输出
+inline void GRU::forward_o(in S_t, in Wo, in Bo, out o) {
+	o = (S_t * Wo + Bo).foreach([](CLMATRIXEX_CALLBACK_PARAM) { v = tf_Sigmoid(v, false); }).move();
+}
+
+
+

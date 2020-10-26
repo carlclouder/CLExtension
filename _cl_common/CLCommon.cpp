@@ -1678,9 +1678,7 @@ inline void CLCSLock::unlock(int csId)
 }
 
 inline _rw_lock::_rw_lock() noexcept :
-	ownerThreadId(0), lockCounts(0) {
-	InitializeSRWLock(this);
-}
+	ownerThreadId(0), lockCounts(0) {}
 
 #define OPEN_DEADLOCK_CHECK  FALSE //设置值为TRUE，用于检查死锁或长等待异常
 inline void _rw_lock::lock() {
@@ -1702,7 +1700,7 @@ inline void _rw_lock::lock() {
 #else
 	auto cid = GetCurrentThreadId();
 	if (ownerThreadId != cid) {
-		AcquireSRWLockExclusive(this);
+		::AcquireSRWLockExclusive(this);
 		ownerThreadId = cid;
 	}
 	++lockCounts;
@@ -1710,17 +1708,17 @@ inline void _rw_lock::lock() {
 }
 
 inline void _rw_lock::unlock() {
-	if (GetCurrentThreadId() == ownerThreadId)
+	if (::GetCurrentThreadId() == ownerThreadId)
 		if (--lockCounts == 0) {
 			ownerThreadId = 0;
-			ReleaseSRWLockExclusive(this);
+			::ReleaseSRWLockExclusive(this);
 		}
 }
 
 inline bool _rw_lock::trylock() {
-	auto cid = GetCurrentThreadId();
+	auto cid = ::GetCurrentThreadId();
 	if (ownerThreadId != cid) {
-		if (TryAcquireSRWLockExclusive(this) == FALSE)
+		if (::TryAcquireSRWLockExclusive(this) == FALSE)
 			return false;
 		ownerThreadId = cid;
 	}
@@ -1893,4 +1891,25 @@ void showAcceleratorDeviceAmpBase(UINT type) {
 		system("pause");
 	}
 	return;
+}
+
+inline void _srw_lock::lock() {
+#if OPEN_DEADLOCK_CHECK == TRUE
+	auto cid = GetCurrentThreadId();
+	size_t counts = 0;
+	while (!trylock()) {
+		Sleep(1);
+		++counts;
+		if (counts >= 2000) {
+			char str[100];
+			sprintf_s(str, "产生异常：线程(%ld)可能发生死锁，一直在等待其他所有者线程释放锁！\r\n", cid);
+			messageBoxT(0, str, "RWLockFast alert", MB_OK | MB_ICONWARNING, 3000);
+			cout << str;
+			counts = 0;
+		}
+	}
+	return;
+#else
+	::AcquireSRWLockExclusive(this);
+#endif
 }

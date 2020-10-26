@@ -15,7 +15,7 @@
 #define CLMP_COMMON_SUPPORT
 
 #ifndef CLMP_USE_LOCK_TYPE
-#define CLMP_USE_LOCK_TYPE 1 // 0=无锁（快），1=用RWLock（读写锁）， 2=用C++锁，3=用windows临界区锁
+#define CLMP_USE_LOCK_TYPE 1 // 0=无锁（快），1=用RWLock（读写锁）， 2=用C++锁，3=用windows临界区锁，4=RWLockFast（非嵌套读写锁）
 #endif
 
 #if CLMP_USE_LOCK_TYPE == 3
@@ -33,6 +33,9 @@ class CLMemPoolLock:public std::mutex {};
 #elif CLMP_USE_LOCK_TYPE == 1
 #include "../_cl_common/CLCommon.h" //高速自定义读写锁
 class CLMemPoolLock :public RWLock {};
+#elif CLMP_USE_LOCK_TYPE == 4
+#include "../_cl_common/CLCommon.h" //高速自定义读写锁
+class CLMemPoolLock :public RWLockFast {};
 #else
 class CLMemPoolLock {  //no use lock, it do nothing
 public:

@@ -202,8 +202,6 @@ void Bpnn::MonitorExample::print(BPNN_CBF_MONITOR_PARAM)
 	}
 };
 
-
-
 Bpnn& Bpnn::detachExtend()
 {
 	if (extend) {

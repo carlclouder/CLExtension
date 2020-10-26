@@ -706,8 +706,22 @@ typedef struct _w_cs :CRITICAL_SECTION {
 	inline bool trylock() { return TryEnterCriticalSection(this); }
 }WCS, * PWCS;
 
+//RWLockFast读写锁(windows 平台)  
+typedef struct _srw_lock :SRWLOCK {
+	using typeName = _srw_lock;
+	_srw_lock(const typeName&) = delete;
+	typeName& operator=(const typeName&) = delete;
+	inline _srw_lock() noexcept{::InitializeSRWLock(this);}
+	void lock();
+	inline void unlock() { ::ReleaseSRWLockExclusive(this); }
+	inline bool trylock() { return ::TryAcquireSRWLockExclusive(this); }
+	inline void lockShared() { ::AcquireSRWLockShared(this); }
+	inline void unlockShared() { ::ReleaseSRWLockShared(this); }
+	inline bool trylockShared() { return ::TryAcquireSRWLockShared(this); }
+}RWLockFast, * PRWLockFast;
+
 //RWLock读写锁(windows 平台)  
-typedef struct _rw_lock :SRWLOCK {
+typedef struct _rw_lock :RWLockFast {
 	using typeName = _rw_lock;
 	_rw_lock(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
@@ -716,10 +730,7 @@ typedef struct _rw_lock :SRWLOCK {
 	_rw_lock() noexcept;
 	void lock();
 	void unlock();
-	bool trylock();
-	inline void lockShared() { ::AcquireSRWLockShared(this); }
-	inline void unlockShared() { ::ReleaseSRWLockShared(this); }
-	inline bool trylockShared() { return ::TryAcquireSRWLockShared(this); }
+	bool trylock();	
 }RWLock, * PRWLock;
 
 #include "mutex"

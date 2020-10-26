@@ -28,6 +28,7 @@
 #include "../_cl_showTool/CLShowTool.h"
 #include "../_cl_arrayTemplate/CLArrayTemplate.h"
 #include "../_cl_matrix/CLMatrix.h"
+#include "../_cl_matrix/CLMatrixEx.h"
 #include "../_cl_binSerial/CLBinSerial.h"
 #include "../_rapidjson/CLRapidjsonTX.h"
 #include "../_cl_atomic/CLAtomic.hpp"
@@ -97,11 +98,11 @@ struct neuron {
 	//Uint id_index;
 	//Uint id_lay;
 	//Uint id_pos;	
-	Byte wcFuncType;
-	Byte transFuncType;
-	Uint wb;	
-	Uint link;
-	Byte bitFlag;
+	Byte wcFuncType;//权值组合方式
+	Byte transFuncType;//传递函数方式
+	Uint wb;//权值包id	
+	Uint link;//链接标记索引位置
+	Byte bitFlag; //节点dorpout位标记
 	neuron() { reset(); }
 	void reset() { ZeroMemory(this, sizeof(neuron)); }
 };
@@ -111,11 +112,11 @@ struct neuron {
 typedef Float(*PTransFunc)(const Float x, const Bool dt);
 
 struct wbpack {
-	Uint index;
+	Uint index;//权值包编号
 	Uint nnIds;//起始节点全局号
 	Uint nnIde;//终了节点全局号(<)
-	Uint wji_Index;
-	Uint wjiSi;
+	Uint wji_Index;//数据索引
+	Uint wjiSi;//数据个数
 	Byte bFlag;//权值更新标记
 	wbpack() { reset(); }
 	void reset() { 
@@ -123,6 +124,7 @@ struct wbpack {
 		nnIds = UINT_MAX;
 	}
 };
+
 struct layInfo {
 	Uint iLayIndex; //层号0开始
 	Uint iLayNnCounts;//本层神经元个数
@@ -135,8 +137,7 @@ struct layInfo {
 	void reset() { ZeroMemory(this, sizeof(layInfo)); }
 };
 //网络层信息
-class BpnnLayInfo :public vector<layInfo> {
-public:
+struct BpnnLayInfo :public vector<layInfo> {
 	Uint getLayerMaxNnCountsInNet() const;
 	Uint getLayerMinNnCountsInNet() const;	
 };
@@ -409,12 +410,11 @@ enum EWS_PERSID
 class WorkSvc :public CLTaskSvc {
 public:
 	CLBpExtend* const bpnn;
-	Uint tsi = 0;
-	Uint t0_si = 0;
-	Uint nFlag = 0;
-	Uint samSi = 0;
-	Uint wbSi = 0;
-	EWS_PERSID* flag = nullptr;
+	Uint ws_trdCounts = 0;
+	Uint ws_nFlag = 0;
+	Uint ws_samSi = 0;
+	Uint ws_wbSi = 0;
+	EWS_PERSID* ws_flag = nullptr;
 #if UseLinkStruct > 0
 	neuron* pclay = 0;
 #else
@@ -431,33 +431,33 @@ public:
 #define usecsl 1
 	WorkSvc() = delete;
 	explicit WorkSvc(CLBpExtend* __bpnn) :bpnn(__bpnn) {}
-	virtual ~WorkSvc() {close();if (flag)delete[] flag;}	
+	virtual ~WorkSvc() {close();if (ws_flag)delete[] ws_flag;}
 
 	virtual DWORD run(PCLTaskSvcTrdParam var);
 	//设置当前线程组执行任务，并且是阻塞函数
 	void setPermissions(EWS_PERSID type) {
-		assert(tsi <= nFlag);
+		assert(ws_trdCounts <= ws_nFlag);
 		switch (type)
 		{
 		case PERS_QUIT:
-			for (Uint i = 0; i < tsi; i++)flag[i] = type;
+			for (Uint i = 0; i < ws_trdCounts; i++)ws_flag[i] = type;
 			wait();
-			for (Uint i = 0; i < nFlag; i++)flag[i] = PERS_STANDBY;
-			tsi = 0;
+			for (Uint i = 0; i < ws_nFlag; i++)ws_flag[i] = PERS_STANDBY;
+			ws_trdCounts = 0;
 			return;	//	线程组退出，标记值0
 		default:
 			if (type > PERS_QUIT && type < PERS_NULL) {
-				for (Uint i = 0; i < tsi; i++)flag[i] = type; 
+				for (Uint i = 0; i < ws_trdCounts; i++)ws_flag[i] = type;
 				Sleep(0); 
 				break;
 			}
-			for (Uint i = 0; i < tsi; i++)flag[i] = PERS_STANDBY;
+			for (Uint i = 0; i < ws_trdCounts; i++)ws_flag[i] = PERS_STANDBY;
 			break;
 		}
-		for (Uint i = 0; i < tsi; i++)
+		for (Uint i = 0; i < ws_trdCounts; i++)
 		{
 			Uint all = 0;
-			while(flag[i] != PERS_STANDBY) {
+			while(ws_flag[i] != PERS_STANDBY) {
 				//if (++all >= 1000)
 				if (++all >= m_core)
 					Sleep(0), all = 0;
@@ -485,16 +485,16 @@ public:
 		size_t siTag = 1;
 #endif
 		cc = (DWORD)pow(10, 5);
-		if (flag) {
-			if (nsi > nFlag) {
-				delete[] flag;
-				flag = new EWS_PERSID[nFlag = nsi];
+		if (ws_flag) {
+			if (nsi > ws_nFlag) {
+				delete[] ws_flag;
+				ws_flag = new EWS_PERSID[ws_nFlag = nsi];
 			}
 		}
 		else {
-			flag = new EWS_PERSID[nFlag = nsi];
+			ws_flag = new EWS_PERSID[ws_nFlag = nsi];
 		}
-		tsi = nsi;
+		ws_trdCounts = nsi;
 		setPermissions(PERS_STANDBY);
 		resume();
 		if (nsi >= siTag) {
@@ -1033,6 +1033,160 @@ public:
 	CLBpExtend& setAdam(Bool open = false, Float stepL = BPNN_DFT_ADAM_STEP);
 
 	CLBpExtend& setTrainState(EBP_TPC currentState = TPC_Enable);
+};
+
+
+template<class T = Float>
+struct _bpnnMdAlloc :ICLMDDataAlloc<T> {
+	using base = ICLMDDataAlloc<T>;
+	using obj = _bpnnMdAlloc;
+	using infoData = vector<size_t>;
+	using headData = vector<T>;
+	using mod = CLMDDataMod<T>;
+
+	vector<size_t>* infoBase;
+	size_t idx_info = 0;
+	vector<Float>* headBase;
+	size_t idx_head = 0;
+	const bool saved;
+
+	_bpnnMdAlloc()
+		:saved(false)
+	{
+		infoBase = (newObjAndNamed(infoData, _bpnn_Md_Alloc_Inline_InfoData));
+		headBase = (newObjAndNamed(headData, _bpnn_Md_Alloc_Inline_MainData));
+		infoBase->resize(mod::infoSize((size_t)0));
+		mod::clear(info());
+	}
+	template<class ...Args>
+	_bpnnMdAlloc(Args&& ...xyz)
+		:saved(true)
+	{
+		auto tp = std::make_tuple(std::forward<Args>(xyz)...);
+		infoBase = (vector<size_t>*)std::get<0>(tp);
+		idx_info = (std::get<1>(tp));
+		headBase = (vector<Float>*)std::get<2>(tp);
+		idx_head = (std::get<3>(tp));
+	}
+
+	_bpnnMdAlloc(const obj& v)
+		:saved(v.saved)
+	{
+		if (saved) {
+			infoBase = v.infoBase;
+			idx_info = v.idx_info;
+			headBase = v.headBase;
+			idx_head = v.idx_head;
+		}
+		else {
+			infoBase = (newObjAndNamed(infoData, _bpnn_Md_Alloc_Inline_InfoData));
+			headBase = (newObjAndNamed(headData, _bpnn_Md_Alloc_Inline_MainData));
+			*this = v;
+		}
+	}
+	template<class T2>
+	_bpnnMdAlloc(const _bpnnMdAlloc<T2>& v)
+		: saved(false)
+	{
+		infoBase = (newObjAndNamed(infoData, _bpnn_Md_Alloc_Inline_InfoData));
+		headBase = (newObjAndNamed(headData, _bpnn_Md_Alloc_Inline_MainData));
+		*this = v;
+	}
+	_bpnnMdAlloc(obj&& v) noexcept
+		:saved(false)
+	{
+		infoBase = (newObjAndNamed(infoData, _bpnn_Md_Alloc_Inline_InfoData));
+		headBase = (newObjAndNamed(headData, _bpnn_Md_Alloc_Inline_MainData));
+		*this = std::move(v);
+	}
+	~_bpnnMdAlloc() {
+		if (!saved) {
+			giveUpObj(infoBase);
+			giveUpObj(headBase);
+		}
+	}
+	obj& operator=(const obj& v) {
+		if (this == &v)throw runtime_error("two obj is same one!");
+		auto si = mod::size(v.info());
+		if (saved) { //都是保存的外部存储结构
+			if (mod::infoSize(info()) != mod::infoSize(v.info())
+				|| mod::size(info()) != si)
+				throw runtime_error("two obj size is not match!");//结构必须相同，否则不允许复制			
+		}
+		else {
+			infoBase->resize(mod::infoSize(v.info()));
+			headBase->resize(si);
+		}
+		mod::copyInfo(info(), v.info());
+		mod::copyHead(head(), v.head(), si);
+		return *this;
+	}
+	template<class T2>
+	obj& operator=(const _bpnnMdAlloc<T2>& v) {
+		using mod2 = typename _bpnnMdAlloc<T2>::mod;
+		if (this == &v)throw runtime_error("two obj is same one!");
+		auto si = mod2::size(v.info());
+		if (saved) { //都是保存的外部存储结构
+			if (mod::infoSize(info()) != mod2::infoSize(v.info())
+				|| mod::size(info()) != si)
+				throw runtime_error("two obj size is not match!");//结构必须相同，否则不允许复制
+		}
+		else {
+			infoBase->resize(mod2::infoSize(v.info()));
+			headBase->resize(si);
+		}
+		mod::copyInfo(info(), v.info());
+		mod::copyHead(head(), v.head(), si);
+		return *this;
+	}
+	obj& operator= (obj&& v) noexcept {
+		if (!saved && !v.saved) { //同是直接交换数据
+			std::swap(*infoBase, *v.infoBase);
+			std::swap(*headBase, *v.headBase);
+			v.clear();
+			return *this;
+		}
+		return *this = v;
+	}
+	template<class ...Args>
+	void resize(Args&& ...xyz) {
+		if (saved)
+			throw logic_error("saved mod can not be resize!");
+		if (sizeof...(xyz) == 0) { //无参数直接快速返回
+			infoBase->resize(mod::infoSize((size_t)0));
+			mod::clear(info());
+			return;
+		}
+		infoBase->resize(mod::infoSize(sizeof...(xyz)));
+		auto si = mod::setInfo(info(), std::forward<Args>(xyz)...);
+		headBase->clear();
+		headBase->resize(si);
+	}
+	size_t* info() { return infoBase->data() + idx_info; }
+	const size_t* info() const { return infoBase->data() + idx_info; }
+	T* head() { return headBase->data() + idx_head; }
+	const T* head() const { return headBase->data() + idx_head; }
+	void clear() { if (info())mod::clear(info()); }
+};
+template struct CLMultiDimData<Float, _bpnnMdAlloc<Float>>;
+template class CLMatrixExT<Float, _bpnnMdAlloc<Float>>;
+typedef CLMultiDimData<Float, _bpnnMdAlloc<Float>> _bpnn_mdd;
+typedef CLMatrixExT<Float, _bpnnMdAlloc<Float>> _bpnn_mat;
+
+struct GRU {
+	using in = const _bpnn_mat&;
+	using out = _bpnn_mat&;
+	
+	//前向
+	static void forward(
+		in Xt, in S_t_1
+		,in Wr, in Ur, in Br
+		,in Wz, in Uz, in Bz
+		,in Whh, in Uhh, in Bhh
+		,out s_t
+	);
+	//前向输出
+	static void forward_o(in S_t, in Wo, in Bo, out o);
 };
 
 #endif
