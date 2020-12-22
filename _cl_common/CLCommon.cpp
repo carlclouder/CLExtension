@@ -480,17 +480,16 @@ void DisableSetUnhandledExceptionFilter()
 // Desc: Instanse gs_pMiniDumper
 //-----------------------------------------------------------------------------
 HRESULT CLMiniDumper::create(int dumpType)
-{
-	if (NULL == gs_pMiniDumper)
-	{
-		gs_pMiniDumper = new CLMiniDumper(dumpType);
-	}
+{	
 	if (NULL == gs_pCriticalSection)
 	{
 		gs_pCriticalSection = new CRITICAL_SECTION;
 		InitializeCriticalSection(gs_pCriticalSection);
 	}
-
+	if (NULL == gs_pMiniDumper)
+	{
+		gs_pMiniDumper = new CLMiniDumper(dumpType);
+	}
 	return(S_OK);
 }
 
@@ -1677,10 +1676,32 @@ inline void CLCSLock::unlock(int csId)
 	}
 }
 
+#define OPEN_DEADLOCK_CHECK  FALSE //设置值为TRUE，用于检查死锁或长等待异常
+
+inline void _srw_lock::lock() {
+#if OPEN_DEADLOCK_CHECK == TRUE
+	auto cid = GetCurrentThreadId();
+	size_t counts = 0;
+	while (!trylock()) {
+		Sleep(1);
+		++counts;
+		if (counts >= 2000) {
+			char str[100];
+			sprintf_s(str, "产生异常：线程(%ld)可能发生死锁，一直在等待其他所有者线程释放锁！\r\n", cid);
+			messageBoxT(0, str, "RWLockFast alert", MB_OK | MB_ICONWARNING, 3000);
+			cout << str;
+			counts = 0;
+		}
+	}
+	return;
+#else
+	::AcquireSRWLockExclusive(this);
+#endif
+}
+
 inline _rw_lock::_rw_lock() noexcept :
 	ownerThreadId(0), lockCounts(0) {}
 
-#define OPEN_DEADLOCK_CHECK  FALSE //设置值为TRUE，用于检查死锁或长等待异常
 inline void _rw_lock::lock() {
 #if OPEN_DEADLOCK_CHECK == TRUE
 	auto cid = GetCurrentThreadId();
@@ -1700,7 +1721,8 @@ inline void _rw_lock::lock() {
 #else
 	auto cid = GetCurrentThreadId();
 	if (ownerThreadId != cid) {
-		::AcquireSRWLockExclusive(this);
+		//::AcquireSRWLockExclusive(this);
+		base::lock();
 		ownerThreadId = cid;
 	}
 	++lockCounts;
@@ -1893,23 +1915,13 @@ void showAcceleratorDeviceAmpBase(UINT type) {
 	return;
 }
 
-inline void _srw_lock::lock() {
-#if OPEN_DEADLOCK_CHECK == TRUE
-	auto cid = GetCurrentThreadId();
-	size_t counts = 0;
-	while (!trylock()) {
-		Sleep(1);
-		++counts;
-		if (counts >= 2000) {
-			char str[100];
-			sprintf_s(str, "产生异常：线程(%ld)可能发生死锁，一直在等待其他所有者线程释放锁！\r\n", cid);
-			messageBoxT(0, str, "RWLockFast alert", MB_OK | MB_ICONWARNING, 3000);
-			cout << str;
-			counts = 0;
-		}
-	}
-	return;
-#else
-	::AcquireSRWLockExclusive(this);
-#endif
-}
+
+//RWLockFast _g_rwf;
+//RWLock _g_rw;
+//
+//void runlock() {
+//	_g_rwf.lock();
+//	_g_rwf.unlock();
+//	_g_rw.lock();
+//	_g_rw.unlock();
+//}

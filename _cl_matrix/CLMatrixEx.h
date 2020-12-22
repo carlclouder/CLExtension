@@ -463,7 +463,7 @@ public:
 		return false;
 	}
 	// 出现无效元素，打印并抛出异常
-	void invalidPrintAndThrow() const {
+	void isInvalidPrintAndThrow() const {
 		if (isInvalid()) {
 			this->print(_T("<Invalid Matrix>"));
 			throw std::runtime_error("Invalid Matrix");

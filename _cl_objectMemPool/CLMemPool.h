@@ -30,10 +30,10 @@ public:
 #elif CLMP_USE_LOCK_TYPE == 2
 #include <mutex> // C++ STL mutex
 class CLMemPoolLock:public std::mutex {};
-#elif CLMP_USE_LOCK_TYPE == 1
+#elif CLMP_USE_LOCK_TYPE == 4
 #include "../_cl_common/CLCommon.h" //高速自定义读写锁
 class CLMemPoolLock :public RWLock {};
-#elif CLMP_USE_LOCK_TYPE == 4
+#elif CLMP_USE_LOCK_TYPE == 1
 #include "../_cl_common/CLCommon.h" //高速自定义读写锁
 class CLMemPoolLock :public RWLockFast {};
 #else

@@ -657,6 +657,7 @@ typedef struct _atomic_lock_base {
 //自定义原子自旋锁
 typedef struct _atomic_lock :protected ATLockBase
 {
+	using base = ATLockBase;
 	using typeName = _atomic_lock;
 	_atomic_lock(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
@@ -696,18 +697,20 @@ typedef struct _atomic_lock :protected ATLockBase
 
 //Windows临界区
 typedef struct _w_cs :CRITICAL_SECTION {
+	using base = CRITICAL_SECTION;
 	using typeName = _w_cs;
 	_w_cs(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
-	inline _w_cs() noexcept { InitializeCriticalSection(this); }
-	inline ~_w_cs() { DeleteCriticalSection(this); }
-	inline void lock() { EnterCriticalSection(this); }
-	inline void unlock() { LeaveCriticalSection(this); }
-	inline bool trylock() { return TryEnterCriticalSection(this); }
+	inline _w_cs() noexcept { ::InitializeCriticalSection(this); }
+	inline ~_w_cs() { ::DeleteCriticalSection(this); }
+	inline void lock() { ::EnterCriticalSection(this); }
+	inline void unlock() { ::LeaveCriticalSection(this); }
+	inline bool trylock() { return ::TryEnterCriticalSection(this); }
 }WCS, * PWCS;
 
 //RWLockFast读写锁(windows 平台)  
 typedef struct _srw_lock :SRWLOCK {
+	using base = SRWLOCK;
 	using typeName = _srw_lock;
 	_srw_lock(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
@@ -722,6 +725,7 @@ typedef struct _srw_lock :SRWLOCK {
 
 //RWLock读写锁(windows 平台)  
 typedef struct _rw_lock :RWLockFast {
+	using base = RWLockFast;
 	using typeName = _rw_lock;
 	_rw_lock(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
@@ -736,6 +740,7 @@ typedef struct _rw_lock :RWLockFast {
 #include "mutex"
 //c++ STL锁
 typedef struct _std_lock :protected std::mutex {
+	using base = std::mutex;
 	using typeName = _std_lock;
 	_std_lock(const typeName&) = delete;
 	typeName& operator=(const typeName&) = delete;
