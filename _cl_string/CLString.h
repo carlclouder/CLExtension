@@ -806,7 +806,8 @@ public:
 	//用MessageBox显示当前保存值的内容
 	INT messageBox(UINT nStyle = MB_OK,HWND hParentWnd = 0);
 	CLString& messageBoxRef(UINT nStyle = MB_OK,HWND hParentWnd = 0);
-	INT messageBoxTimeout(UINT nStyle = MB_OK, HWND hParentWnd = 0);
+	INT messageBoxTime(LPCTSTR boxTitle = 0, UINT nStyle = MB_OK, DWORD dwMilliseconds = INFINITE,HWND hParentWnd = 0);
+	CLString& messageBoxTimeRef(LPCTSTR boxTitle = 0, UINT nStyle = MB_OK, DWORD dwMilliseconds = INFINITE,HWND hParentWnd = 0);
 	INT messageBox(LPCTSTR boxTitle,UINT nStyle,HWND hParentWnd = 0);
 	CLString& messageBoxRef(LPCTSTR boxTitle,UINT nStyle,HWND hParentWnd = 0);
 	//临时通过一个MessageBox显示出当前保存的字符串内容。

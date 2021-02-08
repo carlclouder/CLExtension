@@ -187,17 +187,23 @@ LPCTSTR CLHttpSpider::_deleteFlagPair(LPCTSTR pc,LPCTSTR lpHeader,size_t nAllSiz
 	LPCTSTR p1=0;
 	LPCTSTR p2=0;
 	size_t t=0;
-n2:
-#ifdef _DEBUG
-#define USE_CEHCK
+	auto deadEnd = lpHeader + nAllSize * sizeof(TCHAR);
+
+//#ifdef _DEBUG
+//#define USE_CEHCK
 #ifdef USE_CEHCK
-#define CHECK_MEM { if( (lpHeader + nAllSize*sizeof(TCHAR) < pta1) /*|| ::IsBadStringPtr(pta1,1)*/){throw _T("string is bad end!");	goto badTatch;}}
+#define CHECK_MEM { if( (deadEnd < pta1) /*|| ::IsBadStringPtr(pta1,1)*/){ \
+CLString alt; \
+	alt.format(_T("_deleteFlagPair func param: char_size = %lld,is too long!"), nAllSize).printf()\
+		.messageBoxTimeRef(_T("CLHttpSpider error"), MB_ICONERROR, 5 * 1000).throw_overflow_error(); throw _T("string is bad end!");	\
+goto badTatch;}}
 #else
 #define CHECK_MEM
 #endif
-#else 
-#define CHECK_MEM
-#endif
+//#else 
+//#define CHECK_MEM
+//#endif
+n2:
 	while(*pta1++ != _T('<'))
 		CHECK_MEM;
 	if(*pta1 == _T('/')){

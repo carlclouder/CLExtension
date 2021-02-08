@@ -1852,6 +1852,16 @@ CLString& CLString::messageBoxRef(UINT nStyle, HWND hParentWnd)
 	return messageBox(nStyle, hParentWnd), * this;
 }
 
+INT CLString::messageBoxTime(LPCTSTR boxTitle,UINT nStyle, DWORD dwMilliseconds, HWND hParentWnd)
+{
+	return ::messageBoxTimeout(hParentWnd, this->string(), boxTitle ? boxTitle : _T("Msg Box"), nStyle, dwMilliseconds);
+}
+
+CLString& CLString::messageBoxTimeRef(LPCTSTR boxTitle, UINT nStyle, DWORD dwMilliseconds, HWND hParentWnd)
+{
+	return ::messageBoxTimeout(hParentWnd, this->string(), boxTitle ? boxTitle : _T("Msg Box"), nStyle, dwMilliseconds),*this;
+}
+
 INT CLString::messageBox(LPCTSTR boxTitle,UINT nStyle,HWND hParentWnd)
 {
 	return ::MessageBox(hParentWnd,string(),boxTitle ? boxTitle: _T("Msg Box"), nStyle);
