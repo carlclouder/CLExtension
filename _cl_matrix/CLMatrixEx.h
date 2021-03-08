@@ -9,17 +9,18 @@
 
 // 矩阵类模板
 template <class T1, class DataBase = CLMultiDimDataAlloc<T1>>
-class CLMatrixExT:public CLMultiDimData<T1, DataBase>
+class CLMatrixExT :public CLMultiDimData<T1, DataBase>
 {
 public:
 	using base = CLMultiDimData<T1, DataBase>;
 	using obj = CLMatrixExT<T1, DataBase>;
 	using ref = obj&;
+	using refc = const obj&;
 	using remove_ref = obj&&;
 	typedef std::vector<T1> MatrixLine;
 	typedef std::vector<MatrixLine> Matrix;
 	typedef std::initializer_list<MatrixLine> MatrixL;
-protected:	
+protected:
 	template<class TList>
 	void set(size_t r, size_t c, const TList& m) {
 		resize(r, c);
@@ -36,9 +37,9 @@ protected:
 		return;
 	}
 	void valid() {//extend line to full
-		
+
 	}
-	void print_(PCStr lpFlag = nullptr) const { 
+	void print_(PCStr lpFlag = nullptr) const {
 		size_t r = rows();
 		size_t c = cols();
 		const size_t precst = 6;   // 小数点后数据最多位数
@@ -106,40 +107,39 @@ protected:
 		return;
 	}
 public:
-	
 
 	//默认构造
 	CLMatrixExT() {}
 	~CLMatrixExT() {}
 	//带初值设定的矩阵构造	
-	CLMatrixExT(size_t rows, size_t cols,const T1 v = 0){
+	CLMatrixExT(size_t rows, size_t cols, const T1 v = 0) {
 		make(rows, cols, v);
 	}
 	////带自定义赋值模式的矩阵构造
-	CLMatrixExT(size_t rows, size_t cols, const std::function<void(T1 & item, size_t row, size_t col)> & func) 	{
+	CLMatrixExT(size_t rows, size_t cols, const std::function<void(T1& item, size_t row, size_t col)>& func) {
 		make(rows, cols, func);
 	}
 	////带自定义赋值模式的方矩阵构造
-	CLMatrixExT(size_t siRank, const std::function<void(T1 & item, size_t row, size_t col)> & func) 	{
+	CLMatrixExT(size_t siRank, const std::function<void(T1& item, size_t row, size_t col)>& func) {
 		make(siRank, siRank, func);
 	}
 	CLMatrixExT(const base& m)
 		:base(m)
 	{}
-	CLMatrixExT(const obj& m) 
+	CLMatrixExT(const obj& m)
 		:base((const base&)m)
 	{}
 	CLMatrixExT(obj&& m) noexcept
 		: base(std::move((base&)m))
 	{}
-	template <class T2,class Db2>	
-	CLMatrixExT(const CLMatrixExT<T2,Db2>& m)	{
+	template <class T2, class Db2>
+	CLMatrixExT(const CLMatrixExT<T2, Db2>& m) {
 		*this = m;
 	}
-	CLMatrixExT(const Matrix& m)	{
+	CLMatrixExT(const Matrix& m) {
 		*this = m;
 	}
-	CLMatrixExT(const MatrixL& m) 	{
+	CLMatrixExT(const MatrixL& m) {
 		*this = m;
 	}
 	ref operator=(const obj& m) {
@@ -223,17 +223,19 @@ public:
 		auto matrixUseSSEMinRankbk = matrixUseSSEMinRank;
 		matrixUseSSEMinRank = rank;
 		return matrixUseSSEMinRankbk;
-	}	
-	// 输出矩阵元素内容到控制台，参数可传入一个标识字符串
-	void print(PCStr lpFlag = nullptr) const {
-		return print_(lpFlag);
 	}
 	// 输出矩阵元素内容到控制台，参数可传入一个标识字符串
-	ref print(PCStr lpFlag = nullptr) {		
-		return print_(lpFlag), *this;
+	refc print(PCStr lpFlag = nullptr) const {
+		//return print_(lpFlag);
+		return ::print(*this, lpFlag);
 	}
+	// 输出矩阵元素内容到控制台，参数可传入一个标识字符串
+	//ref print(PCStr lpFlag = nullptr) {
+	//	//return print_(lpFlag), *this;
+	//	return ::print(*this, lpFlag),*this;
+	//}
 	// 按指定规则构建矩阵,会按照指定规则修改每一项，方法区别于resize()
-	ref make(size_t rows, size_t cols, const std::function<void(T1 & item, size_t row, size_t col)> & func = [](T1& v, size_t r, size_t c) { v = 0; }) {
+	ref make(size_t rows, size_t cols, const std::function<void(T1& item, size_t row, size_t col)>& func = [](T1& v, size_t r, size_t c) { v = 0; }) {
 		resize(rows, cols);
 		auto r = this->rows(), c = this->cols();
 		for (size_t i = 0; i < r; ++i)
@@ -245,21 +247,21 @@ public:
 		return *this;
 	}
 	// 按指定规则构建矩阵,会按照指定规则修改每一项，方法区别于resize()
-	ref make(size_t rows, size_t cols,const T1 v = 0) {
+	ref make(size_t rows, size_t cols, const T1 v = 0) {
 		resize(rows, cols);
 		if (v == 0)
 			return *this;
 		auto r = this->rows(), c = this->cols();
-		for (size_t i = 0,si = base::size(); i < si; i++)		
-			base::element(i) = v;		
+		for (size_t i = 0, si = base::size(); i < si; i++)
+			base::element(i) = v;
 		return *this;
 	}
 	// 按指定规则构建方正矩阵（默认状态填充全0）
-	ref makeSquare(size_t newRank, const std::function<void(T1 & item, size_t row, size_t col)> & func = [](T1& v, size_t r, size_t c) { v = 0; }) {
+	ref makeSquare(size_t newRank, const std::function<void(T1& item, size_t row, size_t col)>& func = [](T1& v, size_t r, size_t c) { v = 0; }) {
 		return make(newRank, newRank, func);
 	}
 	// 按指定值填充构建方正矩阵并（默认状态填充全0）
-	ref makeSquare(size_t newRank,const T1 v = 0) {
+	ref makeSquare(size_t newRank, const T1 v = 0) {
 		return make(newRank, newRank, v);
 	}
 	// 构建单位矩阵
@@ -268,7 +270,7 @@ public:
 	}
 	// 改变当前矩阵大小,并清空所有内容,用0填充；维度含0，就清空
 	ref resize(size_t rows, size_t cols)
-	{	
+	{
 		base::resize(cols, rows);
 		return *this;
 	}
@@ -309,27 +311,27 @@ public:
 	//	m.resize(r, r, v);
 	//	return std::move(m);
 	//}
-	
+
 	// 将换两行
 	ref swap_row(size_t row1, size_t row2)
 	{
 		if (row1 != row2 && row1 >= 0 &&
-			row1 < rows() && row2 >= 0 && row2 < rows()){
+			row1 < rows() && row2 >= 0 && row2 < rows()) {
 			auto col = cols();
-			for (size_t i = 0, si = col; i < si; ++i)			
-				std::swap((*this)[row1][i], (*this)[row2][i]);			
+			for (size_t i = 0, si = col; i < si; ++i)
+				std::swap((*this)[row1][i], (*this)[row2][i]);
 		}
 		return *this;
-	}    
-	
+	}
+
 	// 将换两列数据
 	ref swap_col(size_t col1, size_t col2)
 	{
 		auto col = cols();
-		if (col1 != col2 && col1 >= 0 && col1 < col && col2 >= 0 && col2 < col)	{
+		if (col1 != col2 && col1 >= 0 && col1 < col && col2 >= 0 && col2 < col) {
 			auto ros = rows();
-			for (size_t i = 0, si = ros; i < si; ++i)			
-				std::swap((*this)[i][col1], (*this)[i][col2]);			
+			for (size_t i = 0, si = ros; i < si; ++i)
+				std::swap((*this)[i][col1], (*this)[i][col2]);
 		}
 		return *this;
 	}
@@ -338,7 +340,7 @@ public:
 		return setRow(row, tag.data(), tag.size());
 	}
 	// 用目标向量设置某一行，不会改变维度，多余元素省略
-	ref setRow(size_t row, const T1* tag,size_t tagSize) {
+	ref setRow(size_t row, const T1* tag, size_t tagSize) {
 		if (row < rows()) {
 			auto r = (*this)[row];
 			auto c = cols(); size_t i = 0;
@@ -383,10 +385,10 @@ public:
 		return tag;
 	}
 	// 把矩阵拆解到一个一维向量
-	T1* setToVector(T1* buf,size_t nCounts) const {
+	T1* setToVector(T1* buf, size_t nCounts) const {
 		auto r = rows(), c = cols();
-		for (size_t i = 0; i < r; ++i){
-			for (size_t j = 0; j < c; ++j){
+		for (size_t i = 0; i < r; ++i) {
+			for (size_t j = 0; j < c; ++j) {
 				auto ci = c * i + j;
 				if (ci >= nCounts)
 					return buf;
@@ -402,7 +404,7 @@ public:
 		return *this;
 	}
 	// 通过自定义方式修改矩阵中的每项，也可只修改一个子矩阵区域。若只是需要修改一份矩阵的副本请使用operate()方法。
-	ref foreach(const std::function<void(T1 & item, size_t iRow, size_t iCol)> & func,
+	ref foreach(const std::function<void(T1& item, size_t iRow, size_t iCol)>& func,
 		size_t startRow = 0, size_t startCol = 0, size_t endRow = 0, size_t endCol = 0)
 	{
 		return ::foreach(*this, func, startRow, startCol, endRow, endCol);
@@ -417,7 +419,7 @@ public:
 	ref zero() { return this->foreach(0); }
 	// 拷贝并逐项操作函数，若是需要修改原矩阵请使用foreach()方法。
 	// 作用：取得原矩阵的拷贝并按规则处理每一项后的新矩阵（默认状态下只拷贝什么也不做），也可设定范围让规则只作用于一个子区域
-	obj operate(const std::function<void(T1 & item, size_t iRow, size_t iCol)> & func = [](T1&, size_t, size_t) {},
+	obj operate(const std::function<void(T1& item, size_t iRow, size_t iCol)>& func = [](T1&, size_t, size_t) {},
 		size_t startRow = 0, size_t startCol = 0, size_t endRow = 0, size_t endCol = 0) const {
 		obj m = *this;
 		return std::move(::foreach(m, func, startRow, startCol, endRow, endCol));
@@ -469,8 +471,8 @@ public:
 			throw std::runtime_error("Invalid Matrix");
 		}
 	}
-	
-	template <class T2,class Db2> obj& operator+=(const CLMatrixExT<T2,Db2>& m)
+
+	template <class T2, class Db2> obj& operator+=(const CLMatrixExT<T2, Db2>& m)
 	{
 #if CLMAT_USE_SSE > 0
 		if (matrixUseSSE)
@@ -500,7 +502,7 @@ public:
 		}
 		return *this;
 	}
-	template <class T2,class Db2> obj& operator-=(const CLMatrixExT<T2,Db2>& m)
+	template <class T2, class Db2> obj& operator-=(const CLMatrixExT<T2, Db2>& m)
 	{
 #if CLMAT_USE_SSE > 0
 		if (matrixUseSSE)
@@ -523,7 +525,7 @@ public:
 	{
 		return *this += (-v);
 	}
-	template <class T2,class Db2> obj& operator*=(const CLMatrixExT<T2,Db2>& m)
+	template <class T2, class Db2> obj& operator*=(const CLMatrixExT<T2, Db2>& m)
 	{
 		return *this = ::dotMul(*this, m, (ref)obj());
 	}
@@ -541,7 +543,7 @@ public:
 		}
 		return *this;
 	}
-	template <class T2,class Db2> obj& operator/=(const CLMatrixExT<T2,Db2>& m)
+	template <class T2, class Db2> obj& operator/=(const CLMatrixExT<T2, Db2>& m)
 	{
 		return operator*=(::inv(m, (ref)obj()));
 	}
@@ -650,10 +652,10 @@ public:
 		auto r = rows(), c = cols();
 		if (r == 0)return obj();
 		obj m(r, 1);
-		for (size_t i = 0; i < r; ++i){
+		for (size_t i = 0; i < r; ++i) {
 			T1 sm = 0;
 			for (size_t j = 0; j < c; ++j)
-				sm += (*this)[i][j];			
+				sm += (*this)[i][j];
 			m[i][0] = sm;
 		}
 		return std::move(m);
@@ -675,35 +677,35 @@ public:
 		return std::move(m);
 	}
 	// 矩阵内积。满足左列=右行条件
-	template <class T2,class Db2> obj dotMul(const CLMatrixExT<T2,Db2>& rhs) const {
+	template <class T2, class Db2> obj dotMul(const CLMatrixExT<T2, Db2>& rhs) const {
 		return std::move(::dotMul(*this, rhs, (ref)obj()));
 	}
 	// 矩阵逐点相乘，即元素对应相乘。L行向量 X R横向量，左右操作数的列数必须相同；
 	// 右操作数行数 = 1：左操作数的每个行向量分别与右操作数的唯一行向量相乘；
 	// 右操作数行数 >= 左操作数的行：左操作数的每个行向量分别对应与右操作数的每个行向量相乘；
-	template <class T2,class Db2> obj mul(const CLMatrixExT<T2,Db2>& rhs) const {
+	template <class T2, class Db2> obj mul(const CLMatrixExT<T2, Db2>& rhs) const {
 		return std::move(::mul(*this, rhs, (ref)obj()));
 	}
 	// 矩阵逐点相乘，即元素对应相乘。L行向量 X R列向量，左右操作数的列数和行数必须相同；（等价于 右操作数是按其转置来处理逐点相乘的。）
 	// 右操作数列数 = 1：左操作数的每个行向量分别与右操作数的唯一行列量相乘；
 	// 右操作数列数 >= 左操作数的行：左操作数的每个行向量分别对应与右操作数的每个列向量相乘；
-	template <class T2,class Db2> obj mul_T(const CLMatrixExT<T2,Db2>& rhs) const {
+	template <class T2, class Db2> obj mul_T(const CLMatrixExT<T2, Db2>& rhs) const {
 		return std::move(::mul_T(*this, rhs, (ref)obj()));
 	}
 	// 矩阵按列逐点相乘，即元素对应相乘。L列向量 X R列向量，左右操作数的行数必须相同；
 	// 右操作数列数 = 1：左操作数的每个列向量分别与右操作数的唯一列向量相乘；
 	// 右操作数列数 >= 左操作数的列数：左操作数的每个列向量分别对应与右操作数的每个列向量相乘；
-	template <class T2,class Db2> obj mul_V(const CLMatrixExT<T2,Db2>& rhs) const {
+	template <class T2, class Db2> obj mul_V(const CLMatrixExT<T2, Db2>& rhs) const {
 		return std::move(::mul_V(*this, rhs, (ref)obj()));
 	}
 	// 矩阵按列逐点相乘，即元素对应相乘。L列向量 X R行向量，左右操作数的列数和行数必须相同；（等价于 右操作数是按其转置来处理逐点相乘的。）
 	// 右操作数行数 = 1：左操作数的每个列向量分别与右操作数的唯一行列量相乘；
 	// 右操作数行数 >= 左操作数的列：左操作数的每个列向量分别对应与右操作数的每个行向量相乘；
-	template <class T2,class Db2> obj mul_VT(const CLMatrixExT<T2,Db2>& rhs) const {
+	template <class T2, class Db2> obj mul_VT(const CLMatrixExT<T2, Db2>& rhs) const {
 		return std::move(::mul_VT(*this, rhs, (ref)obj()));
 	}
-	template<class T2,class Db2> obj conv(
-		const CLMatrixExT<T2,Db2>& K, //卷积核
+	template<class T2, class Db2> obj conv(
+		const CLMatrixExT<T2, Db2>& K, //卷积核
 		size_t _stepX = 1, //卷积核X移动步长
 		size_t _stepY = 1, //卷积核Y移动步长
 		size_t padding = 0,//输入map，即本矩阵的边缘填充宽度
@@ -807,7 +809,7 @@ public:
 	// 从输入流读取矩阵
 	bool readMatrix(istream& in /*= std::cin */)
 	{
-		::readMatrix(*this,in);
+		::readMatrix(*this, in);
 		if (this->rows() > 0 && this->cols() > 0)
 			return true;
 		else return false;
@@ -878,8 +880,8 @@ public:
 	}
 };
 
-template <class T1,class Db1>
-size_t max_idx(const CLMatrixExT<T1,Db1>& m, size_t k, size_t n)
+template <class T1, class Db1>
+size_t max_idx(const CLMatrixExT<T1, Db1>& m, size_t k, size_t n)
 {
 	size_t p = k;
 	for (size_t i = k + 1; i < n; ++i)
@@ -889,7 +891,7 @@ size_t max_idx(const CLMatrixExT<T1,Db1>& m, size_t k, size_t n)
 }
 
 // 通过自定义方式修改矩阵中的每项，也可只修改一个子矩阵区域
-template<class T1,class Db1> CLMatrixExT<T1,Db1>& foreach(CLMatrixExT<T1,Db1>& m, const std::function<void(T1 & item, size_t iRow, size_t iCol)> & func,
+template<class T1, class Db1> CLMatrixExT<T1, Db1>& foreach(CLMatrixExT<T1, Db1>& m, const std::function<void(T1& item, size_t iRow, size_t iCol)>& func,
 	size_t startRow = 0, size_t startCol = 0, size_t endRow = 0, size_t endCol = 0)
 {
 	size_t i = min(startRow, endRow), j = min(startCol, endCol);
@@ -897,13 +899,13 @@ template<class T1,class Db1> CLMatrixExT<T1,Db1>& foreach(CLMatrixExT<T1,Db1>& m
 	size_t j2 = max(startCol, endCol) == 0 ? m.cols() : min(max(startCol, endCol), m.cols());
 	for (size_t r = i; r < i2; r++)
 		for (size_t c = j; c < j2; c++)
-			func(m[r][c], r, c);	
+			func(m[r][c], r, c);
 	return m;
 }
 // 矩阵转置
-template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& T(const CLMatrixExT<T1,Db1>& m, CLMatrixExT<T2,Db2>& ret)
+template<class T1, class Db1, class T2, class Db2> CLMatrixExT<T2, Db2>& T(const CLMatrixExT<T1, Db1>& m, CLMatrixExT<T2, Db2>& ret)
 {
-	if (m.isEmpty()) 
+	if (m.isEmpty())
 		return ret.clear();
 	size_t row = m.cols();
 	size_t col = m.rows();
@@ -917,6 +919,11 @@ template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& T(const CL
 	}
 	return ret;
 }
+template<class T1, class Db1> CLMatrixExT<T1, Db1> T(const CLMatrixExT<T1, Db1>& m)
+{
+	return std::move(::T(m,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
+
 #ifdef _WINDOWS_
 #define _CLMatrixExT_Runtime_Error_Box(err) ::MessageBoxA(nullptr, (err), "CLMatrixExT Runtime Error", MB_ICONERROR);
 #else
@@ -927,8 +934,76 @@ template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& T(const CL
 	_CLMatrixExT_Runtime_Error_Box(("Error: CLMatrixExT method \" " + name + " \" \n" + #ReasonString).c_str());\
 	throw std::runtime_error(("CLMatrixT Runtime Error: " + name).c_str());}
 
+template<class T1, class Db1> const CLMatrixExT<T1, Db1>&
+print(const CLMatrixExT<T1, Db1>& mt, PCStr lpFlag = nullptr) {
+	size_t r = mt.rows();
+	size_t c = mt.cols();
+	const size_t precst = 6;   // 小数点后数据最多位数
+	const double v6 = ::pow(10.0, precst), v_6 = ::pow(10.0, -((double)precst)), v_13 = ::pow(10.0, -((double)(precst * 2 + 1)));
+	size_t n = 0;              // 数据小数点前最大位数
+	size_t pre = 0;            // 小数点后数据位数
+	size_t wid = 1;            // 控制字符宽度=n+pre+符号位+小数点位
+	for (size_t i = 0; i < r; i++)
+	{
+		for (size_t j = 0; j < c; j++)
+		{
+			//计算整数位
+			size_t nc = 0;
+			double maxV = ::abs(double((mt)[i][j]));
+			while (maxV >= 1.0) {
+				maxV /= 10.0;
+				++nc;
+			}
+
+			//计算小数位
+			auto xs = ((long long)(::abs(double((mt)[i][j] - ((T1)(long long)((mt)[i][j])))) * v6)) * v_6;
+			size_t prec = 0;
+			while (xs >= v_6) {
+				xs *= 10.0;
+				xs = xs - (double)(long long)xs + v_13;
+				++prec;
+				if (prec >= precst)
+					break;
+			}
+			pre = max(pre, prec);
+			auto widc = max(1, nc) + (prec > 0 ? prec + 1 : 0) + 1;
+			//更新总位数
+			wid = max(widc, wid);
+		}
+	}
+	::_tprintf_s(_T("\nMatrix(%d,%d) %s = \n[\n"), (int)r, (int)c, lpFlag == 0 ? _T("") : lpFlag);
+	cout << std::setiosflags(std::ios::fixed);
+	for (size_t i = 0; i < r; ++i)
+	{
+		for (size_t j = 0; j < c; ++j)
+		{
+			if (j > 0)
+				cout << ",";
+			if (::abs(double((mt)[i][j] - ((T1)(long long)((mt)[i][j])))) < v_6) //清除末尾全0
+				cout << std::setprecision(0) << std::setw(wid) << (mt)[i][j];
+			else {
+				//计算本元素实际小数位
+				auto xs = ((long long)(::abs(double((mt)[i][j] - ((T1)(long long)((mt)[i][j])))) * v6)) * v_6;
+				size_t prec = 0;
+				while (xs >= v_6)
+				{
+					xs *= 10.0;
+					xs = xs - (double)(long long)xs + v_13;
+					++prec;
+					if (prec >= precst)
+						break;
+				}
+				cout << std::setprecision(prec) << std::setw(wid) << (mt)[i][j];
+			}
+		}
+		cout << endl;
+	}
+	printf_s("]\n");
+	cout << std::setprecision(6);
+	return mt;
+}
 // 计算方阵行列式
-template<class T1,class Db1> T1 det(const CLMatrixExT<T1,Db1>& m)
+template<class T1, class Db1> T1 det(const CLMatrixExT<T1, Db1>& m)
 {
 	if (m.isEmpty())
 	{
@@ -939,7 +1014,7 @@ template<class T1,class Db1> T1 det(const CLMatrixExT<T1,Db1>& m)
 	}
 	T1 ret = 0;
 
-	CLMatrixExT<T1,Db1> N;
+	CLMatrixExT<T1, Db1> N;
 	LU(m, N);
 
 	if (N.isEmpty()) return ret;
@@ -950,7 +1025,7 @@ template<class T1,class Db1> T1 det(const CLMatrixExT<T1,Db1>& m)
 		ret *= N[i][i];
 	}
 
-	if (isSignRev(&N[N.rows() - 1],N.dimlength(CLMatrixExT<T1,Db1>::dim::col)))
+	if (isSignRev(&N[N.rows() - 1], N.dimlength(CLMatrixExT<T1, Db1>::dim::col)))
 	{
 		return -ret;
 	}
@@ -958,12 +1033,12 @@ template<class T1,class Db1> T1 det(const CLMatrixExT<T1,Db1>& m)
 	return ret;
 }
 // 计算矩阵指定子方阵的行列式 
-template<class T1,class Db1> T1 det(const CLMatrixExT<T1,Db1>& m, size_t start, size_t end)
+template<class T1, class Db1> T1 det(const CLMatrixExT<T1, Db1>& m, size_t start, size_t end)
 {
-	return det(subMatrix(m, start, end, start, end, CLMatrixExT<T1,Db1>()));
+	return det(subMatrix(m, start, end, start, end,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
 }
 // 计算绝对值
-template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& abs(const CLMatrixExT<T1,Db1>& m, CLMatrixExT<T2,Db2>& ret)
+template<class T1, class Db1, class T2, class Db2> CLMatrixExT<T2, Db2>& abs(const CLMatrixExT<T1, Db1>& m, CLMatrixExT<T2, Db2>& ret)
 {
 	if (m.isEmpty())
 	{
@@ -984,10 +1059,14 @@ template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& abs(const 
 	}
 	return ret;
 }
-// 返回矩阵所有元素的最大值
-template<class T1,class Db1> T1 maxElement(const CLMatrixExT<T1,Db1>& m)
+template<class T1, class Db1> CLMatrixExT<T1, Db1> abs(const CLMatrixExT<T1, Db1>& m)
 {
-	if (m.isEmpty()) 
+	return std::move(::abs(m,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
+// 返回矩阵所有元素的最大值
+template<class T1, class Db1> T1 maxElement(const CLMatrixExT<T1, Db1>& m)
+{
+	if (m.isEmpty())
 		return 0;
 
 	T1 ret = m[0][0];
@@ -1005,9 +1084,9 @@ template<class T1,class Db1> T1 maxElement(const CLMatrixExT<T1,Db1>& m)
 	return ret;
 }
 // 计算矩阵最大值，并返回该元素的引用
-template<class T1,class Db1> T1 maxElement(const CLMatrixExT<T1,Db1>& m, size_t& row, size_t& col)
+template<class T1, class Db1> T1 maxElement(const CLMatrixExT<T1, Db1>& m, size_t& row, size_t& col)
 {
-	if (m.isEmpty()) 
+	if (m.isEmpty())
 		return 0.;
 
 	T1 ret = m[0][0];
@@ -1032,7 +1111,7 @@ template<class T1,class Db1> T1 maxElement(const CLMatrixExT<T1,Db1>& m, size_t&
 	return ret;
 }
 // 计算矩阵所有元素最小值
-template<class T1,class Db1> T1 minElement(const CLMatrixExT<T1,Db1>& m)
+template<class T1, class Db1> T1 minElement(const CLMatrixExT<T1, Db1>& m)
 {
 	if (m.isEmpty())
 		return 0;
@@ -1052,9 +1131,9 @@ template<class T1,class Db1> T1 minElement(const CLMatrixExT<T1,Db1>& m)
 	return ret;
 }
 // 计算矩阵最小值，并返回该元素的引用
-template<class T1,class Db1> T1 minElement(const CLMatrixExT<T1,Db1>& m, size_t& row, size_t& col)
+template<class T1, class Db1> T1 minElement(const CLMatrixExT<T1, Db1>& m, size_t& row, size_t& col)
 {
-	if (m.isEmpty()) 
+	if (m.isEmpty())
 		return 0.;
 
 	T1 ret = m[0][0];
@@ -1079,14 +1158,15 @@ template<class T1,class Db1> T1 minElement(const CLMatrixExT<T1,Db1>& m, size_t&
 	return ret;
 }
 // 取矩阵中指定位置的子矩阵。rb开始行，re结束行，cb开始列，ce结束列。
-template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& subMatrix(const CLMatrixExT<T1,Db1>& m, size_t _rb, size_t _cb, size_t _re, size_t _ce, CLMatrixExT<T2,Db2>& ret)
+template<class T1, class Db1, class T2, class Db2> CLMatrixExT<T2, Db2>& subMatrix(const CLMatrixExT<T1, Db1>& m, size_t _rb, size_t _cb, size_t _re, size_t _ce,
+	CLMatrixExT<T2, Db2>& ret)
 {
 	if (m.isEmpty()) return ret.clear();
-	
+
 	auto rb = min(min(_rb, _re), m.rows());
-	auto re = min(max(_rb, _re)+1, m.rows());
+	auto re = min(max(_rb, _re) + 1, m.rows());
 	auto cb = min(min(_cb, _ce), m.cols());
-	auto ce = min(max(_cb, _ce)+1, m.cols());
+	auto ce = min(max(_cb, _ce) + 1, m.cols());
 
 	if (rb == re || cb == ce) return ret.clear();
 
@@ -1102,13 +1182,21 @@ template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& subMatrix(
 
 	return ret;
 }
+template<class T1, class Db1> CLMatrixExT<T1, Db1> subMatrix(const CLMatrixExT<T1, Db1>& m)
+{
+	return std::move(::subMatrix(m,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
 // 计算逆矩阵
-template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& inv(const CLMatrixExT<T1,Db1>& m, CLMatrixExT<T2,Db2>& ret)
+template<class T1, class Db1, class T2, class Db2> CLMatrixExT<T2, Db2>& inv(const CLMatrixExT<T1, Db1>& m, CLMatrixExT<T2, Db2>& ret)
 {
 	return LUP_Inverse(m, ret);
 }
+template<class T1, class Db1> CLMatrixExT<T1, Db1> inv(const CLMatrixExT<T1, Db1>& m)
+{
+	return std::move(::inv(m,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
 // 计算方阵 M 的 LU 分解,取得增广和矩阵
-template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& LU(const CLMatrixExT<T1,Db1>& m, CLMatrixExT<T2,Db2>& ret)
+template<class T1, class Db1, class T2, class Db2> CLMatrixExT<T2, Db2>& LU(const CLMatrixExT<T1, Db1>& m, CLMatrixExT<T2, Db2>& ret)
 {
 	if (m.isEmpty())
 	{
@@ -1163,8 +1251,12 @@ template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& LU(const C
 
 	return ret;
 }
+template<class T1, class Db1> CLMatrixExT<T1, Db1> LU(const CLMatrixExT<T1, Db1>& m)
+{
+	return std::move(::LU(m,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
 // 从输入流读取矩阵
-template<class T1,class Db1> CLMatrixExT<T1,Db1>& readMatrix(CLMatrixExT<T1,Db1>& M, istream& in = std::cin)
+template<class T1, class Db1> CLMatrixExT<T1, Db1>& readMatrix(CLMatrixExT<T1, Db1>& M, istream& in = std::cin)
 {
 	M.clear();
 	string str;
@@ -1204,7 +1296,7 @@ template<class T1,class Db1> CLMatrixExT<T1,Db1>& readMatrix(CLMatrixExT<T1,Db1>
 	return M;
 }               // 从指定输入流读入矩阵
 // 从文本文件读入矩阵
-template<class T1,class Db1> CLMatrixExT<T1,Db1>& readMatrix(CLMatrixExT<T1,Db1>& M, const tstring& file)
+template<class T1, class Db1> CLMatrixExT<T1, Db1>& readMatrix(CLMatrixExT<T1, Db1>& M, const tstring& file)
 {
 	ifstream fin(file.c_str());
 	if (!fin)
@@ -1216,7 +1308,7 @@ template<class T1,class Db1> CLMatrixExT<T1,Db1>& readMatrix(CLMatrixExT<T1,Db1>
 	return M;
 }                          // 从文本文件读入矩阵
 // 从二进制文件load矩阵
-template<class T1,class Db1> CLMatrixExT<T1,Db1>& loadMatrix(CLMatrixExT<T1,Db1>& m, const tstring& file)
+template<class T1, class Db1> CLMatrixExT<T1, Db1>& loadMatrix(CLMatrixExT<T1, Db1>& m, const tstring& file)
 {
 	ifstream fin(file.c_str(), std::ios_base::in | std::ios::binary);
 	if (!fin) return m.clear();
@@ -1251,7 +1343,7 @@ template<class T1,class Db1> CLMatrixExT<T1,Db1>& loadMatrix(CLMatrixExT<T1,Db1>
 	return m;
 }                          // 从二进制文件读取矩阵
 // 将矩阵输出到指定输出流
-template<class T1,class Db1> void  printMatrix(const CLMatrixExT<T1, Db1>& m, ostream& out = std::cout)
+template<class T1, class Db1> void  printMatrix(const CLMatrixExT<T1, Db1>& m, ostream& out = std::cout)
 {
 	size_t r = m.rows();
 	size_t c = m.cols();
@@ -1276,28 +1368,28 @@ template<class T1,class Db1> void  printMatrix(const CLMatrixExT<T1, Db1>& m, os
 	{
 		for (size_t j = 0; j < c; ++j)
 		{
-			if(::abs(double(m[i][j] - ((T1)(long long)(m[i][j])))) < 1e-6)
-				out << std::setprecision(0) << std::setw(wid)  <<  m[i][j];
-			else 
-				out << std::setprecision(pre) << std::setw(wid) <<  m[i][j];
+			if (::abs(double(m[i][j] - ((T1)(long long)(m[i][j])))) < 1e-6)
+				out << std::setprecision(0) << std::setw(wid) << m[i][j];
+			else
+				out << std::setprecision(pre) << std::setw(wid) << m[i][j];
 		}
 		out << endl;
 	}
 	out << std::setprecision(6);
-} 
+}
 // 将矩阵打印到指定文件 
-template<class T1,class Db1> void  printMatrix(const CLMatrixExT<T1, Db1>& m, const tstring& file)
+template<class T1, class Db1> void  printMatrix(const CLMatrixExT<T1, Db1>& m, const tstring& file)
 {
 	ofstream fout(file.c_str());
 	if (!fout) return;
 
 	printMatrix(m, fout);
 	fout.close();
-}              
+}
 // 将矩阵数据存为二进制文件 
-template<class T1,class Db1> void  saveMatrix(const CLMatrixExT<T1, Db1>& m, const tstring& file)
+template<class T1, class Db1> void  saveMatrix(const CLMatrixExT<T1, Db1>& m, const tstring& file)
 {
-	if (m.isEmpty()) 
+	if (m.isEmpty())
 		_CLMatrixEx_Runtime_Error(saveMatrix, matix obj is empty matrix!);
 
 	ofstream fout(file.c_str(), std::ios_base::out | std::ios::binary);
@@ -1322,8 +1414,8 @@ template<class T1,class Db1> void  saveMatrix(const CLMatrixExT<T1, Db1>& m, con
 	fout.close();
 }                 // 将矩阵保存为二进制文件
 
-template<class T1,class Db1, class T2,class Db2>
-bool  operator==(const CLMatrixExT<T1,Db1>& lhs, const CLMatrixExT<T2,Db2>& rhs)
+template<class T1, class Db1, class T2, class Db2>
+bool  operator==(const CLMatrixExT<T1, Db1>& lhs, const CLMatrixExT<T2, Db2>& rhs)
 {
 	auto r = lhs.rows(), c = lhs.cols();
 	if (r != rhs.rows() || c != rhs.cols())
@@ -1344,8 +1436,8 @@ bool  operator==(const CLMatrixExT<T1,Db1>& lhs, const CLMatrixExT<T2,Db2>& rhs)
 
 	return true;
 }
-template<class T1,class Db1>
-bool  operator==(const CLMatrixExT<T1,Db1>& lhs, T1 v)
+template<class T1, class Db1>
+bool  operator==(const CLMatrixExT<T1, Db1>& lhs, T1 v)
 {
 	auto r = lhs.rows(), c = lhs.cols();
 	if (r == 0 || c == 0)
@@ -1364,23 +1456,23 @@ bool  operator==(const CLMatrixExT<T1,Db1>& lhs, T1 v)
 	}
 	return true;
 }
-template<class T1,class Db1>
-bool  operator==(T1 v, const CLMatrixExT<T1,Db1>& lhs)
+template<class T1, class Db1>
+bool  operator==(T1 v, const CLMatrixExT<T1, Db1>& lhs)
 {
 	return lhs == v;
 }
-template<class T1,class Db1, class T2,class Db2>
-bool  operator!=(const CLMatrixExT<T1,Db1>& lhs, const CLMatrixExT<T2,Db2>& rhs)
+template<class T1, class Db1, class T2, class Db2>
+bool  operator!=(const CLMatrixExT<T1, Db1>& lhs, const CLMatrixExT<T2, Db2>& rhs)
 {
 	return !(lhs == rhs);
 }
-template<class T1,class Db1>
-bool  operator!=(const CLMatrixExT<T1,Db1>& lhs, T1 v)
+template<class T1, class Db1>
+bool  operator!=(const CLMatrixExT<T1, Db1>& lhs, T1 v)
 {
 	return !(lhs == v);
 }
-template<class T1,class Db1>
-bool  operator!=(T1 v, const CLMatrixExT<T1,Db1>& lhs)
+template<class T1, class Db1>
+bool  operator!=(T1 v, const CLMatrixExT<T1, Db1>& lhs)
 {
 	return !(lhs == v);
 }
@@ -1392,42 +1484,42 @@ CLMatrixExT<T1, Db1> operator+(const  CLMatrixExT<T1, Db1>& lhs, const  CLMatrix
 	m += rhs;
 	return std::move(m);
 }
-template<class T1,class Db1, class T2>
-CLMatrixExT<T1,Db1> operator+(const  CLMatrixExT<T1,Db1>& lhs, T2 v)
+template<class T1, class Db1, class T2>
+CLMatrixExT<T1, Db1> operator+(const  CLMatrixExT<T1, Db1>& lhs, T2 v)
 {
 	auto m = lhs;
 	m += T1(v);
 	return std::move(m);
 }
-template<class T1,class Db1,class T2>
-CLMatrixExT<T1,Db1> operator+(T2 v, const  CLMatrixExT<T1,Db1>& lhs)
+template<class T1, class Db1, class T2>
+CLMatrixExT<T1, Db1> operator+(T2 v, const  CLMatrixExT<T1, Db1>& lhs)
 {
 	auto m = lhs;
 	m += T1(v);
 	return std::move(m);
 }
-template<class T1,class Db1, class T2,class Db2>
-CLMatrixExT<T1,Db1> operator-(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs)
+template<class T1, class Db1, class T2, class Db2>
+CLMatrixExT<T1, Db1> operator-(const  CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs)
 {
 	auto m = lhs;
 	m -= rhs;
 	return std::move(m);
 }
-template<class T1,class Db1, class T2>
-CLMatrixExT<T1,Db1> operator-(const  CLMatrixExT<T1,Db1>& lhs, T2 v)
+template<class T1, class Db1, class T2>
+CLMatrixExT<T1, Db1> operator-(const  CLMatrixExT<T1, Db1>& lhs, T2 v)
 {
 	auto m = lhs;
 	m -= T1(v);
 	return std::move(m);
 }
-template<class T1,class Db1,class T2>
-CLMatrixExT<T1,Db1> operator-(T2 v, const  CLMatrixExT<T1,Db1>& lhs)
+template<class T1, class Db1, class T2>
+CLMatrixExT<T1, Db1> operator-(T2 v, const  CLMatrixExT<T1, Db1>& lhs)
 {
 	return std::move(lhs * (-1) + v);
 }
 
 
-template<class T1,class Db1, class T2,class Db2>  CLMatrixExT<T1,Db1>& matrixAddSelf(CLMatrixExT<T1,Db1>& m, const CLMatrixExT<T2,Db2>& rhs)
+template<class T1, class Db1, class T2, class Db2>  CLMatrixExT<T1, Db1>& matrixAddSelf(CLMatrixExT<T1, Db1>& m, const CLMatrixExT<T2, Db2>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1436,7 +1528,7 @@ template<class T1,class Db1, class T2,class Db2>  CLMatrixExT<T1,Db1>& matrixAdd
 			m[i][j] += rhs[i][j];
 	return m;
 }
-template<class Dbf>inline  CLMatrixExT<float,Dbf>& matrixAddSelf(CLMatrixExT<float,Dbf>& m, const CLMatrixExT<float,Dbf>& rhs)
+template<class Dbf>inline  CLMatrixExT<float, Dbf>& matrixAddSelf(CLMatrixExT<float, Dbf>& m, const CLMatrixExT<float, Dbf>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1444,7 +1536,7 @@ template<class Dbf>inline  CLMatrixExT<float,Dbf>& matrixAddSelf(CLMatrixExT<flo
 		lineAdd_sse(&m[i][0], &rhs[i][0], (int)c, &m[i][0]);
 	return m;
 }
-template<class Dbd>inline  CLMatrixExT<double,Dbd>& matrixAddSelf(CLMatrixExT<double,Dbd>& m, const CLMatrixExT<double,Dbd>& rhs)
+template<class Dbd>inline  CLMatrixExT<double, Dbd>& matrixAddSelf(CLMatrixExT<double, Dbd>& m, const CLMatrixExT<double, Dbd>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1453,7 +1545,7 @@ template<class Dbd>inline  CLMatrixExT<double,Dbd>& matrixAddSelf(CLMatrixExT<do
 	return m;
 }
 
-template<class T1,class Db1, class T2,class Db2>  CLMatrixExT<T1,Db1>& matrixSubSelf(CLMatrixExT<T1,Db1>& m, const CLMatrixExT<T2,Db2>& rhs)
+template<class T1, class Db1, class T2, class Db2>  CLMatrixExT<T1, Db1>& matrixSubSelf(CLMatrixExT<T1, Db1>& m, const CLMatrixExT<T2, Db2>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1462,7 +1554,7 @@ template<class T1,class Db1, class T2,class Db2>  CLMatrixExT<T1,Db1>& matrixSub
 			m[i][j] -= rhs[i][j];
 	return m;
 }
-template<class Dbf>inline  CLMatrixExT<float,Dbf>& matrixSubSelf(CLMatrixExT<float,Dbf>& m, const CLMatrixExT<float,Dbf>& rhs)
+template<class Dbf>inline  CLMatrixExT<float, Dbf>& matrixSubSelf(CLMatrixExT<float, Dbf>& m, const CLMatrixExT<float, Dbf>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1470,7 +1562,7 @@ template<class Dbf>inline  CLMatrixExT<float,Dbf>& matrixSubSelf(CLMatrixExT<flo
 		lineSub_sse(&m[i][0], &rhs[i][0], (int)c, &m[i][0]);
 	return m;
 }
-template<class Dbd>inline  CLMatrixExT<double,Dbd>& matrixSubSelf(CLMatrixExT<double,Dbd>& m, const CLMatrixExT<double,Dbd>& rhs)
+template<class Dbd>inline  CLMatrixExT<double, Dbd>& matrixSubSelf(CLMatrixExT<double, Dbd>& m, const CLMatrixExT<double, Dbd>& rhs)
 {
 	size_t r = min(m.rows(), rhs.rows());
 	size_t c = min(m.cols(), rhs.cols());
@@ -1479,8 +1571,8 @@ template<class Dbd>inline  CLMatrixExT<double,Dbd>& matrixSubSelf(CLMatrixExT<do
 	return m;
 }
 
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3>
-CLMatrixExT<T3,Db3>& _dotMul_sse(const CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>
+CLMatrixExT<T3, Db3>& _dotMul_sse(const CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m)
 {
 	auto I = lhs.rows(), K = lhs.cols(), J = rhs.cols();
 	CLMatrixExT<double> _b, a = lhs;
@@ -1510,12 +1602,12 @@ CLMatrixExT<T3,Db3>& _dotMul_sse(const CLMatrixExT<T1,Db1>& lhs, const  CLMatrix
 	}
 	return m;
 }
-template<class T2,class Db2, class T3,class Db3, class Dbd>
-CLMatrixExT<T3,Db3>& _dotMul_sse(const CLMatrixExT<double,Dbd>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m)
+template<class T2, class Db2, class T3, class Db3, class Dbd>
+CLMatrixExT<T3, Db3>& _dotMul_sse(const CLMatrixExT<double, Dbd>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m)
 {
 	auto I = lhs.rows(), K = lhs.cols(), J = rhs.cols();
 	m.resize(I, J);
-	CLMatrixExT<double,Dbd> _b; ::T(rhs, _b);
+	CLMatrixExT<double, Dbd> _b; ::T(rhs, _b);
 #if CLMAT_USE_CXX_PPL > 0
 	auto total = I * J;
 	if (total >= DOTMUL_RANK_LIMIT * DOTMUL_RANK_LIMIT) {
@@ -1540,26 +1632,26 @@ CLMatrixExT<T3,Db3>& _dotMul_sse(const CLMatrixExT<double,Dbd>& lhs, const  CLMa
 	}
 	return m;
 }
-template<class T2,class Db2, class T3,class Db3, class Dbf>
-CLMatrixExT<T3,Db3>& _dotMul_sse(const CLMatrixExT<float,Dbf>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m)
+template<class T2, class Db2, class T3, class Db3, class Dbf>
+CLMatrixExT<T3, Db3>& _dotMul_sse(const CLMatrixExT<float, Dbf>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m)
 {
 	auto I = lhs.rows(), K = lhs.cols(), J = rhs.cols();
 	m.resize(I, J);
-	CLMatrixExT<float,Dbf> _b; ::T(rhs, _b);
+	CLMatrixExT<float, Dbf> _b; ::T(rhs, _b);
 #if CLMAT_USE_CXX_PPL > 0
-	auto total = I * J;	
+	auto total = I * J;
 	if (total >= DOTMUL_RANK_LIMIT * DOTMUL_RANK_LIMIT) {
 		auto tsi = total / DOTMUL_BLOCKS + 1;
 		parallel_for<size_t>(0, tsi,
 			[&J, &K, &m, &lhs, &_b, &total](size_t idt) {
 				size_t idx = idt * DOTMUL_BLOCKS;
 				size_t ide = min(idx + DOTMUL_BLOCKS, total);
-				for (; idx < ide;++idx) {
+				for (; idx < ide; ++idx) {
 					size_t i = idx / J;
 					size_t j = idx % J;
 					m[i][j] = T3(lineDotMul_sse(&lhs[i][0], &_b[j][0], (int)K));
 				}
-		});
+			});
 		return m;
 	}
 #endif
@@ -1570,8 +1662,8 @@ CLMatrixExT<T3,Db3>& _dotMul_sse(const CLMatrixExT<float,Dbf>& lhs, const  CLMat
 	}
 	return m;
 }
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3>
-CLMatrixExT<T3,Db3>& _mul_sse(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m) {
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>
+CLMatrixExT<T3, Db3>& _mul_sse(const  CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
 	if (rhs.rows() == 1)
@@ -1584,7 +1676,7 @@ CLMatrixExT<T3,Db3>& _mul_sse(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixEx
 				m[i][j] = T3(lhs[i][j] * rhs[i][j]);
 	return m;
 }
-template<class Dbf>inline CLMatrixExT<float,Dbf>& _mul_sse(const  CLMatrixExT<float,Dbf>& lhs, const  CLMatrixExT<float,Dbf>& rhs, CLMatrixExT<float,Dbf>& m) {
+template<class Dbf>inline CLMatrixExT<float, Dbf>& _mul_sse(const  CLMatrixExT<float, Dbf>& lhs, const  CLMatrixExT<float, Dbf>& rhs, CLMatrixExT<float, Dbf>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
 	if (rhs.rows() == 1)
@@ -1595,7 +1687,7 @@ template<class Dbf>inline CLMatrixExT<float,Dbf>& _mul_sse(const  CLMatrixExT<fl
 			lineMul_sse(&lhs[i][0], &rhs[i][0], (int)c1, &m[i][0]);
 	return m;
 }
-template<class Dbd>inline CLMatrixExT<double,Dbd>& _mul_sse(const  CLMatrixExT<double,Dbd>& lhs, const  CLMatrixExT<double,Dbd>& rhs, CLMatrixExT<double,Dbd>& m) {
+template<class Dbd>inline CLMatrixExT<double, Dbd>& _mul_sse(const  CLMatrixExT<double, Dbd>& lhs, const  CLMatrixExT<double, Dbd>& rhs, CLMatrixExT<double, Dbd>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
 	if (rhs.rows() == 1)
@@ -1606,8 +1698,8 @@ template<class Dbd>inline CLMatrixExT<double,Dbd>& _mul_sse(const  CLMatrixExT<d
 			lineMul_sse(&lhs[i][0], &rhs[i][0], (int)c1, &m[i][0]);
 	return m;
 }
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3>
-CLMatrixExT<T3,Db3>& _mul_T_sse(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m) {
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>
+CLMatrixExT<T3, Db3>& _mul_T_sse(const  CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
 	if (rhs.rows() == 1)
@@ -1620,10 +1712,10 @@ CLMatrixExT<T3,Db3>& _mul_T_sse(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrix
 				m[i][j] = T3(lhs[i][j] * rhs[j][i]);
 	return m;
 }
-template<class Dbf>inline CLMatrixExT<float,Dbf>& _mul_T_sse(const  CLMatrixExT<float,Dbf>& lhs, const  CLMatrixExT<float,Dbf>& rhs, CLMatrixExT<float,Dbf>& m) {
+template<class Dbf>inline CLMatrixExT<float, Dbf>& _mul_T_sse(const  CLMatrixExT<float, Dbf>& lhs, const  CLMatrixExT<float, Dbf>& rhs, CLMatrixExT<float, Dbf>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
-	CLMatrixExT<float,Dbf> b;
+	CLMatrixExT<float, Dbf> b;
 	::T(rhs, b);
 	if (b.rows() == 1)
 		for (size_t i = 0; i < r1; i++)
@@ -1633,10 +1725,10 @@ template<class Dbf>inline CLMatrixExT<float,Dbf>& _mul_T_sse(const  CLMatrixExT<
 			lineMul_sse(&lhs[i][0], &b[i][0], (int)c1, &m[i][0]);
 	return m;
 }
-template<class Dbd>inline CLMatrixExT<double,Dbd>& _mul_T_sse(const  CLMatrixExT<double,Dbd>& lhs, const  CLMatrixExT<double,Dbd>& rhs, CLMatrixExT<double,Dbd>& m) {
+template<class Dbd>inline CLMatrixExT<double, Dbd>& _mul_T_sse(const  CLMatrixExT<double, Dbd>& lhs, const  CLMatrixExT<double, Dbd>& rhs, CLMatrixExT<double, Dbd>& m) {
 	auto r1 = lhs.rows(), c1 = lhs.cols();
 	m.resize(r1, c1);
-	CLMatrixExT<double,Dbd> b;
+	CLMatrixExT<double, Dbd> b;
 	::T(rhs, b);
 	if (b.rows() == 1)
 		for (size_t i = 0; i < r1; i++)
@@ -1646,10 +1738,10 @@ template<class Dbd>inline CLMatrixExT<double,Dbd>& _mul_T_sse(const  CLMatrixExT
 			lineMul_sse(&lhs[i][0], &b[i][0], (int)c1, &m[i][0]);
 	return m;
 }
-template<class Dbf>inline CLMatrixExT<float,Dbf>& conv( //float 特化
-	const CLMatrixExT<float,Dbf>& M, //卷积输入map
-	const CLMatrixExT<float,Dbf>& K, //卷积核
-	CLMatrixExT<float,Dbf>& F, //结果集feature map
+template<class Dbf>inline CLMatrixExT<float, Dbf>& conv( //float 特化
+	const CLMatrixExT<float, Dbf>& M, //卷积输入map
+	const CLMatrixExT<float, Dbf>& K, //卷积核
+	CLMatrixExT<float, Dbf>& F, //结果集feature map
 	size_t _stepX = 1, //卷积核X移动步长
 	size_t _stepY = 1, //卷积核Y移动步长
 	size_t padding = 0,//输入map边缘填充宽度
@@ -1674,46 +1766,46 @@ template<class Dbf>inline CLMatrixExT<float,Dbf>& conv( //float 特化
 	auto total = rr * cc;  //PPL处理块
 	if (total >= CONV_RANK_LIMIT * CONV_RANK_LIMIT) {
 		auto tsi = total / CONV_BLOCKS + 1;
-		parallel_for<int>(0, tsi, 
+		parallel_for<int>(0, tsi,
 			[&](int idt) {
-			int idx = idt * CONV_BLOCKS;
-			int ide = min(idx + CONV_BLOCKS, total);
-			for (; idx < ide; ++idx) {
-				int r = idx / cc;
-				int c = idx % cc;
-				double t = 0;
-				int i = 0 - int(padding) + int(r * stepY), si = i + int(K.rows());
-				int kr = 0; int kc = 0;
-				for (; i < 0; ++i, kc = 0, ++kr) // up padding
-				{
-					auto pk = &K[kr][0];
-					for (; kc < int(K.cols()); ++kc)
-						t += paddingValue * *pk++;
-				}
-				for (int top = min(si, (int)M.rows()); i < top; ++i, kc = 0, ++kr)
-				{
-					int j = 0 - int(padding) + int(c * stepX), sj = j + int(K.cols());
-					auto pk = &K[kr][0];
-					for (; j < 0; ++j) // left padding									
-						t += paddingValue * *pk++;
-					int top2 = min(sj, (int)M.cols());
-					int nCounts = top2 - j;
-					if (nCounts > 0) { // 采用SSE
-						t += lineDotMul_sse(&M[i][j], pk, nCounts);
-						j += nCounts;
-						pk += nCounts;
+				int idx = idt * CONV_BLOCKS;
+				int ide = min(idx + CONV_BLOCKS, total);
+				for (; idx < ide; ++idx) {
+					int r = idx / cc;
+					int c = idx % cc;
+					double t = 0;
+					int i = 0 - int(padding) + int(r * stepY), si = i + int(K.rows());
+					int kr = 0; int kc = 0;
+					for (; i < 0; ++i, kc = 0, ++kr) // up padding
+					{
+						auto pk = &K[kr][0];
+						for (; kc < int(K.cols()); ++kc)
+							t += paddingValue * *pk++;
 					}
-					for (; j < sj; ++j)  // right padding			
-						t += paddingValue * *pk++;
+					for (int top = min(si, (int)M.rows()); i < top; ++i, kc = 0, ++kr)
+					{
+						int j = 0 - int(padding) + int(c * stepX), sj = j + int(K.cols());
+						auto pk = &K[kr][0];
+						for (; j < 0; ++j) // left padding									
+							t += paddingValue * *pk++;
+						int top2 = min(sj, (int)M.cols());
+						int nCounts = top2 - j;
+						if (nCounts > 0) { // 采用SSE
+							t += lineDotMul_sse(&M[i][j], pk, nCounts);
+							j += nCounts;
+							pk += nCounts;
+						}
+						for (; j < sj; ++j)  // right padding			
+							t += paddingValue * *pk++;
+					}
+					for (; i < si; ++i, kc = 0, ++kr) // down padding
+					{
+						auto pk = &K[kr][0];
+						for (; kc < int(K.cols()); ++kc)
+							t += paddingValue * *pk++;
+					}
+					F[r][c] = float(t);
 				}
-				for (; i < si; ++i, kc = 0, ++kr) // down padding
-				{
-					auto pk = &K[kr][0];
-					for (; kc < int(K.cols()); ++kc)
-						t += paddingValue * *pk++;
-				}
-				F[r][c] = float(t);
-			}
 			});
 		return F;
 	}
@@ -1756,10 +1848,10 @@ template<class Dbf>inline CLMatrixExT<float,Dbf>& conv( //float 特化
 	};
 	return F;
 } //end func
-template<class Dbd>inline CLMatrixExT<double,Dbd>& conv( //double 特化
-	const CLMatrixExT<double,Dbd>& M, //卷积输入map
-	const CLMatrixExT<double,Dbd>& K, //卷积核
-	CLMatrixExT<double,Dbd>& F, //结果集feature map
+template<class Dbd>inline CLMatrixExT<double, Dbd>& conv( //double 特化
+	const CLMatrixExT<double, Dbd>& M, //卷积输入map
+	const CLMatrixExT<double, Dbd>& K, //卷积核
+	CLMatrixExT<double, Dbd>& F, //结果集feature map
 	size_t _stepX = 1, //卷积核X移动步长
 	size_t _stepY = 1, //卷积核Y移动步长
 	size_t padding = 0,//输入map边缘填充宽度
@@ -1868,8 +1960,8 @@ template<class Dbd>inline CLMatrixExT<double,Dbd>& conv( //double 特化
 } //end func
 
 // 矩阵的标准乘法(内积)
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3>
-CLMatrixExT<T3,Db3>& dotMul(const CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>
+CLMatrixExT<T3, Db3>& dotMul(const CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m)
 {
 	auto c = lhs.cols(), r = rhs.rows();
 	if (c != r)
@@ -1921,11 +2013,16 @@ CLMatrixExT<T3,Db3>& dotMul(const CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T
 	}
 	return m;
 }
+template<class T1, class Db1, class T2, class Db2>
+CLMatrixExT<T1, Db1> dotMul(const CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs)
+{
+	return std::move(::dotMul(lhs, rhs,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
 // 矩阵逐点相乘，即元素对应相乘。L行向量 X R横向量，左右操作数的列数必须相同；
 // 右操作数行数 = 1：左操作数的每个行向量分别与右操作数的唯一行向量相乘；
 // 右操作数行数 >= 左操作数的行：左操作数的每个行向量分别对应与右操作数的每个行向量相乘；
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3>
-CLMatrixExT<T3,Db3>& mul(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>
+CLMatrixExT<T3, Db3>& mul(const  CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m)
 {
 	auto c1 = lhs.cols(), r1 = lhs.rows();
 	auto c2 = rhs.cols(), r2 = rhs.rows();
@@ -1967,11 +2064,16 @@ CLMatrixExT<T3,Db3>& mul(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,
 		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 }
+template<class T1, class Db1, class T2, class Db2>
+CLMatrixExT<T1, Db1> mul(const CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs)
+{
+	return std::move(::mul(lhs, rhs,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
 // 矩阵逐点相乘，即元素对应相乘。L行向量 X R列向量，左右操作数的列数和行数必须相同；（等价于 右操作数是按其转置来处理逐点相乘的。）
 // 右操作数列数 = 1：左操作数的每个行向量分别与右操作数的唯一行列量相乘；
 // 右操作数列数 >= 左操作数的行：左操作数的每个行向量分别对应与右操作数的每个列向量相乘；
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3>
-CLMatrixExT<T3,Db3>& mul_T(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>
+CLMatrixExT<T3, Db3>& mul_T(const  CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m)
 {
 	auto c1 = lhs.cols(), r1 = lhs.rows();
 	auto c2 = rhs.rows(), r2 = rhs.cols();
@@ -2013,11 +2115,16 @@ CLMatrixExT<T3,Db3>& mul_T(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T
 		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 }
+template<class T1, class Db1, class T2, class Db2>
+CLMatrixExT<T1, Db1> mul_T(const CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs)
+{
+	return std::move(::mul_T(lhs, rhs,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
 //矩阵按列逐点相乘，即元素对应相乘。L列向量 X R列向量，左右操作数的行数必须相同；
 //右操作数列数 = 1：左操作数的每个列向量分别与右操作数的唯一列向量相乘；
 //右操作数列数 >= 左操作数的列数：左操作数的每个列向量分别对应与右操作数的每个列向量相乘；
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3>
-CLMatrixExT<T3,Db3>& mul_V(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>
+CLMatrixExT<T3, Db3>& mul_V(const  CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m)
 {
 	auto c1 = lhs.cols(), r1 = lhs.rows();
 	auto c2 = rhs.cols(), r2 = rhs.rows();
@@ -2060,11 +2167,16 @@ CLMatrixExT<T3,Db3>& mul_V(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T
 		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 }
+template<class T1, class Db1, class T2, class Db2>
+CLMatrixExT<T1, Db1> mul_V(const CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs)
+{
+	return std::move(::mul_V(lhs, rhs,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
 //矩阵按列逐点相乘，即元素对应相乘。L列向量 X R行向量，左右操作数的列数和行数必须相同；（等价于 右操作数是按其转置来处理逐点相乘的。）
 //右操作数行数 = 1：左操作数的每个列向量分别与右操作数的唯一行列量相乘；
 //右操作数行数 >= 左操作数的列：左操作数的每个列向量分别对应与右操作数的每个行向量相乘；
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3>
-CLMatrixExT<T3,Db3>& mul_VT(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs, CLMatrixExT<T3,Db3>& m)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>
+CLMatrixExT<T3, Db3>& mul_VT(const  CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs, CLMatrixExT<T3, Db3>& m)
 {
 	auto c1 = lhs.cols(), r1 = lhs.rows();
 	auto r2 = rhs.cols(), c2 = rhs.rows();
@@ -2107,55 +2219,60 @@ CLMatrixExT<T3,Db3>& mul_VT(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<
 		throw std::runtime_error("CLMatrixExT Runtime Error:operator*");
 	}
 }
-// 矩阵的标准乘法(内积)
-template<class T1,class Db1, class T2,class Db2>
-CLMatrixExT<T1,Db1> operator*(const CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs)
+template<class T1, class Db1, class T2, class Db2>
+CLMatrixExT<T1, Db1> mul_VT(const CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs)
 {
-	return std::move(::dotMul(lhs, rhs, (CLMatrixExT<T1,Db1>&)CLMatrixExT<T1,Db1>()));
+	return std::move(::mul_VT(lhs, rhs, (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
+// 矩阵的标准乘法(内积)
+template<class T1, class Db1, class T2, class Db2>
+CLMatrixExT<T1, Db1> operator*(const CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs)
+{
+	return std::move(::dotMul(lhs, rhs, (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
 }
 // 矩阵的元素与数分别相乘，即矩阵按比例缩放数值大小
-template<class T1,class Db1, class T2>
-CLMatrixExT<T1,Db1> operator*(const  CLMatrixExT<T1,Db1>& lhs, T2 v)
+template<class T1, class Db1, class T2>
+CLMatrixExT<T1, Db1> operator*(const  CLMatrixExT<T1, Db1>& lhs, T2 v)
 {
 	auto m = lhs;
 	m *= T1(v);
 	return std::move(m);
 }
 // 矩阵的元素与数分别相乘，即矩阵按比例缩放数值大小
-template<class T1,class Db1, class T2>
-CLMatrixExT<T1,Db1> operator*(T2 v, const  CLMatrixExT<T1,Db1>& lhs)
+template<class T1, class Db1, class T2>
+CLMatrixExT<T1, Db1> operator*(T2 v, const  CLMatrixExT<T1, Db1>& lhs)
 {
 	auto m = lhs;
 	m *= T1(v);
 	return std::move(m);
 }
 // 矩阵标准除法，即左操作数 * 右操作数的逆矩阵
-template<class T1,class Db1, class T2,class Db2>
-CLMatrixExT<T1,Db1> operator/(const  CLMatrixExT<T1,Db1>& lhs, const  CLMatrixExT<T2,Db2>& rhs)
+template<class T1, class Db1, class T2, class Db2>
+CLMatrixExT<T1, Db1> operator/(const  CLMatrixExT<T1, Db1>& lhs, const  CLMatrixExT<T2, Db2>& rhs)
 {
-	CLMatrixExT<T2,Db2> tmp;
+	CLMatrixExT<T2, Db2> tmp;
 	inv(rhs, tmp);
 	if (tmp.isEmpty())
 		return std::move(tmp);
 	return std::move(lhs * tmp);
 }
 // 矩阵的元素与数分别相除，即矩阵按比例缩放数值大小
-template<class T1,class Db1, class T2>
-CLMatrixExT<T1,Db1> operator/(const  CLMatrixExT<T1,Db1>& lhs, T2 v)
+template<class T1, class Db1, class T2>
+CLMatrixExT<T1, Db1> operator/(const  CLMatrixExT<T1, Db1>& lhs, T2 v)
 {
 	auto m = lhs;
 	m /= v;
 	return std::move(m);
 }
 // 数除以矩阵的元素，即矩阵的倒数矩阵与数相乘
-template<class T1,class Db1, class T2>
-CLMatrixExT<T1,Db1> operator/(T2 v, const  CLMatrixExT<T1,Db1>& lhs)
+template<class T1, class Db1, class T2>
+CLMatrixExT<T1, Db1> operator/(T2 v, const  CLMatrixExT<T1, Db1>& lhs)
 {
 	return std::move(lhs.pow(-1.0) * v);
 }
 // 计算方阵 M 的 LU 分解,使得 M = LU
 // 其中L为对角线元素全为1的下三角阵，U为对角元素依赖M的上三角阵
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3>bool LU(const CLMatrixExT<T1,Db1>& A, CLMatrixExT<T2,Db2>& L, CLMatrixExT<T3,Db3>& U)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>bool LU(const CLMatrixExT<T1, Db1>& A, CLMatrixExT<T2, Db2>& L, CLMatrixExT<T3, Db3>& U)
 {
 	if (A.isEmpty())
 	{
@@ -2174,8 +2291,8 @@ template<class T1,class Db1, class T2,class Db2, class T3,class Db3>bool LU(cons
 	return true;
 }
 // LUP分解
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3,class Dbs>bool LUP_Descomposition(CLMatrixExT<T1,Db1>& A, CLMatrixExT<T2,Db2>& L, CLMatrixExT<T3,Db3>& U, 
-	CLMatrixExT<size_t,Dbs>& PLine)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3, class Dbs>bool LUP_Descomposition(CLMatrixExT<T1, Db1>& A, CLMatrixExT<T2, Db2>& L, CLMatrixExT<T3, Db3>& U,
+	CLMatrixExT<size_t, Dbs>& PLine)
 {
 	size_t N = A.rows();
 	L.resize(N, N);
@@ -2254,8 +2371,8 @@ template<class T1,class Db1, class T2,class Db2, class T3,class Db3,class Dbs>bo
 	return true;
 }
 //LUP求解方程
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3,class Dbs>
-void LUP_Solve(size_t N, CLMatrixExT<T1,Db1>& X, CLMatrixExT<T1,Db1>& Y, const CLMatrixExT<T2,Db2>& L, const CLMatrixExT<T3,Db3>& U, const CLMatrixExT<size_t,Dbs>& PLine, const CLMatrixExT<T1,Db1>& B)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3, class Dbs>
+void LUP_Solve(size_t N, CLMatrixExT<T1, Db1>& X, CLMatrixExT<T1, Db1>& Y, const CLMatrixExT<T2, Db2>& L, const CLMatrixExT<T3, Db3>& U, const CLMatrixExT<size_t, Dbs>& PLine, const CLMatrixExT<T1, Db1>& B)
 {
 	auto& P = PLine[0];
 	auto& b = B[0];
@@ -2284,7 +2401,7 @@ void LUP_Solve(size_t N, CLMatrixExT<T1,Db1>& X, CLMatrixExT<T1,Db1>& Y, const C
 	}
 }
 // LUP分解求逆
-template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& LUP_Inverse(const CLMatrixExT<T1,Db1>& A, CLMatrixExT<T2,Db2>& ret)
+template<class T1, class Db1, class T2, class Db2> CLMatrixExT<T2, Db2>& LUP_Inverse(const CLMatrixExT<T1, Db1>& A, CLMatrixExT<T2, Db2>& ret)
 {
 	if (A.isEmpty())
 	{
@@ -2322,11 +2439,15 @@ template<class T1,class Db1, class T2,class Db2> CLMatrixExT<T2,Db2>& LUP_Invers
 	}
 	return ::T(inv_A, ret);
 }
-template<class Dbd,class T2,class Db2> CLMatrixExT<T2,Db2>& LUP_Inverse(const CLMatrixExT<double,Dbd>& A, CLMatrixExT<T2,Db2>& ret) {
+template<class T1, class Db1> CLMatrixExT<T1, Db1> LUP_Inverse(const CLMatrixExT<T1, Db1>& m)
+{
+	return std::move(::LUP_Inverse(m,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
+template<class Dbd, class T2, class Db2> CLMatrixExT<T2, Db2>& LUP_Inverse(const CLMatrixExT<double, Dbd>& A, CLMatrixExT<T2, Db2>& ret) {
 	return ::LUP_Inverse(CLMatrixExT<float>(A), ret);
 }
 // 将一个矩阵变换到对角线矩阵，同一行列的值都加到主对角上
-template<class T1,class Db1, class T2,class Db2>CLMatrixExT<T2,Db2>& diag(const CLMatrixExT<T1,Db1>& m, CLMatrixExT<T2,Db2>& ret) {
+template<class T1, class Db1, class T2, class Db2>CLMatrixExT<T2, Db2>& diag(const CLMatrixExT<T1, Db1>& m, CLMatrixExT<T2, Db2>& ret) {
 	auto r = m.rows(), c = m.cols();
 	if (r == 0 || c == 0)
 		return ret.clear();
@@ -2344,11 +2465,15 @@ template<class T1,class Db1, class T2,class Db2>CLMatrixExT<T2,Db2>& diag(const 
 	}
 	return ret;
 }
+template<class T1, class Db1> CLMatrixExT<T1, Db1> diag(const CLMatrixExT<T1, Db1>& m)
+{
+	return std::move(::diag(m,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>()));
+}
 // 矩阵卷积计算
-template<class T1,class Db1, class T2,class Db2, class T3,class Db3> CLMatrixExT<T3,Db3>& conv(
-	const CLMatrixExT<T1,Db1>& M, //卷积输入map
-	const CLMatrixExT<T2,Db2>& K, //卷积核
-	CLMatrixExT<T3,Db3>& F, //结果集feature map
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3> CLMatrixExT<T3, Db3>& conv(
+	const CLMatrixExT<T1, Db1>& M, //卷积输入map
+	const CLMatrixExT<T2, Db2>& K, //卷积核
+	CLMatrixExT<T3, Db3>& F, //结果集feature map
 	size_t _stepX = 1, //卷积核X移动步长
 	size_t _stepY = 1, //卷积核Y移动步长
 	size_t padding = 0,//输入map边缘填充宽度
@@ -2407,7 +2532,7 @@ template<class T1,class Db1, class T2,class Db2, class T3,class Db3> CLMatrixExT
 				}
 				F[r][c] = T3(t);
 			}
-			}); 
+			});
 		return F;
 	}
 #endif
@@ -2441,9 +2566,20 @@ template<class T1,class Db1, class T2,class Db2, class T3,class Db3> CLMatrixExT
 			}
 			F[r][c] = T3(t);
 		}
-	}; 
+	};
 	return F;
 } //end func
+// 矩阵卷积计算，返回结果集feature map
+template<class T1, class Db1, class T2, class Db2> CLMatrixExT<T1, Db1> conv(
+	const CLMatrixExT<T1, Db1>& M, //卷积输入map
+	const CLMatrixExT<T2, Db2>& K, //卷积核
+	size_t _stepX = 1, //卷积核X移动步长
+	size_t _stepY = 1, //卷积核Y移动步长
+	size_t padding = 0,//输入map边缘填充宽度
+	double paddingValue = 0.0//输入map边缘填充内填充的值（该值不一定是0，根据计算需要自由设置）
+) {
+	return std::move(::conv(M, K,  (CLMatrixExT<T1, Db1>&)CLMatrixExT<T1, Db1>(), _stepX, _stepY, padding, paddingValue));
+}
 
 #define CLMATRIXEX_CALLBACK_PARAM CLMATRIXF_CALLBACK_PARAM //传参类型:v元素项引用，r元素行标，c元素列标
 #define CLMATRIXEXD_CALLBACK_PARAM CLMATRIXD_CALLBACK_PARAM
@@ -2511,24 +2647,24 @@ inline void matrixExLocalTest() {
 #define AXB a.conv(b)
 #define CXD c.conv(d)
 #define EXF e.conv(f)
-//#define AXB a* b
-//#define CXD c* d
-//#define EXF e* f
-//#define AXB a/ b
-//#define CXD c/ d
-//#define EXF e/ f
-//#define AXB a.mul_V(b)
-//#define CXD c.mul_V(d)
-//#define EXF e.mul_V(f)
-//#define AXB a.mul_T(b)
-//#define CXD c.mul_T(d)
-//#define EXF e.mul_T(f)
-//#define AXB a.mul(b)
-//#define CXD c.mul(d)
-//#define EXF e.mul(f)
-//#define AXB (a+b)
-//#define CXD (c-d)
-//#define EXF (e+f)
+	//#define AXB a* b
+	//#define CXD c* d
+	//#define EXF e* f
+	//#define AXB a/ b
+	//#define CXD c/ d
+	//#define EXF e/ f
+	//#define AXB a.mul_V(b)
+	//#define CXD c.mul_V(d)
+	//#define EXF e.mul_V(f)
+	//#define AXB a.mul_T(b)
+	//#define CXD c.mul_T(d)
+	//#define EXF e.mul_T(f)
+	//#define AXB a.mul(b)
+	//#define CXD c.mul(d)
+	//#define EXF e.mul(f)
+	//#define AXB (a+b)
+	//#define CXD (c-d)
+	//#define EXF (e+f)
 	auto bku = CLMatrixEx::isUseSSE();
 	cout << "\n\n测试本机不同大小矩阵的类型运行效率----------------------------------";
 	srand((unsigned int)time(0));
@@ -2547,7 +2683,7 @@ inline void matrixExLocalTest() {
 		CLMatrixExF a(base, MakeXF), b(base2, MakeXF);
 		CLMatrixExD c(base, MakeXD), d(base2, MakeXD);
 		CLMatrixExI e(base, MakeXI), f(base2, MakeXI);
-		base2 = max(min(base/4, 64),1);
+		base2 = max(min(base / 4, 64), 1);
 		//base2 = min(base/4, 64);
 		CLMatrixEx::setUseSSE(true);
 		auto t0 = clock();
