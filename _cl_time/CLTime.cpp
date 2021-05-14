@@ -574,12 +574,12 @@ double CLTime::calcTimeDelta(const SYSTEMTIME* beforetime,const SYSTEMTIME* beha
 }
 double CLTime::calcTimeDelta_ll(TIMESTAMP beforetime,TIMESTAMP behandtime)
 {
-	int dyear = (int)EXTR_YEAR(behandtime)-(int)EXTR_YEAR(beforetime);
-	int dmonth = (int)EXTR_MON(behandtime)-(int)EXTR_MON(beforetime) + dyear * 12;
-	int dday = (int)EXTR_DAY(behandtime)-(int)EXTR_DAY(beforetime) + dmonth * 30;
-	int dhour = (int)EXTR_HOUR(behandtime)-(int)EXTR_HOUR(beforetime) + dday * 24;
-	int dminute = (int)EXTR_MINU(behandtime)-(int)EXTR_MINU(beforetime) + dhour * 60;
-	int dsecond = (int)EXTR_SEC(behandtime)-(int)EXTR_SEC(beforetime) + dminute * 60;
+	long dyear = EXTR_YEAR(behandtime)-EXTR_YEAR(beforetime);
+	long dmonth = EXTR_MON(behandtime)-EXTR_MON(beforetime) + dyear * 12;
+	long dday = EXTR_DAY(behandtime)-EXTR_DAY(beforetime) + dmonth * 30;
+	long dhour = EXTR_HOUR(behandtime)-EXTR_HOUR(beforetime) + dday * 24;
+	long dminute = EXTR_MINU(behandtime)-EXTR_MINU(beforetime) + dhour * 60;
+	long dsecond = EXTR_SEC(behandtime)-EXTR_SEC(beforetime) + dminute * 60;
 	double dmillisecond = (double)EXTR_MIS(behandtime)-(double)EXTR_MIS(beforetime) + dsecond * 1000.0;
 	return dmillisecond / 1000.0;
 }

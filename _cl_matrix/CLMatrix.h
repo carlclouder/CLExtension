@@ -90,10 +90,7 @@ typedef Char* PStr;
 #endif
 #endif
 
-template<class T1> T1 LxAbs(T1 d)
-{
-	return (d >= 0) ? (d) : (-d);
-}
+
 template<class T1> bool isSignRev(const T1* v, size_t n){
 	size_t p = 0;
 	size_t sum = 0;
@@ -103,7 +100,6 @@ template<class T1> bool isSignRev(const T1* v, size_t n){
 		p = (size_t)v[i];
 		if (p >= 0)
 			sum += p + i;
-
 	}
 
 	if (sum % 2 == 0) // 如果是偶数，说明不变号	
@@ -1280,6 +1276,10 @@ public:
 	}
 };
 
+template<class T1> T1 LxAbs(T1 d)
+{
+	return (d >= 0) ? (d) : (-d);
+}
 template <class T1>
 size_t max_idx(const CLMatrixT<T1>& m,size_t k, size_t n)
 {
@@ -2690,7 +2690,9 @@ template<class T1, class T2, class T3>bool LU(const CLMatrixT<T1>& A, CLMatrixT<
 	return true;
 }
 // LUP分解
-template<class T1, class T2, class T3>bool LUP_Descomposition(CLMatrixT<T1>& A, CLMatrixT<T2>& L, CLMatrixT<T3>& U, CLMatrixT<size_t>& PLine)
+template<class T1, class T2, class T3>
+bool LUP_Descomposition(CLMatrixT<T1>& A, CLMatrixT<T2>& L, 
+	CLMatrixT<T3>& U, CLMatrixT<size_t>& PLine)
 {
 	size_t N = A.rows();
 	L.resize(N, N);
@@ -3445,13 +3447,17 @@ struct CLMultiDimData {
 #if CLMatrixEx_Data_Check_Open
 		dimId dim() const { return _dim; }
 #endif
+		dimData& operator=(const dimData& other) {
+			*_value = *other._value;
+			return *this;
+		}
 	protected:
 		valueType* _value;
 		dimSize* _span;
 #if CLMatrixEx_Data_Check_Open
 		dimId _dim;
 #endif
-	};
+	};//end def dimData
 	
 protected:
 	valueType* _head;

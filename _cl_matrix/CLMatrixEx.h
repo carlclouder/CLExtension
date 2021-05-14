@@ -37,74 +37,6 @@ protected:
 		return;
 	}
 	void valid() {//extend line to full
-
-	}
-	void print_(PCStr lpFlag = nullptr) const {
-		size_t r = rows();
-		size_t c = cols();
-		const size_t precst = 6;   // 小数点后数据最多位数
-		const double v6 = ::pow(10.0, precst), v_6 = ::pow(10.0, -((double)precst)), v_13 = ::pow(10.0, -((double)(precst * 2 + 1)));
-		size_t n = 0;              // 数据小数点前最大位数
-		size_t pre = 0;            // 小数点后数据位数
-		size_t wid = 1;            // 控制字符宽度=n+pre+符号位+小数点位
-		for (size_t i = 0; i < r; i++)
-		{
-			for (size_t j = 0; j < c; j++)
-			{
-				//计算整数位
-				size_t nc = 0;
-				double maxV = ::abs(double((*this)[i][j]));
-				while (maxV >= 1.0) {
-					maxV /= 10.0;
-					++nc;
-				}
-
-				//计算小数位
-				auto xs = ((long long)(::abs(double((*this)[i][j] - ((T1)(long long)((*this)[i][j])))) * v6)) * v_6;
-				size_t prec = 0;
-				while (xs >= v_6) {
-					xs *= 10.0;
-					xs = xs - (double)(long long)xs + v_13;
-					++prec;
-					if (prec >= precst)
-						break;
-				}
-				pre = max(pre, prec);
-				auto widc = max(1, nc) + (prec > 0 ? prec + 1 : 0) + 1;
-				//更新总位数
-				wid = max(widc, wid);
-			}
-		}
-		::_tprintf_s(_T("\nMatrix(%d,%d) %s = \n[\n"), (int)r, (int)c, lpFlag == 0 ? _T("") : lpFlag);
-		cout << std::setiosflags(std::ios::fixed);
-		for (size_t i = 0; i < r; ++i)
-		{
-			for (size_t j = 0; j < c; ++j)
-			{
-				if (j > 0)
-					cout << ",";
-				if (::abs(double((*this)[i][j] - ((T1)(long long)((*this)[i][j])))) < v_6) //清除末尾全0
-					cout << std::setprecision(0) << std::setw(wid) << (*this)[i][j];
-				else {
-					//计算本元素实际小数位
-					auto xs = ((long long)(::abs(double((*this)[i][j] - ((T1)(long long)((*this)[i][j])))) * v6)) * v_6;
-					size_t prec = 0;
-					while (xs >= v_6)
-					{
-						xs *= 10.0;
-						xs = xs - (double)(long long)xs + v_13;
-						++prec;
-						if (prec >= precst)
-							break;
-					}
-					cout << std::setprecision(prec) << std::setw(wid) << (*this)[i][j];
-				}
-			}
-			cout << endl;
-		}
-		printf_s("]\n");
-		cout << std::setprecision(6);
-		return;
 	}
 public:
 
@@ -226,14 +158,8 @@ public:
 	}
 	// 输出矩阵元素内容到控制台，参数可传入一个标识字符串
 	refc print(PCStr lpFlag = nullptr) const {
-		//return print_(lpFlag);
 		return ::print(*this, lpFlag);
 	}
-	// 输出矩阵元素内容到控制台，参数可传入一个标识字符串
-	//ref print(PCStr lpFlag = nullptr) {
-	//	//return print_(lpFlag), *this;
-	//	return ::print(*this, lpFlag),*this;
-	//}
 	// 按指定规则构建矩阵,会按照指定规则修改每一项，方法区别于resize()
 	ref make(size_t rows, size_t cols, const std::function<void(T1& item, size_t row, size_t col)>& func = [](T1& v, size_t r, size_t c) { v = 0; }) {
 		resize(rows, cols);
@@ -511,13 +437,9 @@ public:
 		size_t r = min(rows(), m.rows());
 		size_t c = min(cols(), m.cols());
 
-		for (size_t i = 0; i < r; ++i)
-		{
-			for (size_t j = 0; j < c; ++j)
-			{
-				(*this)[i][j] -= m[i][j];
-			}
-		}
+		for (size_t i = 0; i < r; ++i)		
+			for (size_t j = 0; j < c; ++j)			
+				(*this)[i][j] -= m[i][j];		
 
 		return *this;
 	}
@@ -880,6 +802,7 @@ public:
 	}
 };
 
+
 template <class T1, class Db1>
 size_t max_idx(const CLMatrixExT<T1, Db1>& m, size_t k, size_t n)
 {
@@ -934,8 +857,8 @@ template<class T1, class Db1> CLMatrixExT<T1, Db1> T(const CLMatrixExT<T1, Db1>&
 	_CLMatrixExT_Runtime_Error_Box(("Error: CLMatrixExT method \" " + name + " \" \n" + #ReasonString).c_str());\
 	throw std::runtime_error(("CLMatrixT Runtime Error: " + name).c_str());}
 
-template<class T1, class Db1> const CLMatrixExT<T1, Db1>&
-print(const CLMatrixExT<T1, Db1>& mt, PCStr lpFlag = nullptr) {
+template<class T1, class Db1> 
+const CLMatrixExT<T1, Db1>& print(const CLMatrixExT<T1, Db1>& mt, PCStr lpFlag = nullptr) {
 	size_t r = mt.rows();
 	size_t c = mt.cols();
 	const size_t precst = 6;   // 小数点后数据最多位数
@@ -2270,9 +2193,92 @@ CLMatrixExT<T1, Db1> operator/(T2 v, const  CLMatrixExT<T1, Db1>& lhs)
 {
 	return std::move(lhs.pow(-1.0) * v);
 }
+// LUP分解
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3, class T4>
+bool LUP_Descomposition(CLMatrixExT<T1, Db1>& A, CLMatrixExT<T2, Db2>& L, CLMatrixExT<T3, Db3>& U,
+	T4* P ,size_t N) 
+{
+	//size_t N = A.rows();
+	L.resize(N, N);
+	U.resize(N, N);
+	//PLine.resize(1, N);
+	//auto& P = PLine[0];//该处不能采用引用
+	size_t row = 0;
+	for (size_t i = 0; i < N; ++i)
+	{
+		P[i] = i;
+	}
+	T1 p = 0, tmp = 0, u = 0, l = 0;
+	for (size_t i = 0,j; i < N - 1; ++i)
+	{
+		p = 0;
+		for (j = i; j < N; ++j)
+		{
+			tmp = abs(A[j][i]);
+			if (tmp > p)
+			{
+				p = tmp;
+				row = j;
+			}
+		}
+		if (0 == p)
+		{
+			//cout << endl << "矩阵奇异，无法计算逆" << endl;
+			return false;
+		}
+
+		//交换P[i]和P[row]
+		tmp = P[i];
+		P[i] = P[row];
+		P[row] = tmp;
+
+		for (size_t j = 0; j < N; ++j)
+		{
+			//交换A[i][j]和 A[row][j]
+			tmp = A[i][j];
+			A[i][j] = A[row][j];
+			A[row][j] = tmp;
+		}
+
+		//以下同LU分解
+		u = A[i][i];
+		for (size_t j = i + 1,k; j < N; ++j)
+		{
+			l = A[j][i] / u;
+			A[j][i] = l;
+			for (k = i + 1; k < N; ++k)
+			{				
+				//A[j][k] = A[j][k] - A[i][k] * l;
+				A[j][k] -= A[i][k] * l;
+			}
+		}
+	}
+
+	//构造L和U
+	for (size_t i = 0, j, k; i < N; ++i)
+	{
+		for (j = 0; j <= i; ++j)
+		{
+			if (i != j)
+			{
+				L[i][j] = A[i][j];
+			}
+			else
+			{
+				L[i][j] = 1;
+			}
+		}
+		for (k = i; k < N; ++k)
+		{
+			U[i][k] = A[i][k];
+		}
+	}
+	return true;
+}
 // 计算方阵 M 的 LU 分解,使得 M = LU
 // 其中L为对角线元素全为1的下三角阵，U为对角元素依赖M的上三角阵
-template<class T1, class Db1, class T2, class Db2, class T3, class Db3>bool LU(const CLMatrixExT<T1, Db1>& A, CLMatrixExT<T2, Db2>& L, CLMatrixExT<T3, Db3>& U)
+template<class T1, class Db1, class T2, class Db2, class T3, class Db3>
+bool LU(const CLMatrixExT<T1, Db1>& A, CLMatrixExT<T2, Db2>& L, CLMatrixExT<T3, Db3>& U)
 {
 	if (A.isEmpty())
 	{
@@ -2284,102 +2290,22 @@ template<class T1, class Db1, class T2, class Db2, class T3, class Db3>bool LU(c
 		_CLMatrixEx_Runtime_Error(LUP, matix obj is not a square matrix!);
 	}
 	auto M = A;
-	if (!LUP_Descomposition(M, L, U, CLMatrixExT<size_t>())) {
-		cout << endl << "[Runtime error]: Matrix is singular, unable to calculate inverse!" << endl;
+	auto N = A.cols();
+	CLMatrixExT<size_t> _P(1, N);
+	size_t* P = &_P[0][0];
+	if (!LUP_Descomposition(M, L, U, P, N)) {
+		cout << endl << "[Runtime error]: Matrix is singular, unable to calculate LU decomposition!" << endl;
 		return false;
 	}
 	return true;
 }
-// LUP分解
-template<class T1, class Db1, class T2, class Db2, class T3, class Db3, class Dbs>bool LUP_Descomposition(CLMatrixExT<T1, Db1>& A, CLMatrixExT<T2, Db2>& L, CLMatrixExT<T3, Db3>& U,
-	CLMatrixExT<size_t, Dbs>& PLine)
-{
-	size_t N = A.rows();
-	L.resize(N, N);
-	U.resize(N, N);
-	PLine.resize(1, N);
-	auto& P = PLine[0];
-	size_t row = 0;
-	for (size_t i = 0; i < N; ++i)
-	{
-		P[i] = i;
-	}
-	for (size_t i = 0; i < N - 1; ++i)
-	{
-		T1 p = 0;
-		for (size_t j = i; j < N; ++j)
-		{
-			if (abs(A[j][i]) > p)
-			{
-				p = abs(A[j][i]);
-				row = j;
-			}
-		}
-		if (0 == p)
-		{
-			//cout << endl << "矩阵奇异，无法计算逆" << endl;
-			return false;
-		}
-
-		//交换P[i]和P[row]
-		size_t tmp = P[i];
-		P[i] = P[row];
-		P[row] = tmp;
-
-		T1 tmp2 = 0;
-		for (size_t j = 0; j < N; ++j)
-		{
-			//交换A[i][j]和 A[row][j]
-			tmp2 = A[i][j];
-			A[i][j] = A[row][j];
-			A[row][j] = tmp2;
-		}
-
-		//以下同LU分解
-		T1 u = A[i][i], l = 0;
-		for (size_t j = i + 1; j < N; ++j)
-		{
-			l = A[j][i] / u;
-			A[j][i] = l;
-			for (size_t k = i + 1; k < N; ++k)
-			{
-				A[j][k] = A[j][k] - A[i][k] * l;
-			}
-		}
-
-	}
-
-	//构造L和U
-	for (size_t i = 0; i < N; ++i)
-	{
-		for (size_t j = 0; j <= i; ++j)
-		{
-			if (i != j)
-			{
-				L[i][j] = A[i][j];
-			}
-			else
-			{
-				L[i][j] = 1;
-			}
-		}
-		for (size_t k = i; k < N; ++k)
-		{
-			U[i][k] = A[i][k];
-		}
-	}
-	return true;
-}
 //LUP求解方程
-template<class T1, class Db1, class T2, class Db2, class T3, class Db3, class Dbs>
-void LUP_Solve(size_t N, CLMatrixExT<T1, Db1>& X, CLMatrixExT<T1, Db1>& Y, const CLMatrixExT<T2, Db2>& L, const CLMatrixExT<T3, Db3>& U, const CLMatrixExT<size_t, Dbs>& PLine, const CLMatrixExT<T1, Db1>& B)
+template<class T1, class T2, class Db2, class T3, class Db3, class T4>
+void LUP_Solve(size_t N, 
+	T1* x,T1* y, const CLMatrixExT<T2, Db2>& L, const CLMatrixExT<T3, Db3>& U,
+	const T4* P,const T1* b
+)
 {
-	auto& P = PLine[0];
-	auto& b = B[0];
-	X.resize(1, N);
-	Y.resize(1, N);
-	auto& x = X[0];
-	auto& y = Y[0];
 	//正向替换
 	for (size_t i = 0; i < N; ++i)
 	{
@@ -2417,25 +2343,29 @@ template<class T1, class Db1, class T2, class Db2> CLMatrixExT<T2, Db2>& LUP_Inv
 
 	CLMatrixExT<float> A_mirror(N, N);
 	CLMatrixExT<float> inv_A(N, N);//最终的逆矩阵（还需要转置）
-	CLMatrixExT<float> inv_A_each(1, N);//矩阵逆的各列
-	CLMatrixExT<float> B(1, N);//b阵为B阵的列矩阵分量
-	CLMatrixExT<float> Y(1, N);//b阵为B阵的列矩阵分量
+	CLMatrixExT<float> _inv_A_each(1, N);//矩阵逆的各列
+	float* inv_A_each= &_inv_A_each[0][0];//矩阵逆的各列
+	CLMatrixExT<float> _B(1, N);//b阵为B阵的列矩阵分量
+	float* B = &_B[0][0];//b阵为B阵的列矩阵分量
+	CLMatrixExT<float> _Y(1, N);//b阵为B阵的列矩阵分量
+	float* Y = &_Y[0][0];//y阵为Y阵的列矩阵分量
 	CLMatrixExT<float> L(N, N);
 	CLMatrixExT<float> U(N, N);
 
-	CLMatrixExT<size_t> P(1, N);
+	CLMatrixExT<size_t> _P(1, N);
+	size_t* P = &_P[0][0];
 	for (size_t i = 0; i < N; ++i)
 	{
 		//构造单位阵的每一列
-		for (size_t j = 0; j < N; ++j)B[0][j] = 0;
-		B[0][i] = 1;
+		for (size_t j = 0; j < N; ++j)B[j] = 0;
+		B[i] = 1;
 		A_mirror = A;
-		if (!LUP_Descomposition(A_mirror, L, U, P)) {
+		if (!LUP_Descomposition(A_mirror, L, U, P,N)) {
 			//奇异矩阵返回矩阵
 			return ret.clear();
 		}
 		LUP_Solve(N, inv_A_each, Y, L, U, P, B);
-		inv_A.setRow(i, &inv_A_each[0], inv_A_each.cols());
+		inv_A.setRow(i, &inv_A_each[0], N);
 	}
 	return ::T(inv_A, ret);
 }
@@ -2598,7 +2528,7 @@ typedef CLMatrixExT<long> CLMatrixExL;//long型矩阵类
 
 template class CLMatrixExT<float>;
 
-// 测试检查本机SSE参数的最佳值，返回值用于CLMatrixEx::setUseSSEMinRank()的参数
+// 测试检查本机单次SSE参数的最佳值，返回值用于CLMatrixEx::setUseSSEMinRank()的参数
 inline size_t matrixExSSEParamFitValue() {
 	auto MakeXF = [](CLMATRIXF_CALLBACK_PARAM) { v = 1; };
 	auto MakeXD = [](CLMATRIXD_CALLBACK_PARAM) { v = 1; };
@@ -2638,6 +2568,19 @@ inline size_t matrixExSSEParamFitValue() {
 	CLMatrixEx::setUseSSEMinRank(bksi);
 	size_t rt = (2 * mk2 + 7 * mk1 + 1 * mk3) / 10;
 	return rt;
+}
+// 测试检查本机SSE参数的统计最佳值，返回值用于CLMatrixEx::setUseSSEMinRank()的参数
+inline void matrixExSSEParam() {
+	size_t sii = 0, total = 20;
+	printf("\n测试矩阵SSE参数：\n");
+	for (size_t i = 0; i < total; i++)
+	{
+		auto si = matrixExSSEParamFitValue();
+		printf(" %lld ", si);
+		CLMatrix::setUseSSEMinRank(si);
+		sii += si;
+	}
+	printf("\nSSE参数均值：%lld\n",sii/total);
 }
 // 做本地效率测试,并输出结果
 inline void matrixExLocalTest() {

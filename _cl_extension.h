@@ -33,6 +33,8 @@ static_assert(_CURRENT_MYSQL_VERSION == LIBMYSQL_VERSION, "MySQL include lib ver
 #endif
 #endif
 
+//引入cURL库
+#include "_curl/CLCurl.h"
 
 //以下是自定义库----------------------------------------------------------------------
 using namespace std;

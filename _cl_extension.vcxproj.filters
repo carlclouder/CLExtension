@@ -87,6 +87,9 @@
     <ClInclude Include="_cl_atomic\CLAtomic.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="_curl\CLCurl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="_cl_time\CLTime.cpp">
@@ -144,6 +147,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="_cl_parallel\CLParallel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="_curl\CLCurl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
