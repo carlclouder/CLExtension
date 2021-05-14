@@ -95,37 +95,37 @@
     <OutDir>$(SolutionDir).lib\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)\.MIDIR\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\lib</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\lib</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir).lib\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)\.MIDIR\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\lib</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\lib</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseD|Win32'">
     <OutDir>$(SolutionDir).lib\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)\.MIDIR\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\lib</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\lib</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IntDir>$(SolutionDir)\.MIDIR\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir).lib\$(ProjectName)\</OutDir>
     <TargetName>$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\lib</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\lib</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IntDir>$(SolutionDir)\.MIDIR\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir).lib\$(ProjectName)\</OutDir>
     <TargetName>$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\lib</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\lib</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseD|x64'">
     <IntDir>$(SolutionDir)\.MIDIR\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir).lib\$(ProjectName)\</OutDir>
     <TargetName>$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl-7.76.1\lib</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\include\curl;$(SolutionDir)\$(ProjectName)\_curl\curl.lib\curl-7.76.1\lib</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
