@@ -3494,7 +3494,7 @@ Bool CLBpExtend::exportGraphNetStruct(PCStr outFileName, Bool bUseDetailMode)
 		if (!path.createDirectory())
 			return ::MessageBox(htop, CLString(("路径不存在:\n"), (PCStr)(path), 0).string(), ("错误提示"), MB_ICONERROR), FALSE;
 	name.getLastStrByPath();
-	auto pos = name.reverseFind(('.'));
+	auto pos = name.rfind(('.'));
 	if (pos > 0)
 		name.leftSave(pos);
 	else

@@ -1744,7 +1744,7 @@ BOOL CLShowTool::windowsToBmp(HWND hTagWnd, LPCTSTR outFileName)
 		if (!path.createDirectory())
 			return ::MessageBox(hTagWnd, CLString(_T("路径不存在:\n"), (LPCTSTR)(path), 0).string(), _T("错误提示"), MB_ICONERROR), FALSE;
 	name.getLastStrByPath();
-	auto pos = name.reverseFind(_T('.'));
+	auto pos = name.rfind(_T('.'));
 	if (pos > 0)
 		name.leftSave(pos);
 	else

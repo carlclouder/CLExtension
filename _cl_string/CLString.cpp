@@ -1268,9 +1268,9 @@ CLString& CLString::deleteLastStrFromPath()
 }
 CLString& CLString::replaceExtName(LPCTSTR newExtName)
 {
-	//auto idot = reverseFind(_T('.'));
-	//auto idot1 = reverseFind(_T('\\'));
-	//auto idot2 = reverseFind(_T('/'));
+	//auto idot = rfind(_T('.'));
+	//auto idot1 = rfind(_T('\\'));
+	//auto idot2 = rfind(_T('/'));
 	long long ci = size() - 1;
 	long long nsi = 0;
 	while (ci >= 0 )
@@ -3572,58 +3572,61 @@ CLString& CLString::trimRight(LPCTSTR lpszTargets)
 }
 LONG_PTR CLString::find(TCHAR ch, LONG_PTR nStart) 
 {
-	if(nStart < 0 || nStart >= strlen())
-		return -1;
-	LPCTSTR p = _tcschr((pHead + nStart),ch);
-	if (p)
-		return (p - pHead)/sizeof(TCHAR);
-	else
-		return -1;
+	TCHAR chr[] = { ch,0 };
+	return find(pHead, chr, nStart);
 }
 LONG_PTR  CLString::find(LPCTSTR lpszSub, LONG_PTR nStart) 
 {
-	return findString(pHead,lpszSub,nStart);
+	return find(pHead, lpszSub, nStart);
 }
-LONG_PTR  CLString::findString(LPCTSTR lpszTag,LPCTSTR lpszSub, LONG_PTR nStart) 
-{
-	if(!lpszTag)
-		return -1;
-	if(nStart < 0 || nStart >= (LONG_PTR)std::_tcslen(lpszTag))
-		return -1;
-	LPCTSTR p = lpszTag + nStart;
-	LPCTSTR b = lpszSub;
-	if(!lpszSub) return -1;
-	LONG_PTR flag = 0;
-	LONG_PTR szSublen = std::_tcslen(lpszSub);
-	while(*p){
-		if (*p == *b)
+LONG_PTR  CLString::find(LPCTSTR lpszTag,LPCTSTR lpszSub, LONG_PTR nStart)
+{	
+	if (!lpszTag || !lpszSub)return -1;
+	LONG_PTR si = std::_tcslen(lpszTag), jsi = std::_tcslen(lpszSub);
+	if (nStart < 0)nStart = 0;
+	for (; nStart < si; nStart++)
+	{
+		for (LONG_PTR j = 0; nStart < si && j < jsi; )
 		{
-			//LPTSTR p1 = p,*b1 = b;
-			flag = 1;
-			for(LONG_PTR i = 0 ; i < szSublen ; i++){
-				if (*(p+i) != *(b+i))
-				{
-					flag = 0;
-					p+=i;
-					break;
-				}				
-			}
-			if(flag == 1)
-				return (p - lpszTag)/sizeof(TCHAR);
+			if (lpszTag[nStart] != lpszSub[j])
+				break;
+			j++, nStart++;
+			if (j == jsi)
+				return nStart - jsi;
 		}
-		p++;
 	}
 	return -1;
 }
-LONG_PTR  CLString::reverseFind(TCHAR ch) 
+LONG_PTR  CLString::rfind(LPCTSTR lpszTag, LPCTSTR lpszSub, LONG_PTR nRevStart) {	
+	if (!lpszTag || !lpszSub)return -1;
+	LONG_PTR i = std::_tcslen(lpszTag), jsi = std::_tcslen(lpszSub);
+	if (nRevStart < 0)nRevStart = 0;
+	i = i - nRevStart - 1;
+	jsi = jsi - 1;
+	for ( ; i >= 0; i--) 
+	{
+		for (LONG_PTR j = jsi; i >= 0 && j >= 0; j--, i--)
+		{
+			if (lpszTag[i] != lpszSub[j]) 
+				break;			
+			if (j == 0)
+				return i;
+		}
+	}
+	return -1;
+}
+LONG_PTR  CLString::rfind(TCHAR ch, LONG_PTR nRevStart)
 {
-	LPCTSTR p = _tcsrchr(pHead,ch);
-	return p ? (p - pHead)/sizeof(TCHAR) : -1 ;
+	TCHAR chr[] = { ch,0 };
+	return rfind(pHead,chr,nRevStart) ;
+}
+LONG_PTR CLString::rfind(LPCTSTR lpszSub, LONG_PTR nRevStart)
+{
+	return rfind(pHead, lpszSub, nRevStart);
 }
 LONG_PTR  CLString::findFirstOneOf(LPCTSTR lpszCharSet) 
 {
-	if (!lpszCharSet)
-		return -1;
+	if (!lpszCharSet)return -1;
 	LPCTSTR p = pHead;
 	LONG_PTR len = std::_tcslen(lpszCharSet);
 	while (*p)

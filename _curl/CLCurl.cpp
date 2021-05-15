@@ -4,12 +4,12 @@
 
 size_t _write_data_doNothing(void* ptr, size_t size, size_t nmemb, void* stream)
 {
-	return nmemb; //什么也不做
+	return size * nmemb; //什么也不做
 }
 
 size_t CLCurl::getInfoContentLength() {
 	double downloadFileLenth = 0;
-	if (!_isInit)init();
+	if (!isInit())init();
 	//直接由底层源码取值；该方式需要工程完全由源码编译构成，而不是连接外部库；
 	bool isHeadBk = this->curl->set.include_header;
 	bool isNoBody = this->curl->set.opt_no_body;
@@ -17,13 +17,11 @@ size_t CLCurl::getInfoContentLength() {
 	auto pParam = this->curl->set.out;
 	curl_easy_setopt(*this, CURLOPT_HEADER, true);
 	curl_easy_setopt(*this, CURLOPT_NOBODY, true);
-	curl_easy_setopt(*this, CURLOPT_WRITEFUNCTION, _write_data_doNothing);//屏蔽调用默认输出函数
+    curl_easy_setopt(*this, CURLOPT_WRITEFUNCTION, _write_data_doNothing);//屏蔽调用默认输出函数
 	curl_easy_setopt(*this, CURLOPT_WRITEDATA, 0);
-	_lastError = curl_easy_perform(*this);
-	_CHECK_CODE_ERROR();
+    CCURL_SAVE_CODE_CHECK(curl_easy_perform(*this));
 	if (getLastError() == CURLE_OK) {
-		_lastError = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &downloadFileLenth);
-		_CHECK_CODE_ERROR();
+        CCURL_SAVE_CODE_CHECK(curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &downloadFileLenth));
 	}
 	//此处可以还原
 	curl_easy_setopt(*this, CURLOPT_HEADER, isHeadBk);
@@ -32,7 +30,8 @@ size_t CLCurl::getInfoContentLength() {
 	curl_easy_setopt(*this, CURLOPT_WRITEDATA, pParam);
 	return (size_t)(downloadFileLenth < 0 ? 0: downloadFileLenth);
 }
-PCStr CLCurl::getLastErrorString(CURLcode err)
+
+PCStr CLCurl::getLastErrorStringCN(CURLcode err)
 {
 	switch (err)
 	{
@@ -124,11 +123,304 @@ PCStr CLCurl::getLastErrorString(CURLcode err)
 	default:return "未知结果！"; break;
 	}
 }
-CURLcode CLCurl::getLastErrorMsgBox(CURLcode err) {
-	PCStr rt = getLastErrorString(err);
+
+CURLcode CLCurl::getLastErrorMsgBoxCN(CURLcode err) {
+	PCStr rt = getLastErrorStringCN(err);
 	CLString().format("code:  %d  \n%s", err, rt).messageBox("CURLcode info:",MB_ICONWARNING);
 	return err;
 }
-CURLcode CLCurl::getLastErrorMsgBoxExceptSucceed(CURLcode err) {
-	return err == CURLE_OK ? err : getLastErrorMsgBox(err);
+
+CURLcode CLCurl::getLastErrorMsgBoxCNExceptSucceed(CURLcode err) {
+	return err == CURLE_OK ? err : getLastErrorMsgBoxCN(err);
 }
+
+//
+//  Make sure libcurl version > 7.32
+//
+// ---- common progress display ---- //
+struct CustomProgress
+{
+    curl_off_t lastruntime; /* type depends on version, see above */
+    CURL* curl;
+};
+
+// work for both download and upload
+int progressCallback(void* p,
+    curl_off_t dltotal,
+    curl_off_t dlnow,
+    curl_off_t ultotal,
+    curl_off_t ulnow)
+{
+    struct CustomProgress* progress = (struct CustomProgress*)p;
+    CURL* curl = progress->curl;
+    curl_off_t curtime = 0;
+
+    curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME_T, &curtime);
+
+    /* under certain circumstances it may be desirable for certain functionality
+     to only run every N seconds, in order to do this the transaction time can
+     be used */
+    if ((curtime - progress->lastruntime) >= 3000000)
+    {
+        progress->lastruntime = curtime;
+        printf_s("TOTAL TIME: %f \n", (float)curtime);
+    }
+
+    // do something to display the progress
+    std::cout << "UP: " << ulnow << " bytes of " << ultotal << " bytes, DOWN: " << dlnow << " bytes of " << dltotal << " bytes \n";
+    if (ultotal)
+        printf_s("UP progress: %0.2f\n", float(ulnow / ultotal));
+    if (dltotal)
+        printf_s("DOWN progress: %0.2f\n", float(dlnow / dltotal));
+
+    return 0;
+}
+
+// ---- upload related ---- //
+// parse headers for Content-Length
+size_t getContentLengthFunc(void* ptr, size_t size, size_t nmemb, void* stream)
+{
+    int r;
+    long len = 0;
+
+    r = sscanf_s((PCStr)ptr, "Content-Length: %ld\n", &len);
+    if (r) /* Microsoft: we don't read the specs */
+        *((long*)stream) = len;
+    return size * nmemb;
+}
+
+// discard already downloaded data
+size_t discardFunc(void* ptr, size_t size, size_t nmemb, void* stream)
+{
+    return size * nmemb;
+}
+
+// read data to upload
+size_t readfunc(void* ptr, size_t size, size_t nmemb, void* stream)
+{
+    FILE* f = (FILE*)stream;
+    size_t n;
+    if (ferror(f))
+        return CURL_READFUNC_ABORT;
+    n = fread(ptr, size, nmemb, f) * size;
+    return n;
+}
+
+int curlx_win32_stat(const char* path, struct_stat* buffer)
+{
+    int result = -1;
+#ifdef _UNICODE
+    wchar_t* path_w = curlx_convert_UTF8_to_wchar(path);
+    if (path_w) {
+#if defined(USE_WIN32_SMALL_FILES)
+        result = _wstat(path_w, buffer);
+#else
+        result = _wstati64(path_w, buffer);
+#endif
+        free(path_w);
+        if (result != -1)
+            return result;
+    }
+#endif /* _UNICODE */
+
+#if defined(USE_WIN32_SMALL_FILES)
+    result = _stat(path, buffer);
+#else
+    result = _stati64(path, buffer);
+#endif
+    return result;
+}
+FILE* curlx_win32_fopen(const char* filename, const char* mode)
+{
+#ifdef _UNICODE
+    FILE* rt = NULL;
+    wchar_t* filename_w = curlx_convert_UTF8_to_wchar(filename);
+    wchar_t* mode_w = curlx_convert_UTF8_to_wchar(mode);
+    if (filename_w && mode_w)
+         _wfopen_s(&rt,filename_w, mode_w);
+    free(filename_w);
+    free(mode_w);
+    if (rt)
+        return rt;
+#endif
+    FILE* rt = 0;
+    fopen_s(&rt,filename, mode);
+    return rt;
+}
+
+// do upload, will overwrite existing file
+CLCurl& CLCurl::ftpUpload(PCStr remote_file_path,
+    PCStr local_file_path,
+    PCStr username,
+    PCStr password,
+    long timeout, long tries)
+{
+    // init curl handle
+    if (!isInit())init();
+    CURL* curlhandle = *this;
+    // get user_key pair
+    char user_key[1024] = { 0 };
+    sprintf_s(user_key, "%s:%s", username, password);
+
+    FILE* file;
+    long uploaded_len = 0;
+    _lastError = CURLE_GOT_NOTHING;
+    file = curlx_win32_fopen(local_file_path, "rb");
+    if (file == NULL)
+    {
+        perror(NULL);
+        return *this;
+    }
+    curl_easy_setopt(curlhandle, CURLOPT_UPLOAD, 1L);
+    if (remote_file_path) //如果为null则不设置采用内部预设。
+        curl_easy_setopt(curlhandle, CURLOPT_URL, remote_file_path);
+    curl_easy_setopt(curlhandle, CURLOPT_USERPWD, user_key);
+    if (timeout)
+        curl_easy_setopt(curlhandle, CURLOPT_FTP_RESPONSE_TIMEOUT, timeout);
+    curl_easy_setopt(curlhandle, CURLOPT_HEADERFUNCTION, getContentLengthFunc);
+    curl_easy_setopt(curlhandle, CURLOPT_HEADERDATA, &uploaded_len);
+    curl_easy_setopt(curlhandle, CURLOPT_WRITEFUNCTION, discardFunc);
+    curl_easy_setopt(curlhandle, CURLOPT_READFUNCTION, readfunc);
+    curl_easy_setopt(curlhandle, CURLOPT_READDATA, file);
+    curl_easy_setopt(curlhandle, CURLOPT_FTPPORT, "-"); /* disable passive mode */
+    curl_easy_setopt(curlhandle, CURLOPT_FTP_CREATE_MISSING_DIRS, 1L);
+
+    // set upload progress
+    curl_easy_setopt(curlhandle, CURLOPT_XFERINFOFUNCTION, progressCallback);
+    struct CustomProgress prog;
+    curl_easy_setopt(curlhandle, CURLOPT_XFERINFODATA, &prog);
+    curl_easy_setopt(curlhandle, CURLOPT_NOPROGRESS, 0);
+
+    //    curl_easy_setopt(curlhandle, CURLOPT_VERBOSE, 1L); // if set 1, debug mode will print some low level msg
+
+        // upload: 断点续传
+    for (int c = 0; (getLastError() != CURLE_OK) && (c < tries); c++)
+    {
+        /* are we resuming? */
+        if (c)
+        { /* yes */
+            /* determine the length of the file already written */
+            /*
+            * With NOBODY and NOHEADER, libcurl will issue a SIZE
+            * command, but the only way to retrieve the result is
+            * to parse the returned Content-Length header. Thus,
+            * getContentLengthfunc(). We need discardfunc() above
+            * because HEADER will dump the headers to stdout
+            * without it.
+            */
+            curl_easy_setopt(curlhandle, CURLOPT_NOBODY, 1L);
+            curl_easy_setopt(curlhandle, CURLOPT_HEADER, 1L);
+            _lastError = curl_easy_perform(curlhandle);
+            if (_lastError != CURLE_OK)
+                continue;
+            curl_easy_setopt(curlhandle, CURLOPT_NOBODY, 0L);
+            curl_easy_setopt(curlhandle, CURLOPT_HEADER, 0L);
+            fseek(file, uploaded_len, SEEK_SET);
+            curl_easy_setopt(curlhandle, CURLOPT_APPEND, 1L);
+        }
+        else
+            curl_easy_setopt(curlhandle, CURLOPT_APPEND, 0L);
+
+        _lastError = curl_easy_perform(curlhandle);
+    }
+    fclose(file);
+
+    if (_lastError != CURLE_OK)
+    {
+        fprintf(stderr, "%s\n", curl_easy_strerror(getCode()));
+        CCURL_CHECK_CODE_ERROR();
+    }
+
+    // exit curl handle
+    //curl_easy_cleanup(curlhandle);
+    //curl_global_cleanup();
+
+    return *this;
+}
+
+// ---- download related ---- //
+// write data to upload
+size_t writeFunc(void* ptr, size_t size, size_t nmemb, void* stream)
+{
+    std::cout << "--- write func ---" << std::endl;
+    return fwrite(ptr, size, nmemb, (FILE*)stream);
+}
+
+
+// do download, will overwrite existing file
+CLCurl& CLCurl::ftpDownload(PCStr remote_file_path,
+    PCStr local_file_path,
+    PCStr username,
+    PCStr password,
+    long timeout)
+{
+    // init curl handle
+   // curl_global_init(CURL_GLOBAL_ALL);
+   // CURL* curlhandle = curl_easy_init();
+    if (!isInit())init();
+    CURL* curlhandle = *this;
+    // get user_key pair
+    char user_key[1024] = { 0 };
+    sprintf_s(user_key, "%s:%s", username, password);
+
+    FILE* file;
+    curl_off_t local_file_len = -1;
+    long filesize = 0;
+    _lastError = CURLE_GOT_NOTHING;
+    //struct stat file_info;
+    struct _stat64 file_info;
+    int use_resume = 0; // resume flag
+
+    // get local file info, if success ,set resume mode
+    if (curlx_win32_stat(local_file_path, &file_info) == 0)
+    {
+        local_file_len = file_info.st_size;
+        use_resume = 1;
+    }
+
+    // read file in append mode: 断点续传
+    file = curlx_win32_fopen(local_file_path, "ab+");
+    if (file == NULL)
+    {
+        perror(NULL);
+        return *this;
+    }
+    if(remote_file_path) //如果为null则不设置采用内部预设。
+        curl_easy_setopt(curlhandle, CURLOPT_URL, remote_file_path);
+    curl_easy_setopt(curlhandle, CURLOPT_USERPWD, user_key); // set user:password
+    // set connection timeout
+    curl_easy_setopt(curlhandle, CURLOPT_CONNECTTIMEOUT, timeout);
+    // set header process, get content length callback
+    curl_easy_setopt(curlhandle, CURLOPT_HEADERFUNCTION, getContentLengthFunc);
+    curl_easy_setopt(curlhandle, CURLOPT_HEADERDATA, &filesize);
+
+    // 断点续传 set download resume, if use resume, set current local file length
+    curl_easy_setopt(curlhandle, CURLOPT_RESUME_FROM_LARGE, use_resume ? local_file_len : 0);
+    //    curl_easy_setopt(curlhandle, CURLOPT_WRITEFUNCTION, writeFunc);
+    curl_easy_setopt(curlhandle, CURLOPT_WRITEDATA, file);
+
+    // set download progress
+    curl_easy_setopt(curlhandle, CURLOPT_XFERINFOFUNCTION, progressCallback);
+    struct CustomProgress prog;
+    curl_easy_setopt(curlhandle, CURLOPT_XFERINFODATA, &prog);
+    curl_easy_setopt(curlhandle, CURLOPT_NOPROGRESS, 0);
+
+    //    curl_easy_setopt(curlhandle, CURLOPT_VERBOSE, 1); // if set 1, debug mode will print some low level msg
+    CCURL_SAVE_CODE_CHECK(curl_easy_perform(curlhandle));
+    fclose(file);
+
+    if (getCode() != CURLE_OK)
+    {
+        fprintf(stderr, "%s\n", curl_easy_strerror(getCode()));
+        CCURL_CHECK_CODE_ERROR();
+    }
+
+    // exit curl handle
+    //curl_easy_cleanup(curlhandle);
+    //curl_global_cleanup();
+
+    return *this;
+}
+
+
+

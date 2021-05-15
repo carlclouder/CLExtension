@@ -910,24 +910,26 @@ public:
 	CLString& trimRight( );
 	CLString& trimRight( TCHAR chTarget );
 	CLString& trimRight( LPCTSTR lpszTargets );
-
-	//字符串中搜索子字符串的第一个匹配的字符。
-	//返回此对象中与需要的子字符串或字符匹配的第一个字符的从零开始的索引；如果没有找到子字符串或字符则返回-1。
-	LONG_PTR  find( TCHAR ch, LONG_PTR nStart = 0 ) ;
-	LONG_PTR  find( LPCTSTR lpszSub, LONG_PTR nStart = 0 ) ;
+	
 
 	LPCSTR strStr(LPCSTR lpszSub) { return StrStrA(getASCII(), lpszSub); };
 	LPCWSTR strStr(LPCWSTR lpszSub) { return StrStrW(getUnicode(), lpszSub); };
 	LPCSTR strStrI(LPCSTR lpszSub) { return StrStrIA(getASCII(), lpszSub); };
 	LPCWSTR strStrI(LPCWSTR lpszSub) { return StrStrIW(getUnicode(), lpszSub); };
 
-	//字符串中搜索子字符串的第一个匹配的字符。
-	//返回此对象中与需要的子字符串或字符匹配的第一个字符的从零开始的索引；如果没有找到子字符串或字符则返回-1。
-	static LONG_PTR  findString(LPCTSTR lpszTag,LPCTSTR lpszSub, LONG_PTR nStart = 0);
+	//在字符串中查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	static LONG_PTR  find(LPCTSTR lpszTag,LPCTSTR lpszSub, LONG_PTR nStart = 0);
+	//在字符串中查找字符，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	LONG_PTR  find(TCHAR ch, LONG_PTR nStart = 0);
+	//在字符串中查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	LONG_PTR  find(LPCTSTR lpszSub, LONG_PTR nStart = 0);
 
-	//搜索与一个子串匹配的最后一个字符。此函数类似于运行时函数strrchr.
-	//返回此对象中与要求的字符匹配的最后一个字符的索引；如果没有找到需要的字符则返回-1。
-	LONG_PTR  reverseFind( TCHAR ch ) ;
+	//在字符串中反向查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	static LONG_PTR  rfind(LPCTSTR lpszTag, LPCTSTR lpszSub, LONG_PTR nRevStart = 0);	
+	//在字符串中反向查找字符，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	LONG_PTR  rfind( TCHAR ch, LONG_PTR nRevStart = 0) ;
+	//在字符串中反向查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	LONG_PTR  rfind( LPCTSTR lpszSub,  LONG_PTR nRevStart = 0);
 	//字符串中搜索与lpszCharSet中任意字符匹配的第一个字符。
 	//返回此字符串中第一个在lpszCharSet中也包括的字符的从零开始的索引。
 	LONG_PTR  findFirstOneOf( LPCTSTR lpszCharSet ) ;

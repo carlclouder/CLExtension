@@ -13,11 +13,11 @@
 #include "curl.lib/curl-7.76.1/include/curl/curl.h"
 
 // 不需要错误提示框，则置为0
-#define OPEN_CHECK_CODE_ERROR_MSGBOX 1 
-#if OPEN_CHECK_CODE_ERROR_MSGBOX > 0
-#define _CHECK_CODE_ERROR() getLastErrorMsgBoxExceptSucceed()
+#define OPEN_CCURL_ERROR_MSGBOX 1 
+#if OPEN_CCURL_ERROR_MSGBOX > 0
+#define CCURL_CHECK_CODE_ERROR() getLastErrorMsgBoxCNExceptSucceed()
 #else
-#define _CHECK_CODE_ERROR() 
+#define CCURL_CHECK_CODE_ERROR() 
 #endif
 
 
@@ -42,14 +42,17 @@ protected:
 		if (time++ == 0)
 			buf.clear();
 		auto pos = buf.size();
-		buf.resize(pos + nmemb);
-		memcpy_s(buf.data() + pos, nmemb, buffer, nmemb);
+		auto newsi = size * nmemb;
+		buf.resize(pos + newsi);
+		memcpy_s(buf.data() + pos, newsi, buffer, newsi);
 		return nmemb;
 	}
 	static bool& _getGbInit() {
 		static bool _isGlbInit = false;
 		return _isGlbInit;
 	}
+	//保存表达式返回码，并检查提示。
+#define CCURL_SAVE_CODE_CHECK( doReturnExpr ) (_lastError = (doReturnExpr),CCURL_CHECK_CODE_ERROR(),_lastError)
 public:
 	//默认使用的浏览器客户端。
 	static constexpr PCStr DefaultUserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.131 Safari/537.36";
@@ -91,12 +94,17 @@ public:
 		return *this;
 	}
 	ref operator = (PCStr url) { return setUrl(url); }
-	//curl对象初始化（该函数不一定要显示调用，它会在其他需要的时刻自动执行）
+	//curl对象初始化。
+	//该函数不一定要显示调用，它会在其他需要的时刻自动执行。
+	//若对象本身保存了一个有效初始化的句柄，调用该函数后辉先以保存的句柄，再重新创建。
+	//因此，应该在显示调用前，用isInit()查询当前的对象初始化状态。
 	ref init() {
 		globalInit(CURL_GLOBAL_ALL);
 		*this = curl_easy_init(); // 初始化CURL句柄
 		return setUserAgent(DefaultUserAgent);
 	}
+	//curl对象检查当前是否已初始化。
+	bool isInit() const { return _isInit; }
 	//取得上一行为返回的结果码CURLcode。
 	CURLcode getLastError() const { return _lastError; }
 	//取得上一行为返回的结果码CURLcode。
@@ -104,10 +112,9 @@ public:
 	//curl设置用户选项参数。
 	template<class ...Args>
 	ref setopt(CURLoption option, Args ...args) {
-		//if (!_isInit)throw std::runtime_error("CLCurl is not init!");
-		if (!_isInit)init();
-		_lastError = (CURLcode)curl_easy_setopt(*this, option, std::forward<Args>(args)...);
-		_CHECK_CODE_ERROR();
+		//if (!isInit())throw std::runtime_error("CLCurl is not init!");
+		if (!isInit())init();
+		CCURL_SAVE_CODE_CHECK(curl_easy_setopt(*this, option, std::forward<Args>(args)...));
 		return *this;
 	}
 	//curl设置目标url字符串。
@@ -139,12 +146,13 @@ public:
 	ref setWriteData(void* param) { return setopt(CURLOPT_WRITEDATA, param); }
 	//curl请求执行。
 	ref perform() {
-		if (!_isInit)init();
-		_lastError = curl_easy_perform(*this);
-		_CHECK_CODE_ERROR();
+		if (!isInit())init();
+		CCURL_SAVE_CODE_CHECK(curl_easy_perform(*this));
 		return *this;
 	}
 	//curl请求执行，并将结果返回数据集storeBuf。
+	//设置CURLOPT_NOPROGRESS        显示内部预设方式显示进度信息；
+	//设置CURLOPT_XFERINFOFUNCTION  采用自定义回调处理进度过程；
 	ref perform(ResultBuffer& storeBuf) {
 		_buferStorePack _data{ 0, storeBuf };
 		return setWriteFunction(_perfToBufferCallBack)
@@ -160,19 +168,31 @@ public:
 	//curl取得目标URL指向的内容的字节大小。（函数调用前应该充分的设置选项参数，以保证函数执行成功）
 	size_t getInfoContentLength();
 	//curl取得结果码CURLcode对应的解释信息字符串。
-	static PCStr getLastErrorString(CURLcode err);
+	static PCStr getLastErrorStringCN(CURLcode err);
 	//curl取得结果码CURLcode对应的解释信息字符串。
-	PCStr getLastErrorString() const { return getLastErrorString(getLastError()); }
+	PCStr getLastErrorStringCN() const { return getLastErrorStringCN(getLastError()); }
 	//curl取得结果码CURLcode对应的解释信息字符串。
-	PCStr getCodeString() const { return getLastErrorString(); }
+	PCStr getCodeStringCN() const { return getLastErrorStringCN(); }
 	//curl取得结果码CURLcode对应的解释信息字符串并用消息框提示。
-	static CURLcode getLastErrorMsgBox(CURLcode err);
+	static CURLcode getLastErrorMsgBoxCN(CURLcode err);
 	//curl取得结果码CURLcode对应的解释信息字符串并用消息框提示。
-	CURLcode getLastErrorMsgBox() const { return getLastErrorMsgBox(getLastError()); }
+	CURLcode getLastErrorMsgBoxCN() const { return getLastErrorMsgBoxCN(getLastError()); }
 	//curl取得结果码CURLcode除CURLE_OK外，对应的解释信息字符串并用消息框提示。
-	static CURLcode getLastErrorMsgBoxExceptSucceed(CURLcode err);
+	static CURLcode getLastErrorMsgBoxCNExceptSucceed(CURLcode err);
 	//curl取得结果码CURLcode除CURLE_OK外，对应的解释信息字符串并用消息框提示。
-	CURLcode getLastErrorMsgBoxExceptSucceed() const { return getLastErrorMsgBoxExceptSucceed(getLastError()); }
+	CURLcode getLastErrorMsgBoxCNExceptSucceed() const { return getLastErrorMsgBoxCNExceptSucceed(getLastError()); }
+	// do upload, will overwrite existing file
+	ref ftpUpload(PCStr remote_file_path,
+		PCStr local_file_path,
+		PCStr username,
+		PCStr password,
+		long timeout = 0, long tries = 3);
+	// do download, will overwrite existing file
+	ref ftpDownload(PCStr remote_file_path,
+		PCStr local_file_path,
+		PCStr username,
+		PCStr password,
+		long timeout = 30);
 };
 
 #endif
