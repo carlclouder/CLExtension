@@ -181,9 +181,13 @@ protected:
 	}
 
 	LPTSTR _newbuffer(LONG_PTR nNeedSize,LONG_PTR nPosIndex);
+	//在扩展数据中构造一个（含末尾0空间的）字符串buffer，参数为需要保存的字符串不含末尾0的字符个数,并设置存储标记；
+	PCLStringExData makeNewTempStringBuf(size_t stringSizeNoEndZero, size_t charSize = sizeof(TCHAR));
+	//交换所有数据
+	CLString& swapData(CLString& other);
 public:
-	//同类型指定为友元类
-	friend class CLString;
+	typedef CLString& ref;
+	typedef const CLString& refc;
 
 	//构造函数（默认）
 	//构造函数（LPCTSTR版本）接收一个初始化字符串指针。
@@ -194,8 +198,11 @@ public:
 	CLString(LPCSTR pString);
 	CLString(LPCWSTR pString);
 	CLString(LPCTSTR pString1,LPCTSTR pString2,...);
-	CLString(const CLString& mString);	
+	CLString(const CLString& mString);
 	explicit CLString(LONG_PTR nDefaultCharNumber);
+
+	CLString(CLString&& right);
+	CLString& operator=(CLString&& right);
 
 	//析构函数
 	virtual ~CLString();
@@ -211,9 +218,9 @@ public:
 	friend CLString operator+(const CLString & str1, LPCTSTR pStr2);
 
 	//拷贝数据，包含扩展数据（扩展数据只拷贝：临时字符串缓冲，时间结构数据，字符串列表数据，拆分输出当前状态等数据，（不拷贝文件句柄和网络句柄））
-	CLString& copy(CLStringRC str);
+	ref copy(CLStringRC str);
 	//拷贝扩展数据（只拷贝：临时字符串缓冲，时间结构数据，字符串列表数据，拆分输出当前状态等数据，（不拷贝文件句柄和网络句柄））
-	CLString& copyExData(CLStringRC str);
+	ref copyExData(CLStringRC str);
 
 
 	//1、赋值函数。参数1：字符串指针。
@@ -222,21 +229,21 @@ public:
 	//   注意：可变参数最后一个参数必须为一个0或NULL指针作为结束标记；
 	//   也就是说函数参数一旦遇到NULL指针将结束继续取参数；
 	//   若没有0指针作为结束，则函数无限取参数下去，后果将不可预料。
-	CLString& set(LPCSTR pString);	
-	CLString& set(LPCWSTR pString);	
-	CLString& set(LPCTSTR pString1,LPCTSTR pString2,...);
-	CLString& set(CHAR ch);
-	CLString& set(WCHAR ch);
+	ref set(LPCSTR pString);	
+	ref set(LPCWSTR pString);	
+	ref set(LPCTSTR pString1,LPCTSTR pString2,...);
+	ref set(CHAR ch);
+	ref set(WCHAR ch);
 	//赋值目标中的n个字符到对象，在末尾增加末尾0；
-	CLString& setn(LPCTSTR pStr,LONG_PTR nSiChar);
+	ref setn(LPCTSTR pStr,LONG_PTR nSiChar);
 
 	//拷贝并连接另一个字符串到当前对象尾部。参数1：字符串指针。
-	CLString& append(LPCSTR pString);
-	CLString& append(LPCWSTR pString);
+	ref append(LPCSTR pString);
+	ref append(LPCWSTR pString);
 
 	//拷贝并连接另一个TCHAR对象到当前对象尾部。参数1：TCHAR对象。
-	CLString& append(CHAR ch);
-	CLString& append(WCHAR ch);
+	ref append(CHAR ch);
+	ref append(WCHAR ch);
 
 #ifndef CLSTRING_FTOSLIMIT
 #define CLSTRING_FTOSLIMIT  26
@@ -252,92 +259,92 @@ public:
 	//原样输出数字，v可以是任何类型的数字
 	//maxAccuracy表示小数显示精度（最大支持CLSTRING_FTOSLIMIT_MAXACCURACY位小数精确），若精度大于实际小数位函数会自动抹去末尾0，并且不会用科学计数法输出，全部为原样输出
 	//nBufSizeInChar最小要求有ltos CLSTRING_LTOSLIMIT和 ftos CLSTRING_FTOSLIMIT个字符的空间，否则直接返回false
-	CLString& appendl(LONG_PTR v,BOOL *_out_bIsSuccess = 0);
-	CLString& appendf(double v,size_t maxAccuracy = CLSTRING_FTOSLIMIT_MAXACCURACY,BOOL *_out_bIsSuccess = 0);
+	ref appendl(LONG_PTR v,BOOL *_out_bIsSuccess = 0);
+	ref appendf(double v,size_t maxAccuracy = CLSTRING_FTOSLIMIT_MAXACCURACY,BOOL *_out_bIsSuccess = 0);
 
 	//重载操作符<< 其优先级遵循C++原则
-	CLString& operator<<(const CHAR ch);
-	CLString& operator<<(const byte number);
-	CLString& operator<<(const WCHAR ch);
-	CLString& operator<<(LPCSTR pString);
-	CLString& operator<<(LPCWSTR pString);
-	CLString& operator<<(const CLString& mString);
-	CLString& operator<<(const CLString* pString);
-	CLString& operator<<(const long long number);
-	CLString& operator<<(const unsigned long long number);
-	CLString& operator<<(const long number);
-	CLString& operator<<(const unsigned long number);
-	CLString& operator<<(const int number);
-	CLString& operator<<(const unsigned int number);
-	CLString& operator<<(const short number);
-	CLString& operator<<(const unsigned short number);
-	CLString& operator<<(const float number);
-	CLString& operator<<(const double number);
-	CLString& operator<<(const long double number);
-	CLString& operator<<(const bool number);
+	ref operator<<(const CHAR ch);
+	ref operator<<(const byte number);
+	ref operator<<(const WCHAR ch);
+	ref operator<<(LPCSTR pString);
+	ref operator<<(LPCWSTR pString);
+	ref operator<<(const CLString& mString);
+	ref operator<<(const CLString* pString);
+	ref operator<<(const long long number);
+	ref operator<<(const unsigned long long number);
+	ref operator<<(const long number);
+	ref operator<<(const unsigned long number);
+	ref operator<<(const int number);
+	ref operator<<(const unsigned int number);
+	ref operator<<(const short number);
+	ref operator<<(const unsigned short number);
+	ref operator<<(const float number);
+	ref operator<<(const double number);
+	ref operator<<(const long double number);
+	ref operator<<(const bool number);
 
     //赋值函数。字符串，CLString对象，数字。
-	template<typename _Class>CLString& set (_Class obj){
+	template<typename _Class>ref set (_Class obj){
 		empty() << obj;return *this;
 	}
-	inline CLString& set(const CLString& mString){set(mString.string());return *this;}
-	inline CLString& set(const CLString* pString){set(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
+	inline ref set(const CLString& mString){set(mString.string());return *this;}
+	inline ref set(const CLString* pString){set(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
 	//拷贝并连接另一个CLString对象到当前对象尾部。参数1：字符串，CLString对象，数字。
-	template<typename _Class>CLString& append (_Class obj){
+	template<typename _Class>ref append (_Class obj){
 		(*this) << obj;return *this;
 	}
-	inline CLString& append(const CLString& mString){append(mString.string());return *this;}
-	inline CLString& append(const CLString* pString){append(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
+	inline ref append(const CLString& mString){append(mString.string());return *this;}
+	inline ref append(const CLString* pString){append(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
 	//赋值操作符重载。参数：字符串，CLString对象，数字。
-	template<typename _Class>CLString& operator=(_Class obj){
+	template<typename _Class>ref operator=(_Class obj){
 		set(obj);return *this;
 	}
-	inline CLString& operator=(const CLString& mString){set(mString.string());return *this;}
-	inline CLString& operator=(const CLString* pString){set(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
+	inline ref operator=(const CLString& mString){set(mString.string());return *this;}
+	inline ref operator=(const CLString* pString){set(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
 
 	//重载一个 % 操作，用于符号运算中实现在最前端像赋值函数set()的功能。参数：字符串，对象，数字。
 	//它有比 + 和 <<  = 等更高的优先级，从而可以在运算符操作串中的最前端实现首先做初始化的操作。
 	//而不用像 = 操作一样是低优先级后置的，必须在后面的操作串结束后才执行。
-	template<typename _Class>CLString& operator%(_Class obj){
+	template<typename _Class>ref operator%(_Class obj){
 		empty() << obj; return *this;
 	}
-	inline CLString& operator%(const CLString& mString){set(mString.string());return *this;}
-	inline CLString& operator%(const CLString* pString){set(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
+	inline ref operator%(const CLString& mString){set(mString.string());return *this;}
+	inline ref operator%(const CLString* pString){set(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
 	//操作符重载，拷贝并连接另一个字符串到当前对象尾部。参数：字符串，CLString对象，数字。
-    template<typename _Class>CLString& operator+=(_Class obj){
+    template<typename _Class>ref operator+=(_Class obj){
 		append(obj);return *this;
 	}
-	inline CLString& operator+=(const CLString& mString){append(mString.string());return *this;}
-	inline CLString& operator+=(const CLString* pString){append(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
+	inline ref operator+=(const CLString& mString){append(mString.string());return *this;}
+	inline ref operator+=(const CLString* pString){append(pString ? pString->string(): (LPCTSTR)NULL);return *this;}
 
 
 	//按指定格式格式化对象，类似CString中的format函数功能。
 	//特别注意，调用此函数会清空原内容，不能将自身字串指针作为字符串参数源。但是可以作为格式化字串的源。
-	CLString& format(LONG_PTR maxStrlen,LPCTSTR szFormat,...);
-	CLString& format(LPCTSTR szFormat,...);
+	ref format(LONG_PTR maxStrlen,LPCTSTR szFormat,...);
+	ref format(LPCTSTR szFormat,...);
 
 	//将保存字符串输出到目标变量,使用前可先设置切分标记，调用operator*
-	CLString& operator>>(char& ch);
-	CLString& operator>>(unsigned char& number);
-	CLString& operator>>(wchar_t& ch);
+	ref operator>>(char& ch);
+	ref operator>>(unsigned char& number);
+	ref operator>>(wchar_t& ch);
 	
-	CLString& operator>>(CLString& mString);
-	CLString& operator>>(CLString* pString);
-	CLString& operator>>(long long& number);
-	CLString& operator>>(unsigned long long& number);
-	CLString& operator>>(long& number);
-	CLString& operator>>(unsigned long& number);
-	CLString& operator>>(int& number);
-	CLString& operator>>(unsigned int& number);
-	CLString& operator>>(short& number);
-	CLString& operator>>(unsigned short& number);
-	CLString& operator>>(float& number);
-	CLString& operator>>(double& number);
-	CLString& operator>>(long double& number);
-	CLString& operator>>(bool& number);
+	ref operator>>(ref mString);
+	ref operator>>(CLString* pString);
+	ref operator>>(long long& number);
+	ref operator>>(unsigned long long& number);
+	ref operator>>(long& number);
+	ref operator>>(unsigned long& number);
+	ref operator>>(int& number);
+	ref operator>>(unsigned int& number);
+	ref operator>>(short& number);
+	ref operator>>(unsigned short& number);
+	ref operator>>(float& number);
+	ref operator>>(double& number);
+	ref operator>>(long double& number);
+	ref operator>>(bool& number);
 
 	//设置分割符号，并初始化分割工作变量，并做切分
-	CLString& operator*(LPCTSTR lpSplit);
+	ref operator*(LPCTSTR lpSplit);
 #define CLRet _T("\r\n")//windows风格换行符
 #define CLComma _T(",")//逗号
 #define CLBkSla _T("/")//反斜杠，除号
@@ -355,8 +362,8 @@ public:
 	//返回值*_out_bIsSuccess为false时，buf中的值将是不可预测的值，只有当返回true时，结果才有效。
 	static BOOL ltos(LONG_PTR v,LPTSTR lpBuf,size_t nBufSizeInChar = CLSTRING_LTOSLIMIT);
 	static BOOL ftos(double v,LPTSTR lpBuf,size_t nBufSizeInChar = CLSTRING_FTOSLIMIT,size_t maxAccuracy = CLSTRING_FTOSLIMIT_MAXACCURACY);
-	CLString& ltos(LONG_PTR v,BOOL* _out_bIsSuccess = NULL);
-	CLString& ftos(double v,size_t maxAccuracy = CLSTRING_FTOSLIMIT_MAXACCURACY,BOOL* _out_bIsSuccess = NULL);
+	ref ltos(LONG_PTR v,BOOL* _out_bIsSuccess = NULL);
+	ref ftos(double v,size_t maxAccuracy = CLSTRING_FTOSLIMIT_MAXACCURACY,BOOL* _out_bIsSuccess = NULL);
 	//字符串转double类型，小数精度最好不要超过CLSTRING_FTOSLIMIT_MAXACCURACY位，有效位总数不超过17位，否则可能失真（压力测试为atoi速度2.3倍）
 	static double stof(LPCTSTR lpBuf);
 	//字符串转LONG_PTR类型，有效位总数不超过18位，否则可能失真（压力测试为atoi速度2.3倍）
@@ -392,7 +399,7 @@ public:
 	LPWSTR storeW(LONG_PTR iStoreMaxCharLen=MAX_PATH);
 
 	//若调用过storeA或storeW存储异格式内容，则根据表示转换存储到内部到字符串，转换成功则归零临时缓冲区，如果未存储什么也不做
-	CLString& saveExStore();
+	ref saveExStore();
 
 	//返回对象已分配了的缓冲区(以字节计)的大小。
 	LONG_PTR buflen(void);
@@ -408,23 +415,23 @@ public:
 
 	//若对象保存的字符串是一个有效路劲，可以在该结尾增加反斜杠"\"。
 	//参数1：增加的反斜杠个数；
-	CLString& addAnPathEnd(INT endNumber=1);
+	ref addAnPathEnd(INT endNumber=1);
 
 	//若对象保存的字符串是一个有效路劲，可以把字串中
 	//所有单"\"变为"\\"。参数1：是否保存新值。
 	//方法时仍然返回变化前的原字符串。
-	CLString& extendPathToQuality();
+	ref extendPathToQuality();
 
 	//若对象保存的字符串是一个有效路劲，可以把字串中
 	//所有双"\\"变为"\"。参数1：是否保存新值。
 	//方法时仍然返回变化前的原字符串。
-	CLString& extendPathToNormal();
+	ref extendPathToNormal();
 
 	//若对象保存的字符串是一个有效路劲，则返回最后一个"\"后面的字符串（不包含"\"）。
 	LPCTSTR getLastStrByPath();
 
 	//若对象保存的字符串是一个有效路劲，则删掉最后一个"\"及后面的字符串，并返回（不包含末尾"\"）。
-	CLString& deleteLastStrFromPath();
+	ref deleteLastStrFromPath();
 
 	//若对象保存的字符串中含有数字，可按参数1指定的位置提取出数字（无法提取出负号，故所有数都将为正数）
 	//并以double类型返回。参数1：以0为起始计的位置索引号。例：1、若字符串为“123.456这是一串数”，则提取
@@ -547,7 +554,7 @@ public:
 	//static BOOL multiByteToWideChar(LPWSTR pDesWideCharBuf, LPSTR pSorMultiByteChar, LONG_PTR nDesBufLen);
 
 	//若文字保存的是一个全路径或文件名，则替换调扩展名,带".xxx"形式的，如果没有扩展名则增加；
-	CLString& replaceExtName(LPCTSTR newExtName);
+	ref replaceExtName(LPCTSTR newExtName);
 
 	//注册表相关---------------------------------------------------------------------------------------------------------------------------------
 	//将对象中字符串保存到指定注册表位置。
@@ -623,7 +630,7 @@ public:
 	//把UTF字串转为多字节后增加到string对象尾部；
 	static void U2G(const char* utf8,std::string& re);
 	//释放所有打开的Http资源句柄
-	CLString& httpClose();
+	ref httpClose();
 	//将Url指向的地址文件内容保存到对象中,Url必须带http://头;urlEncode指定网络数据的格式。该函数不需要调用httpClose()
 	BOOL httpOpenUrl(LPCTSTR Url,BOOL openErrorAlert = TRUE, LPTSTR pOutErrStr = NULL,BYTE urlEncode = EnCode_ASCII);
 
@@ -672,7 +679,7 @@ public:
 	BOOL createDirectory(void);
 	//取得系统特殊对象或文件夹的路劲保存到对象字符串。参数详API函数：SHGetSpecialFolderPath。
 	//默认参数下将取得桌面文件夹的全路劲 nFolder=CSIDL_DESKTOP。
-	CLString& getSpecialFolderPath(INT nFolder=CSIDL_DESKTOP,INT storeLen=MAX_PATH,HWND hwndOwner=NULL,BOOL fCreate=FALSE);
+	ref getSpecialFolderPath(INT nFolder=CSIDL_DESKTOP,INT storeLen=MAX_PATH,HWND hwndOwner=NULL,BOOL fCreate=FALSE);
 	//若对象保存的字符串是一个文件或文件夹的路径（绝对路径、相对路径，文件或文件夹均可），
 	//则检查该文件或文件夹是否存在。存在则返回TRUE。
 	//注意：路劲不能以“/”或“\\”结尾。
@@ -797,7 +804,7 @@ public:
 
 	//取得windows系统GetLastError错误代码格式化字符串
 	LPCTSTR getLastErrorString(DWORD nLastError);
-	CLString& getLastErrorStringR(DWORD nLastError);
+	ref getLastErrorStringR(DWORD nLastError);
 	static DWORD  getLastErrorString(DWORD nLastError,LPTSTR lpszOutPut,LONG_PTR nSize);
 	//取得windows系统GetLastError错误代码对应格式化字符串的MessageBox
 	DWORD getLastErrorMessageBox(DWORD nLastError,HWND hParentWnd = 0,LPCTSTR pTitle = _T("LastError"),UINT uType = MB_ICONWARNING,LPCTSTR pInsetStr = NULL,LPCTSTR pEndStr = NULL);
@@ -805,17 +812,17 @@ public:
 	DWORD getLastErrorMessageBoxExceptSucceed(DWORD nLastError,HWND hParentWnd = 0,LPCTSTR pTitle = _T("LastError"),UINT uType = MB_ICONWARNING,LPCTSTR pInsetStr = NULL,LPCTSTR pEndStr = NULL);
 	//用MessageBox显示当前保存值的内容
 	INT messageBox(UINT nStyle = MB_OK,HWND hParentWnd = 0);
-	CLString& messageBoxRef(UINT nStyle = MB_OK,HWND hParentWnd = 0);
+	ref messageBoxRef(UINT nStyle = MB_OK,HWND hParentWnd = 0);
 	INT messageBoxTime(LPCTSTR boxTitle = 0, UINT nStyle = MB_OK, DWORD dwMilliseconds = INFINITE,HWND hParentWnd = 0);
-	CLString& messageBoxTimeRef(LPCTSTR boxTitle = 0, UINT nStyle = MB_OK, DWORD dwMilliseconds = INFINITE,HWND hParentWnd = 0);
+	ref messageBoxTimeRef(LPCTSTR boxTitle = 0, UINT nStyle = MB_OK, DWORD dwMilliseconds = INFINITE,HWND hParentWnd = 0);
 	INT messageBox(LPCTSTR boxTitle,UINT nStyle,HWND hParentWnd = 0);
-	CLString& messageBoxRef(LPCTSTR boxTitle,UINT nStyle,HWND hParentWnd = 0);
+	ref messageBoxRef(LPCTSTR boxTitle,UINT nStyle,HWND hParentWnd = 0);
 	//临时通过一个MessageBox显示出当前保存的字符串内容。
 	void showContent();
 	//向cmd控制台输出字符串内容。
-	CLString& logout();
+	ref logout();
 	//向cmd控制台输出字符串内容。
-	CLString& printf();
+	ref printf();
 	//退行输出，返回本行输出字符长度，参数1：表示要退格回删的字符数（该值应该为上一次调用函数成功的返回值，以实现单行的回删覆盖显示）
 	int printfBackCover(int bakCoverChars); 
 	//用于在控制台程序输入字符串使用。函数返回值：0 （按下Esc键），1 （按下回车键）。
@@ -845,7 +852,7 @@ public:
 	//类CLString方法实现---------------------------------------------------------------------------------------------------------------------------------
 	BOOL isEmpty();//是否为空字符
 
-	CLString& empty();//强制对象置为空,仅字符串相关数据清空，其他数据不做任何修改
+	ref empty();//强制对象置为空,仅字符串相关数据清空，其他数据不做任何修改
 
 	TCHAR getAt(LONG_PTR nIndex);//返回字串指定位置的字符，索引从0开始,参数可为任意值，若参数越界则返回0不会奔溃
 	TCHAR operator []( LONG_PTR nIndex );//返回字串指定位置的字符，索引从0开始;参数可为任意值，若参数越界则返回0不会奔溃
@@ -861,55 +868,55 @@ public:
 
 
 	//此成员函数从此CLString对象中提取一个长度为nCount个字符的子串（从nFirst（从零开始的索引）指定的位置开始）到目标对象中，返回保存目标对象的引用。
-	CLString& mid( CLString& storeTagObj, LONG_PTR nCount ) ;
-	CLString& mid( CLString& storeTagObj, LONG_PTR nFirst, LONG_PTR nCount ) ;
-	CLString& left( CLString& storeTagObj,  LONG_PTR nCount ) ;
-	CLString& right( CLString& storeTagObj,  LONG_PTR nCount ) ;
+	ref mid( ref storeTagObj, LONG_PTR nCount ) ;
+	ref mid( ref storeTagObj, LONG_PTR nFirst, LONG_PTR nCount ) ;
+	ref left( ref storeTagObj,  LONG_PTR nCount ) ;
+	ref right( ref storeTagObj,  LONG_PTR nCount ) ;
 
 	//此成员函数从此CLString对象中提取一个长度为nCount个字符的子串，从nFirst（从零开始的索引）指定的位置开始。此函数返回截取操作后的类对象自身的引用。
-	CLString& midSave(LONG_PTR nFirst, LONG_PTR nCount );	
-	CLString& leftSave(LONG_PTR nCount);
-	CLString& rightSave(LONG_PTR nCount);
-	CLString& leftCut(LONG_PTR nCount) { return rightSave(this->strlen() - nCount); }
-	CLString& rightCut(LONG_PTR nCount) { return leftSave(this->strlen() - nCount); }
+	ref midSave(LONG_PTR nFirst, LONG_PTR nCount );	
+	ref leftSave(LONG_PTR nCount);
+	ref rightSave(LONG_PTR nCount);
+	ref leftCut(LONG_PTR nCount) { return rightSave(this->strlen() - nCount); }
+	ref rightCut(LONG_PTR nCount) { return leftSave(this->strlen() - nCount); }
 	
-	CLString& makeUpper( );//对象转换为一个大写字符串
-	CLString& makeLower( );//对象转换为一个小写字符串。
-	CLString& makeReverse( );//对象中的字符的顺序颠倒过来。
+	ref makeUpper( );//对象转换为一个大写字符串
+	ref makeLower( );//对象转换为一个小写字符串。
+	ref makeReverse( );//对象中的字符的顺序颠倒过来。
 	//此成员函数用一个字符替换另一个字符。函数的第一个原形在字符串中用chNew现场替换chOld。
 	//函数的第二个原形用lpszNew指定的字符串替换lpszOld指定的子串。
 	//在替换之后，该字符串有可能增长或缩短；那是因为lpszNew和lpszOld的长度不需要是相等的。两种版本形式都进行区分大小写的匹配。
 	//返回值：返回被替换的字符数。如果这个字符串没有改变则返回零。
 	LONG_PTR replaceRN( TCHAR chOld, TCHAR chNew );
-	CLString& replace(TCHAR chOld, TCHAR chNew);	
+	ref replace(TCHAR chOld, TCHAR chNew);	
 	LONG_PTR replaceRN( LPCTSTR lpszOld, LPCTSTR lpszNew );
-	CLString& replace(LPCTSTR lpszOld, LPCTSTR lpszNew);
+	ref replace(LPCTSTR lpszOld, LPCTSTR lpszNew);
 	LONG_PTR removeRN ( TCHAR ch );//将ch实例从字符串中移走。返回值：返回从字符串中移走的字符数。如果字符串没有改变则返回零。
-	CLString& remove(TCHAR ch);
+	ref remove(TCHAR ch);
 
 	//在字符串中的给定索引处插入一个单个字符或一个子字符串。返回值：返回被改变的字符串的长度。
 	LONG_PTR insertRN( LONG_PTR nIndex, TCHAR ch );
-	CLString& insert(LONG_PTR nIndex, TCHAR ch);
+	ref insert(LONG_PTR nIndex, TCHAR ch);
 	LONG_PTR insertRN( LONG_PTR nIndex, LPCTSTR pstr );
-	CLString& insert(LONG_PTR nIndex, LPCTSTR pstr);
+	ref insert(LONG_PTR nIndex, LPCTSTR pstr);
 	//从一个字符串中从nIndex开始的地方删除一个或多个字符。如果nCount比此字符串还要长，则字符串的其余部分都将被删除。
 	LONG_PTR deleteCharRN( LONG_PTR nIndex, LONG_PTR nCount = 1);
-	CLString& deleteChar(LONG_PTR nIndex, LONG_PTR nCount = 1);
+	ref deleteChar(LONG_PTR nIndex, LONG_PTR nCount = 1);
 	//这个成员函数的没有参数的版本用来将字符串最前面和最后面的“换行符，空格和tab字符”修整掉。
 	//这个成员函数的需要参数的版本用来将一个特定的字符或一群特定的字符从字符串的开始和结尾处删除。
-	CLString& trim();
-	CLString& trim(TCHAR chTarget);
-	CLString& trim(LPCTSTR lpszTargets);
+	ref trim();
+	ref trim(TCHAR chTarget);
+	ref trim(LPCTSTR lpszTargets);
 	//这个成员函数的没有参数的版本用来将字符串最前面的“换行符，空格和tab字符”修整掉。
 	//这个成员函数的需要参数的版本用来将一个特定的字符或一群特定的字符从字符串的开始处删除。
-	CLString& trimLeft( );
-	CLString& trimLeft( TCHAR chTarget );
-	CLString& trimLeft( LPCTSTR lpszTargets );
+	ref trimLeft( );
+	ref trimLeft( TCHAR chTarget );
+	ref trimLeft( LPCTSTR lpszTargets );
 	//这个成员函数的没有参数的版本用来将字符串最后面的“换行符，空格和tab字符”修整掉。
 	//这个成员函数的需要参数的版本用来将一个特定的字符或一群特定的字符从字符串的结尾处删除。
-	CLString& trimRight( );
-	CLString& trimRight( TCHAR chTarget );
-	CLString& trimRight( LPCTSTR lpszTargets );
+	ref trimRight( );
+	ref trimRight( TCHAR chTarget );
+	ref trimRight( LPCTSTR lpszTargets );
 	
 
 	LPCSTR strStr(LPCSTR lpszSub) { return StrStrA(getASCII(), lpszSub); };
@@ -917,19 +924,50 @@ public:
 	LPCSTR strStrI(LPCSTR lpszSub) { return StrStrIA(getASCII(), lpszSub); };
 	LPCWSTR strStrI(LPCWSTR lpszSub) { return StrStrIW(getUnicode(), lpszSub); };
 
-	//在字符串中查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	//在字符串中查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。nStart表示搜索起始位置索引。
 	static LONG_PTR  find(LPCTSTR lpszTag,LPCTSTR lpszSub, LONG_PTR nStart = 0);
-	//在字符串中查找字符，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	//在字符串中查找字符，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。nStart表示搜索起始位置索引。
 	LONG_PTR  find(TCHAR ch, LONG_PTR nStart = 0);
-	//在字符串中查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	//在字符串中查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。nStart表示搜索起始位置索引。
 	LONG_PTR  find(LPCTSTR lpszSub, LONG_PTR nStart = 0);
 
-	//在字符串中反向查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	//将搜索结果保存到内部临时存储空间，并返回给外部,该临时对象在下一次覆盖操作前将会有效，
+	//需要临时独立对象保存结果，则需要调用findStringObj()函数；
+	LPCTSTR findString(LPCTSTR lpszSub, LONG_PTR nStart = 0);
+	//将搜索结果保存到返回对象；
+	CLString findStringObj(LPCTSTR lpszSub, LONG_PTR nStart = 0);
+	//将搜索结果保存到对象本身；
+	ref findStringSave(LPCTSTR lpszSub, LONG_PTR nStart = 0);
+	//将反向搜索结果保存到内部临时存储空间，并返回给外部,该临时对象在下一次覆盖操作前将会有效；
+	//需要临时独立对象保存结果，则需要调用rfindStringObj()函数；
+	LPCTSTR rfindString(LPCTSTR lpszSub, LONG_PTR nStart = 0);
+	//将反向搜索结果保存到返回对象；
+	CLString rfindStringObj(LPCTSTR lpszSub, LONG_PTR nStart = 0);
+	//将反向搜索结果保存到对象本身；
+	ref rfindStringSave(LPCTSTR lpszSub, LONG_PTR nStart = 0);
+	//以下为函数findMidString的搜索模式，以字符串"aabbaabbccbbccdd"为例，剪裁字符分别为"aa","cc"时候以下结果有不同；
+	enum FMS_TYPE {
+		FMS_LEFT = 0,  // 左边型，"aabbaabbccbbccdd"为例，剪裁字符"aa","cc"，结果 "aabbaabb";
+		FMS_RIGHT, // 左边型，"aabbaabbccbbccdd"为例，剪裁字符"aa","cc"，结果 "aabbccbb";
+		FMS_MAX,   // 左边型，"aabbaabbccbbccdd"为例，剪裁字符"aa","cc"，结果 "aabbaabbccbb";
+		FMS_MIN,   // 左边型，"aabbaabbccbbccdd"为例，剪裁字符"aa","cc"，结果 "aabb";
+	};
+	//两个子字符串剪裁，若子字符串在文字中可能存在多个，应该制定剪裁的具体模式；
+	//cutType表示剪裁模式，saveType边界保留模式，具体详见FMS_TYPE定义；
+	LPCTSTR findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_TYPE cutType = FMS_MIN, FMS_TYPE saveType = FMS_MAX, 
+		LONG_PTR nStart = 0, LONG_PTR nRevStart = 0);
+	CLString findMidStringObj(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_TYPE cutType = FMS_MIN, FMS_TYPE saveType = FMS_MAX,
+		LONG_PTR nStart = 0, LONG_PTR nRevStart = 0);
+	ref findMidStringSave(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_TYPE cutType = FMS_MIN, FMS_TYPE saveType = FMS_MAX,
+		LONG_PTR nStart = 0, LONG_PTR nRevStart = 0);
+
+	//在字符串中反向查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。nRevStart表示反向搜索正序起始位置索引。
 	static LONG_PTR  rfind(LPCTSTR lpszTag, LPCTSTR lpszSub, LONG_PTR nRevStart = 0);	
-	//在字符串中反向查找字符，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	//在字符串中反向查找字符，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。nRevStart表示反向搜索正序起始位置索引。
 	LONG_PTR  rfind( TCHAR ch, LONG_PTR nRevStart = 0) ;
-	//在字符串中反向查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。
+	//在字符串中反向查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。nRevStart表示反向搜索正序起始位置索引。
 	LONG_PTR  rfind( LPCTSTR lpszSub,  LONG_PTR nRevStart = 0);
+
 	//字符串中搜索与lpszCharSet中任意字符匹配的第一个字符。
 	//返回此字符串中第一个在lpszCharSet中也包括的字符的从零开始的索引。
 	LONG_PTR  findFirstOneOf( LPCTSTR lpszCharSet ) ;
@@ -1002,12 +1040,12 @@ CLString operator+(const CLString& str1 ,LPCTSTR pStr2);
 template<typename _class> CLString operator+(const CLString& str1 ,_class obj2){
 	CLString temp;
 	temp << str1 << obj2;
-	return (temp);
+	return  std::move(temp);
 }
 template<typename _class> CLString operator+(_class obj1 ,const CLString&  str2){
 	CLString temp;
 	temp << obj1 << str2;
-	return (temp);
+	return  std::move(temp);
 }
 
 
