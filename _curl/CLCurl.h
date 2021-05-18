@@ -165,6 +165,13 @@ public:
 		_isInit = false, _lastError = CURLE_OK;
 		return *this;
 	}
+	//curl对象重置;It does keep: live connections, the Session ID cache, the DNS cache and the cookies.
+	ref reset() {
+		if (!isInit())init();
+		else curl_easy_reset(this->curl);
+		_lastError = CURLE_OK;
+		return *this;
+	}
 	//curl取得目标URL指向的内容的字节大小。（函数调用前应该充分的设置选项参数，以保证函数执行成功）
 	size_t getInfoContentLength();
 	//curl取得结果码CURLcode对应的解释信息字符串。

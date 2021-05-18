@@ -2,12 +2,13 @@
 #include "curl.lib/curl-7.76.1/lib/urldata.h"
 #include "../_cl_string/CLString.h"
 
-size_t _write_data_doNothing(void* ptr, size_t size, size_t nmemb, void* stream)
-{
-	return size * nmemb; //什么也不做
-}
-
 size_t CLCurl::getInfoContentLength() {
+    struct _writeFunc {
+        static size_t doNothing(void* ptr, size_t size, size_t nmemb, void* stream)
+        {
+            return size * nmemb; //什么也不做
+        }
+    };
 	double downloadFileLenth = 0;
 	if (!isInit())init();
 	//直接由底层源码取值；该方式需要工程完全由源码编译构成，而不是连接外部库；
@@ -17,8 +18,9 @@ size_t CLCurl::getInfoContentLength() {
 	auto pParam = this->curl->set.out;
 	curl_easy_setopt(*this, CURLOPT_HEADER, true);
 	curl_easy_setopt(*this, CURLOPT_NOBODY, true);
-    curl_easy_setopt(*this, CURLOPT_WRITEFUNCTION, _write_data_doNothing);//屏蔽调用默认输出函数
+    curl_easy_setopt(*this, CURLOPT_WRITEFUNCTION, _writeFunc::doNothing);//屏蔽调用默认输出函数
 	curl_easy_setopt(*this, CURLOPT_WRITEDATA, 0);
+    //curl_easy_setopt(*this, CURLOPT_CUSTOMREQUEST, "GET");
     CCURL_SAVE_CODE_CHECK(curl_easy_perform(*this));
 	if (getLastError() == CURLE_OK) {
         CCURL_SAVE_CODE_CHECK(curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &downloadFileLenth));
@@ -115,7 +117,7 @@ PCStr CLCurl::getLastErrorStringCN(CURLcode err)
 	case CURLE_AGAIN: return "Socket是没有准备好发送/接收等待，直到它准备好了，然后再试一次。"; break;
 	case CURLE_SSL_CRL_BADFILE: return "无法加载CRL文件"; break;
 	case CURLE_SSL_ISSUER_ERROR: return "发行人检查失败"; break;
-	case CURLE_FTP_PRET_FAILED: return "FTP服务器不理解的PRET命令，所有不支持给定的参数；要小心时usingCURLOPT_CUSTOMREQUEST，自定义列表“命令将发送PRET CMD前PASV以及"; break;
+	case CURLE_FTP_PRET_FAILED: return "FTP服务器不理解的PRET命令，所有不支持给定的参数；要小心时using CURLOPT_CUSTOMREQUEST，自定义列表“命令将发送PRET CMD前PASV以及"; break;
 	case CURLE_RTSP_CSEQ_ERROR: return "RTSP的Cseq号码不匹配"; break;
 	case CURLE_RTSP_SESSION_ERROR: return "RTSP会话标识符不匹配"; break;
 	case CURLE_FTP_BAD_FILE_LIST: return "无法，解析FTP文件列表（在FTP通配符下载）"; break;

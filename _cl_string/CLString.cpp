@@ -11,7 +11,6 @@ BOOL $clstring_open_destroyflag = 0; //析构函数调用情况开关
 
 #define BUFFERSIZE 16384 //16k
 
-
 LPTSTR getCLString0() {
 	static TCHAR $char0 = 0;//初始化常量值不能修改其值
 	assert($char0 == 0);
@@ -162,10 +161,10 @@ CLString& CLString::set(LPCTSTR pString1, LPCTSTR pString2, ...)
 
 	LPCTSTR p = pString1;
 	LONG_PTR n = 0;
-	LONG_PTR nSize = p ? n = 1, std::_tcslen(p) : 0;
+	LONG_PTR nSize = p ? n = 1, CLString::_strlen(p) : 0;
 	va_list ap;
 	va_start(ap, pString2);
-	for (p = pString2; p; nSize += std::_tcslen(p), p = va_arg(ap, LPCTSTR), n++);
+	for (p = pString2; p; nSize += CLString::_strlen(p), p = va_arg(ap, LPCTSTR), n++);
 	va_end(ap);
 	store(nSize);
 	LONG_PTR i = 1;
@@ -343,6 +342,12 @@ BOOL CLString::_RegSZ(HKEY mainKey, LPCTSTR mainPass, LPCTSTR optionName, LPTSTR
 	}
 	return m_ret;
 }
+inline LONG_PTR CLString::_strlen(LPCTSTR _in_Ptr) {
+	if (!_in_Ptr)return 0;
+	LONG_PTR t = 0;
+	for (; _in_Ptr[t]; ++t);
+	return t;
+}
 LPTSTR CLString::_newbuffer(LONG_PTR nNeedSize, LONG_PTR nPosIndex)
 {
 	LPTSTR p = NULL;
@@ -387,7 +392,7 @@ CLString::PCLStringExData CLString::makeNewTempStringBuf(size_t stringSizeNoEndZ
 	return pEx;
 }
 
-CLString& CLString::swapData(CLString& other)
+CLString& CLString::swap(CLString& other)
 {
 	std::swap(pHead, other.pHead);
 	std::swap(m_unitNumber, other.m_unitNumber);
@@ -410,11 +415,13 @@ CLString::CLString(LPCSTR pString)
 CLString::CLString(CLString&& right)
 {
 	initialize();
-	*this = std::move(right);
+	*this = right.move();
 }
 CLString& CLString::operator=(CLString&& right)
 {
-	return swapData(right);
+	this->swap(right);
+	right.cleanAllMemory();
+	return *this;
 }
 CLString::CLString(LPCWSTR pString)
 {
@@ -423,7 +430,7 @@ CLString::CLString(LPCWSTR pString)
 }
 CLString::CLString(const CLString& mString)
 {
-	initialize(std::_tcslen(mString.string()));
+	initialize(CLString::_strlen(mString.string()));
 	set(mString.string());
 }
 CLString::CLString(LONG_PTR nDefaultCharNumber)
@@ -435,12 +442,12 @@ CLString::CLString(LPCTSTR pString1, LPCTSTR pString2, ...)
 {
 	LPCTSTR p = (pString1 ? &pString1[0] : 0);
 	LONG_PTR n = 0;
-	LONG_PTR nSize = p ? std::_tcslen(p) : 0;
+	LONG_PTR nSize = p ? CLString::_strlen(p) : 0;
 	va_list ap;
 	va_start(ap, pString2);
 	for (p = pString2; p != NULL; ) {
 		++n;
-		nSize += std::_tcslen(p);
+		nSize += CLString::_strlen(p);
 		p = va_arg(ap, LPCTSTR);
 	}
 	va_end(ap);
@@ -675,7 +682,7 @@ CLString& CLString::format(LONG_PTR maxStrlen, LPCTSTR szFormat, ...)
 	{
 		return empty();
 	}
-	LONG_PTR _szFormatlen = std::_tcslen(szFormat) + 1;
+	LONG_PTR _szFormatlen = CLString::_strlen(szFormat) + 1;
 	if (szFormat + _szFormatlen < pHead || szFormat > pHead + m_unitNumber)//指针重叠判断
 	{
 		va_list pArgs;
@@ -700,7 +707,7 @@ CLString& CLString::format(LPCTSTR szFormat, ...)
 	{
 		return empty();
 	}
-	LONG_PTR _szFormatlen = std::_tcslen(szFormat) + 1;
+	LONG_PTR _szFormatlen = CLString::_strlen(szFormat) + 1;
 
 	if (szFormat + _szFormatlen < pHead || szFormat > pHead + m_unitNumber)//指针重叠判断
 	{
@@ -1197,7 +1204,7 @@ LONG_PTR CLString::strlen(void)
 	if (m_changeFlag)
 	{
 		assert(string() != NULL);
-		m_strlen = std::_tcslen(string());
+		m_strlen = CLString::_strlen(string());
 		m_changeFlag = FALSE;
 	}
 	return m_strlen;
@@ -2438,7 +2445,7 @@ CLString operator+(const CLString& str1, const  CLString& str2)
 
 	strResult.append(str2.string());
 
-	return std::move(strResult);
+	return strResult.move();
 }
 CLString operator+(LPCTSTR pStr1, const  CLString& str2)
 {
@@ -2446,7 +2453,7 @@ CLString operator+(LPCTSTR pStr1, const  CLString& str2)
 
 	strResult.append(str2.string());
 
-	return  std::move(strResult);
+	return  strResult.move();
 }
 CLString operator+(const CLString& str1, LPCTSTR pStr2)
 {
@@ -2454,7 +2461,7 @@ CLString operator+(const CLString& str1, LPCTSTR pStr2)
 
 	strResult.append(pStr2);
 
-	return std::move(strResult);
+	return strResult.move();
 }
 double CLString::calcTimeDelta(const SYSTEMTIME* beforetime, const SYSTEMTIME* behandtime)
 {
@@ -2707,7 +2714,7 @@ void  CLString::fileEnumeration(std::vector<LPCTSTR>& m_vtInnerStringVector_, LP
 		if (bClearVectorBefoteStart)
 			clearStringVector(m_vtInnerStringVector_);
 
-		LONG_PTR len = std::_tcslen(lpPath);
+		LONG_PTR len = CLString::_strlen(lpPath);
 		if (lpPath == NULL || len <= 0) return;
 
 		TCHAR path[MAX_PATH] = { 0 };
@@ -2751,7 +2758,7 @@ void  CLString::fileEnumeration(std::vector<LPCTSTR>& m_vtInnerStringVector_, LP
 						|| (*lpExName == 0)
 						|| (lpExName && (pdot = _tcsrchr(tempPath, _T('.'))) && _tcsicmp(pdot, lpExName) == 0))
 					{
-						size_t _nii = (bJustStoreEndName ? std::_tcslen(fd.cFileName) + 1 : MAX_PATH);
+						size_t _nii = (bJustStoreEndName ? CLString::_strlen(fd.cFileName) + 1 : MAX_PATH);
 						LPTSTR p = new TCHAR[_nii];
 						_tcscpy_s(p, _nii, (bJustStoreEndName ? fd.cFileName : tempPath));
 						m_vtInnerStringVector_.push_back(p);
@@ -2759,7 +2766,7 @@ void  CLString::fileEnumeration(std::vector<LPCTSTR>& m_vtInnerStringVector_, LP
 				}
 				else {
 					if (lpExName == NULL) {
-						size_t _nii = (bJustStoreEndName ? std::_tcslen(fd.cFileName) + 1 : MAX_PATH);
+						size_t _nii = (bJustStoreEndName ? CLString::_strlen(fd.cFileName) + 1 : MAX_PATH);
 						LPTSTR p = new TCHAR[_nii];
 						_tcscpy_s(p, _nii, (bJustStoreEndName ? fd.cFileName : tempPath));
 						m_vtInnerStringVector_.push_back(p);
@@ -2768,7 +2775,7 @@ void  CLString::fileEnumeration(std::vector<LPCTSTR>& m_vtInnerStringVector_, LP
 						LPCTSTR pdot;
 						if (*lpExName == 0 || ((pdot = _tcsrchr(tempPath, _T('\\'))) && _tcsicmp(pdot + 1, lpExName) == 0))
 						{
-							size_t _nii = (bJustStoreEndName ? std::_tcslen(fd.cFileName) + 1 : MAX_PATH);
+							size_t _nii = (bJustStoreEndName ? CLString::_strlen(fd.cFileName) + 1 : MAX_PATH);
 							LPTSTR p = new TCHAR[_nii];
 							_tcscpy_s(p, _nii, (bJustStoreEndName ? fd.cFileName : tempPath));
 							m_vtInnerStringVector_.push_back(p);
@@ -2801,7 +2808,7 @@ const std::vector<LPCTSTR>& CLString::fileEnumeration(LPCTSTR lpPath, LPCTSTR lp
 	try {
 		//-------------------------------------------------------------------------  	
 
-		LONG_PTR len = std::_tcslen(lpPath);
+		LONG_PTR len = CLString::_strlen(lpPath);
 		if (lpPath == NULL || len <= 0)
 			return *(makeDEx()->m_vtInnerStringVector_);
 
@@ -2847,7 +2854,7 @@ const std::vector<LPCTSTR>& CLString::fileEnumeration(LPCTSTR lpPath, LPCTSTR lp
 						|| (*lpExName == 0)
 						|| (lpExName && (pdot = _tcsrchr(tempPath, _T('.'))) && _tcsicmp(pdot, lpExName) == 0))
 					{
-						size_t _iin = (bJustStoreEndName ? std::_tcslen(fd.cFileName) + 1 : MAX_PATH);
+						size_t _iin = (bJustStoreEndName ? CLString::_strlen(fd.cFileName) + 1 : MAX_PATH);
 						LPTSTR p = _newbuffer(_iin, (makeDEx()->m_vtInnerStringVector_)->size());
 						_tcscpy_s(p, _iin, (bJustStoreEndName ? fd.cFileName : tempPath));
 						(makeDEx()->m_vtInnerStringVector_)->push_back(p);
@@ -2855,7 +2862,7 @@ const std::vector<LPCTSTR>& CLString::fileEnumeration(LPCTSTR lpPath, LPCTSTR lp
 				}
 				else {
 					if (lpExName == NULL) {
-						size_t _iin = (bJustStoreEndName ? std::_tcslen(fd.cFileName) + 1 : MAX_PATH);
+						size_t _iin = (bJustStoreEndName ? CLString::_strlen(fd.cFileName) + 1 : MAX_PATH);
 						LPTSTR p = _newbuffer(_iin, (makeDEx()->m_vtInnerStringVector_)->size());
 						_tcscpy_s(p, _iin, (bJustStoreEndName ? fd.cFileName : tempPath));
 						(makeDEx()->m_vtInnerStringVector_)->push_back(p);
@@ -2864,7 +2871,7 @@ const std::vector<LPCTSTR>& CLString::fileEnumeration(LPCTSTR lpPath, LPCTSTR lp
 						LPCTSTR pdot;
 						if (*lpExName == 0 || ((pdot = _tcsrchr(tempPath, _T('\\'))) && _tcsicmp(pdot + 1, lpExName) == 0))
 						{
-							size_t _iin = (bJustStoreEndName ? std::_tcslen(fd.cFileName) + 1 : MAX_PATH);
+							size_t _iin = (bJustStoreEndName ? CLString::_strlen(fd.cFileName) + 1 : MAX_PATH);
 							LPTSTR p = _newbuffer(_iin, (makeDEx()->m_vtInnerStringVector_)->size());
 							_tcscpy_s(p, _iin, (bJustStoreEndName ? fd.cFileName : tempPath));
 							(makeDEx()->m_vtInnerStringVector_)->push_back(p);
@@ -3156,7 +3163,7 @@ std::vector<LPCTSTR>& CLString::split(LPCTSTR szSplitCharString, BOOL bClearVect
 		(makeDEx()->m_vtInnerStringVector_) = new std::vector<LPCTSTR>;
 	if (!szSplitCharString)
 		return *(makeDEx()->m_vtInnerStringVector_);
-	LONG_PTR nTag = std::_tcslen(szSplitCharString);
+	LONG_PTR nTag = CLString::_strlen(szSplitCharString);
 	while ((t2 = find(szSplitCharString, t1)) >= 0)
 	{
 		si = t2 - t1;
@@ -3448,11 +3455,11 @@ LONG_PTR CLString::replaceRN(LPCTSTR lpszOld, LPCTSTR lpszNew)
 	BOOL isChange = FALSE;
 	LONG_PTR  pos = -1;
 	CLString tmp = pHead, res, tmp2;//modify---------
-	LONG_PTR i = 0, len = std::_tcslen(lpszOld);
+	LONG_PTR i = 0, len = CLString::_strlen(lpszOld);
 	while ((pos = tmp.find(lpszOld)) >= 0) {
 		res << tmp.left(tmp2, pos);
 		res << lpszNew;
-		tmp.rightSave(tmp.strlen() - pos - std::_tcslen(lpszOld));
+		tmp.rightSave(tmp.strlen() - pos - CLString::_strlen(lpszOld));
 		i += len;
 		isChange = TRUE;
 	}
@@ -3587,7 +3594,7 @@ CLString& CLString::trimLeft(TCHAR chTarget)
 CLString& CLString::trimLeft(LPCTSTR lpszTargets)
 {
 	LONG_PTR nSi = 0;
-	if (!lpszTargets || (nSi = std::_tcslen(lpszTargets)) == 0 || nSi > strlen())
+	if (!lpszTargets || (nSi = CLString::_strlen(lpszTargets)) == 0 || nSi > strlen())
 		return *this;
 	BOOL dif = FALSE;
 	LONG_PTR  same = 0, tm = 0;
@@ -3646,7 +3653,7 @@ CLString& CLString::trimRight(TCHAR chTarget)
 CLString& CLString::trimRight(LPCTSTR lpszTargets)
 {
 	LONG_PTR nSi = 0;
-	if (!lpszTargets || (nSi = std::_tcslen(lpszTargets)) == 0 || nSi > strlen())
+	if (!lpszTargets || (nSi = CLString::_strlen(lpszTargets)) == 0 || nSi > strlen())
 		return *this;
 	BOOL dif = FALSE;
 	LONG_PTR  same = strlen(), tm = 0;
@@ -3713,13 +3720,13 @@ LPCTSTR CLString::findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_T
 	lpszSubLeft = lpszSubLeft ? lpszSubLeft : _T("\0");
 	lpszSubRight = lpszSubRight ? lpszSubRight : _T("\0");
 	LONG_PTR is = 0, ie = 0, st = 0, et = 0;
-	LONG_PTR slen = std::_tcslen(lpszSubLeft);
-	LONG_PTR elen = std::_tcslen(lpszSubRight);
+	LONG_PTR slen = CLString::_strlen(lpszSubLeft);
+	LONG_PTR elen = CLString::_strlen(lpszSubRight);
 	if (nStart > size())nStart = size();
 	if (nRevStart > size())nRevStart = size();	
 	switch (cutType)
 	{
-	case CLString::FMS_LEFT:
+	case FMS_TYPE::FMS_LEFT:
 		st = find(lpszSubLeft, nStart);
 		ie = rfind(lpszSubRight, nRevStart);
 		while (ie > st) {
@@ -3727,7 +3734,7 @@ LPCTSTR CLString::findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_T
 			ie = rfind(lpszSubRight, size() - ie);
 		}
 		break;
-	case CLString::FMS_RIGHT:
+	case FMS_TYPE::FMS_RIGHT:
 		et = rfind(lpszSubRight, nRevStart);
 		is = find(lpszSubLeft, nStart);
 		while (is < et && is > -1) {
@@ -3735,11 +3742,11 @@ LPCTSTR CLString::findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_T
 			is = find(lpszSubLeft, is + slen);
 		}
 		break;
-	case CLString::FMS_MAX:
+	case FMS_TYPE::FMS_MAX:
 		st = find(lpszSubLeft, nStart);
 		et = rfind(lpszSubRight, nRevStart);
 		break;
-	case CLString::FMS_MIN:
+	case FMS_TYPE::FMS_MIN:
 		st = is = find(lpszSubLeft, nStart);
 		//cout << endl << endl << is;
 		ie = find(lpszSubRight);
@@ -3778,16 +3785,16 @@ LPCTSTR CLString::findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_T
 	if (*lpszSubRight == _T('\0'))et = size() - nRevStart;
 	switch (saveType)
 	{
-	case CLString::FMS_LEFT:
+	case FMS_TYPE::FMS_LEFT:
 		break;
-	case CLString::FMS_RIGHT:
+	case FMS_TYPE::FMS_RIGHT:
 		if (et > -1)et += elen;
 		if (st > -1)st += slen;
 		break;
-	case CLString::FMS_MAX:
+	case FMS_TYPE::FMS_MAX:
 		if (et > -1)et += elen;
 		break;
-	case CLString::FMS_MIN:
+	case FMS_TYPE::FMS_MIN:
 		if (st > -1)st += slen;
 		break;
 	default:
@@ -3827,7 +3834,7 @@ LONG_PTR  CLString::find(LPCTSTR lpszTag, LPCTSTR lpszSub, LONG_PTR nStart)
 }
 LONG_PTR  CLString::rfind(LPCTSTR lpszTag, LPCTSTR lpszSub, LONG_PTR nRevStart) {
 	if (!lpszTag || !lpszSub || *lpszSub == 0)return -1;
-	LONG_PTR i = std::_tcslen(lpszTag), jsi = std::_tcslen(lpszSub);
+	LONG_PTR i = CLString::_strlen(lpszTag), jsi = CLString::_strlen(lpszSub);
 	if (nRevStart < 0)nRevStart = 0;
 	i = i - nRevStart - 1;
 	jsi = jsi - 1;
@@ -3856,7 +3863,7 @@ LONG_PTR  CLString::findFirstOneOf(LPCTSTR lpszCharSet)
 {
 	if (!lpszCharSet)return -1;
 	LPCTSTR p = pHead;
-	LONG_PTR len = std::_tcslen(lpszCharSet);
+	LONG_PTR len = CLString::_strlen(lpszCharSet);
 	while (*p)
 	{
 		for (LONG_PTR i = 0; i < len; i++)
@@ -3880,7 +3887,7 @@ void CLString::findFlagAndSort(std::vector<TCHAR*>& sortRet, const TCHAR* lpFlag
 }
 BOOL CLString::createDirectory(LPCTSTR lpszPath)
 {
-	if (!lpszPath /*|| (nSi = std::_tcslen(lpszPath)) > MAX_PATH*/)
+	if (!lpszPath /*|| (nSi = CLString::_strlen(lpszPath)) > MAX_PATH*/)
 		return FALSE;
 	if (_FindFirstFileExists(lpszPath, FALSE))
 		return TRUE;
@@ -4097,7 +4104,7 @@ CLStringR CLString::encrypteString(CLStringR outputString, LPCTSTR inputString, 
 	outputString.empty();
 	if (!inputString)
 		return outputString;
-	size_t nCharCounts = std::_tcslen(inputString);
+	size_t nCharCounts = CLString::_strlen(inputString);
 	//_tprintf_s(_T("%s\n"),inputString.string());
 	int* s = new int[nCharCounts];
 	int* ss = new int[nCharCounts];
@@ -4268,7 +4275,7 @@ CLStringR CLString::unEncrypteString(CLStringR outputString, LPCTSTR inputString
 	outputString.empty();
 	if (!inputString)
 		return outputString;
-	size_t nCharCounts = std::_tcslen(inputString);
+	size_t nCharCounts = CLString::_strlen(inputString);
 	int* s = new int[nCharCounts];
 	int* ss = new int[nCharCounts];
 	unEncrypteString(outputString, inputString, s, ss, nCharCounts, nDenpth);
@@ -5214,7 +5221,7 @@ CLString& CLString::copyExData(CLStringRC str)
 		pDataEx->m_vtInnerStringVector_->clear();
 		for (LONG_PTR i = 0; i < (LONG_PTR)str.pDataEx->m_vtInnerStringVector_->size(); i++)
 		{
-			si = std::_tcslen(str.pDataEx->m_vtInnerStringVector_->at(i)) + 1;
+			si = CLString::_strlen(str.pDataEx->m_vtInnerStringVector_->at(i)) + 1;
 			LPTSTR lp = _newbuffer((LONG_PTR)si, i);
 			_tcscpy_s(lp, si, str.pDataEx->m_vtInnerStringVector_->at(i));
 			pDataEx->m_vtInnerStringVector_->push_back(lp);
