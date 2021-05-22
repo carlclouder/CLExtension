@@ -2897,10 +2897,8 @@ const std::vector<LPCTSTR>& CLString::fileEnumeration(LPCTSTR lpPath, LPCTSTR lp
 }
 void CLString::clearStringVector(std::vector<LPCTSTR>& _v_str)
 {
-	for (size_t i = 0; i < _v_str.size(); i++)
-	{
-		delete[] _v_str.at(i);
-	}
+	for (size_t i = 0; i < _v_str.size(); i++)	
+		delete[] _v_str.at(i);	
 	_v_str.clear();
 }
 void CLString::clearInnerStringVector()
@@ -3723,24 +3721,26 @@ LPCTSTR CLString::findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_T
 	LONG_PTR slen = CLString::_strlen(lpszSubLeft);
 	LONG_PTR elen = CLString::_strlen(lpszSubRight);
 	if (nStart > size())nStart = size();
-	if (nRevStart > size())nRevStart = size();	
+	if (nRevStart > size())nRevStart = size();
 	switch (cutType)
 	{
 	case FMS_TYPE::FMS_LEFT:
 		st = find(lpszSubLeft, nStart);
-		ie = rfind(lpszSubRight, nRevStart);
-		while (ie > st) {
-			et = ie;
-			ie = rfind(lpszSubRight, size() - ie);
-		}
+		et = ie = rfind(lpszSubRight, nRevStart);
+		if (*lpszSubRight != 0)
+			while (ie > st) {
+				et = ie;
+				ie = rfind(lpszSubRight, size() - ie);
+			}
 		break;
 	case FMS_TYPE::FMS_RIGHT:
 		et = rfind(lpszSubRight, nRevStart);
-		is = find(lpszSubLeft, nStart);
-		while (is < et && is > -1) {
-			st = is;
-			is = find(lpszSubLeft, is + slen);
-		}
+		st = is = find(lpszSubLeft, nStart);
+		if (*lpszSubLeft != 0)
+			while (is < et && is > -1) {
+				st = is;
+				is = find(lpszSubLeft, is + slen);
+			}
 		break;
 	case FMS_TYPE::FMS_MAX:
 		st = find(lpszSubLeft, nStart);
@@ -3752,27 +3752,31 @@ LPCTSTR CLString::findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_T
 		ie = find(lpszSubRight);
 		//cout << endl << endl << ie;
 		et = rfind(lpszSubRight, nRevStart);
-		et = (-1 < et) ? ie : -1;
+		if (*lpszSubRight != 0)
+			et = (-1 < et) ? ie : -1;
 		//cout << endl << endl << et;
 		if (is < et) {
-			while (is < et && is >-1) {
-				st = is;
-				is = find(lpszSubLeft, is + slen);
-				//cout << "   " << is;
-			}
+			if (*lpszSubLeft != 0)
+				while (is < et && is >-1) {
+					st = is;
+					is = find(lpszSubLeft, is + slen);
+					//cout << "   " << is;
+				}
 		}
 		else {
 			ie = et;
-			while (st > ie && ie > -1) {
-				ie = find(lpszSubRight, et + elen);
-				et = ie;
-				//cout << "   " << ie;
-			}
-			while (is < et && is >-1) {
-				st = is;
-				is = find(lpszSubLeft, is + slen);
-				//cout << "   " << is;
-			}
+			if (*lpszSubRight != 0)
+				while (st > ie && ie > -1) {
+					ie = find(lpszSubRight, et + elen);
+					et = ie;
+					//cout << "   " << ie;
+				}
+			if (*lpszSubLeft != 0)
+				while (is < et && is >-1) {
+					st = is;
+					is = find(lpszSubLeft, is + slen);
+					//cout << "   " << is;
+				}
 		}
 		et = et > size() - nRevStart - elen ? -1 : et;
 		//cout << endl << endl << et;
@@ -3780,7 +3784,7 @@ LPCTSTR CLString::findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_T
 	default:
 		throw std::invalid_argument("cutType is error!");
 		break;
-	}	
+	}
 	if (*lpszSubLeft == _T('\0'))st = nStart;
 	if (*lpszSubRight == _T('\0'))et = size() - nRevStart;
 	switch (saveType)
@@ -3817,8 +3821,11 @@ CLString& CLString::findMidStringSave(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight,
 }
 LONG_PTR  CLString::find(LPCTSTR lpszTag, LPCTSTR lpszSub, LONG_PTR nStart)
 {
-	if (!lpszTag || !lpszSub || *lpszSub == 0)return -1;
+	if (!lpszTag)return -1;
 	if (nStart < 0)nStart = 0;
+	if (!lpszSub || *lpszSub == 0) { //is null or "" return pos start!
+		return nStart <= CLString::_strlen(lpszTag) ? nStart : -1;
+	}
 	for (; lpszTag[nStart]; nStart++)
 	{
 		for (LONG_PTR j = 0, rt = nStart; lpszTag[nStart] && lpszSub[j]; )
@@ -3833,7 +3840,12 @@ LONG_PTR  CLString::find(LPCTSTR lpszTag, LPCTSTR lpszSub, LONG_PTR nStart)
 	return -1;
 }
 LONG_PTR  CLString::rfind(LPCTSTR lpszTag, LPCTSTR lpszSub, LONG_PTR nRevStart) {
-	if (!lpszTag || !lpszSub || *lpszSub == 0)return -1;
+	if (!lpszTag)return -1;
+	if (nRevStart < 0)nRevStart = 0;
+	if (!lpszSub || *lpszSub == 0) { //is null or "" return pos nRevStart max,is equal pos 0!
+		auto taglen = CLString::_strlen(lpszTag);
+		return nRevStart <= taglen ? taglen - nRevStart : -1;
+	}
 	LONG_PTR i = CLString::_strlen(lpszTag), jsi = CLString::_strlen(lpszSub);
 	if (nRevStart < 0)nRevStart = 0;
 	i = i - nRevStart - 1;
@@ -3864,14 +3876,10 @@ LONG_PTR  CLString::findFirstOneOf(LPCTSTR lpszCharSet)
 	if (!lpszCharSet)return -1;
 	LPCTSTR p = pHead;
 	LONG_PTR len = CLString::_strlen(lpszCharSet);
-	while (*p)
-	{
-		for (LONG_PTR i = 0; i < len; i++)
-		{
+	while (*p) {
+		for (LONG_PTR i = 0; i < len; i++) {
 			if (*p == *(lpszCharSet + i))
-			{
 				return (p - pHead) / sizeof(TCHAR);
-			}
 		}
 		p++;
 	}

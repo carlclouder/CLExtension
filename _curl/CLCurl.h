@@ -28,9 +28,12 @@ public:
 	typedef CLCurl& ref;
 	typedef const CLCurl& refc;
 	typedef std::vector<char> ResultBuffer;
+	typedef std::map<string, string> ResultHead;
 protected:
 	bool _isInit = false;
 	CURLcode _lastError = CURLE_OK;
+	ResultBuffer _buf;
+	ResultHead _head;
 	struct _buferStorePack {
 		size_t time;
 		ResultBuffer& buf;
@@ -144,19 +147,24 @@ public:
 	ref setWriteFunction(PWFCallBack pFunc) { return setopt(CURLOPT_WRITEFUNCTION, pFunc); }
 	//curl设置写入回调函数参数数据。
 	ref setWriteData(void* param) { return setopt(CURLOPT_WRITEDATA, param); }
-	//curl请求执行。
+	//curl请求执行,保存结果到内部buf。
 	ref perform() {
-		if (!isInit())init();
-		CCURL_SAVE_CODE_CHECK(curl_easy_perform(*this));
-		return *this;
+		return perform(this->_buf);
 	}
 	//curl请求执行，并将结果返回数据集storeBuf。
 	//设置CURLOPT_NOPROGRESS        显示内部预设方式显示进度信息；
 	//设置CURLOPT_XFERINFOFUNCTION  采用自定义回调处理进度过程；
 	ref perform(ResultBuffer& storeBuf) {
-		_buferStorePack _data{ 0, storeBuf };
-		return setWriteFunction(_perfToBufferCallBack)
-			.setWriteData((void*)&_data).perform();
+		_buferStorePack _pack{ 0, storeBuf };
+		setWriteFunction(_perfToBufferCallBack).setWriteData((void*)&_pack);
+		CCURL_SAVE_CODE_CHECK(curl_easy_perform(*this));
+		return *this;
+	}
+	const char* getData() const {
+		return _buf.data();
+	}
+	size_t getDataSize() const {
+		return _buf.size();
 	}
 	//curl对象清理释放。
 	ref cleanup() {
@@ -173,9 +181,12 @@ public:
 		return *this;
 	}
 	//curl取得目标URL指向的内容的字节大小。（函数调用前应该充分的设置选项参数，以保证函数执行成功）
-	size_t getInfoContentLength();
+	size_t getContentLength();
+	
+	ref getHeader();
+	const ResultHead& headerMap()const { return _head; }
 	//curl取得结果码CURLcode对应的解释信息字符串。
-	static PCStr getLastErrorStringCN(CURLcode err);
+	static PCStr getLastErrorStringCN(CURLcode err,bool useCN = true);
 	//curl取得结果码CURLcode对应的解释信息字符串。
 	PCStr getLastErrorStringCN() const { return getLastErrorStringCN(getLastError()); }
 	//curl取得结果码CURLcode对应的解释信息字符串。

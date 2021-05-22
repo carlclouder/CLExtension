@@ -977,13 +977,13 @@ public:
 	//     str.findMidString("/","",FMS_RIGHT);           //返回结果："test.txt"
 	//     str.findMidString("/","",FMS_LEFT,FMS_LEFT);   //返回结果："/document/test.txt"
 	//     str.findMidString("/","/",FMS_MAX,FMS_MAX);    //返回结果："/document/"
-	LPCTSTR findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_TYPE cutType = FMS_MIN, FMS_TYPE saveType = FMS_MIN,
+	LPCTSTR findMidString(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight = nullptr, FMS_TYPE cutType = FMS_MIN, FMS_TYPE saveType = FMS_MIN,
 		LONG_PTR nStart = 0, LONG_PTR nRevStart = 0);
 	//用两个前后剪裁字符串剪裁对象字符串，返回剪裁结果（即中间）字符串到CLString对象；参数意义详见CLString::findMidString()函数；
-	CLString findMidStringObj(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_TYPE cutType = FMS_MIN, FMS_TYPE saveType = FMS_MIN,
+	CLString findMidStringObj(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight = nullptr, FMS_TYPE cutType = FMS_MIN, FMS_TYPE saveType = FMS_MIN,
 		LONG_PTR nStart = 0, LONG_PTR nRevStart = 0);
 	//用两个前后剪裁字符串剪裁对象字符串，返回剪裁结果（即中间）字符串保存到CLString对象本身（覆盖掉原字符串）；参数意义详见CLString::findMidString()函数；
-	ref findMidStringSave(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight, FMS_TYPE cutType = FMS_MIN, FMS_TYPE saveType = FMS_MIN,
+	ref findMidStringSave(LPCTSTR lpszSubLeft, LPCTSTR lpszSubRight = nullptr, FMS_TYPE cutType = FMS_MIN, FMS_TYPE saveType = FMS_MIN,
 		LONG_PTR nStart = 0, LONG_PTR nRevStart = 0);
 
 	//在字符串中反向查找子字符串，返回第一次完全匹配的起始位置索引；如果没有找到子字符串或字符则返回-1。nRevStart表示反向搜索正序起始位置索引。
